@@ -7,6 +7,7 @@ import LabArchitecture from './LabArchitecture';
 import CameraController from './CameraController';
 import AdaptivePerfManager from './AdaptivePerfManager';
 import OpeningScreens from './OpeningScreens';
+import ProfileHub from './ProfileHub';
 
 interface ExperienceProps {
   isDev?: boolean;
@@ -34,7 +35,10 @@ export default function Experience({ isDev = false }: ExperienceProps) {
       {/* 4. Opening 3D Floating Screens */}
       <OpeningScreens />
 
-      {/* 5. Smooth Spline Camera Controller with Lenis Scroll & Mouse Parallax */}
+      {/* 5. Profile Hub Room (Monumental media wall & Highlights rings) */}
+      <ProfileHub />
+
+      {/* 6. Smooth Spline Camera Controller with Lenis Scroll & Mouse Parallax */}
       <CameraController />
 
       {/* 5. Adaptive Performance System */}
