@@ -2,10 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 const projectRoot = process.cwd();
-const possibleSourceDirs = [
-  path.join(projectRoot, 'content', 'media'),
-  path.join(projectRoot, 'content', 'content', 'media')
-];
+const srcDir = path.join(projectRoot, 'content', 'media');
 const targetDir = path.join(projectRoot, 'public', 'media');
 
 function copyRecursive(src, dest) {
@@ -32,9 +29,8 @@ if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir, { recursive: true });
 }
 
-for (const srcDir of possibleSourceDirs) {
-  if (fs.existsSync(srcDir)) {
-    copyRecursive(srcDir, targetDir);
-    console.log(`[copy-media] Copied media assets from ${srcDir} to ${targetDir}`);
-  }
+if (fs.existsSync(srcDir)) {
+  copyRecursive(srcDir, targetDir);
+  console.log(`[copy-media] Copied media assets from ${srcDir} to ${targetDir}`);
 }
+
