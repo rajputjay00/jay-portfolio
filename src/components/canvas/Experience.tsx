@@ -6,6 +6,7 @@ import { Perf } from 'r3f-perf';
 import LabArchitecture from './LabArchitecture';
 import CameraController from './CameraController';
 import AdaptivePerfManager from './AdaptivePerfManager';
+import OpeningScreens from './OpeningScreens';
 
 interface ExperienceProps {
   isDev?: boolean;
@@ -30,7 +31,10 @@ export default function Experience({ isDev = false }: ExperienceProps) {
       {/* 3. The 3D Lab Architecture (Reflective floor, walls, instanced columns, light beams, zone markers) */}
       <LabArchitecture />
 
-      {/* 4. Smooth Spline Camera Controller with Lenis Scroll & Mouse Parallax */}
+      {/* 4. Opening 3D Floating Screens */}
+      <OpeningScreens />
+
+      {/* 5. Smooth Spline Camera Controller with Lenis Scroll & Mouse Parallax */}
       <CameraController />
 
       {/* 5. Adaptive Performance System */}

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ZONES } from '@/constants/zones';
 import { scrollManager } from '@/store/scrollStore';
+import OpeningOverlay from '@/components/ui/OpeningOverlay';
 
 export default function HomePage() {
   const [currentZoneIdx, setCurrentZoneIdx] = useState(0);
@@ -26,6 +27,9 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '1000vh' }}>
+      {/* Opening Sequence Layer */}
+      <OpeningOverlay />
+
       {/* Fixed HUD Navigation Overlay */}
       <div
         className="interactive"

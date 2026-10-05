@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { cameraSpline, lookAtSpline } from '@/constants/zones';
 import { scrollManager } from '@/store/scrollStore';
+import { openingStore, OpeningStep } from '@/store/openingStore';
 
 export default function CameraController() {
   const { camera } = useThree();
@@ -15,11 +16,20 @@ export default function CameraController() {
   const targetLookAtRef = useRef(new THREE.Vector3());
   const currentLookAtRef = useRef(new THREE.Vector3());
   const mouseOffsetRef = useRef(new THREE.Vector2());
+  const openingStepRef = useRef<OpeningStep>(openingStore.getStep());
+
+  React.useEffect(() => {
+    openingStepRef.current = openingStore.getStep();
+    const unsub = openingStore.subscribe((s) => {
+      openingStepRef.current = s;
+    });
+    return unsub;
+  }, []);
 
   // Initialize camera position on first load
   React.useEffect(() => {
-    const initialCam = cameraSpline.getPointAt(0);
-    const initialLook = lookAtSpline.getPointAt(0);
+    const initialCam = new THREE.Vector3(0, 2.1, 13.0);
+    const initialLook = new THREE.Vector3(0, 2.0, 4.0);
     camera.position.copy(initialCam);
     camera.lookAt(initialLook);
     currentCamPosRef.current.copy(initialCam);
@@ -29,9 +39,9 @@ export default function CameraController() {
   useFrame((state, delta) => {
     // 1. Get raw scroll progress (0..1)
     const targetT = scrollManager.getProgress();
+    const currentStep = openingStepRef.current;
 
     // 2. Smoothly damp progress for buttery eased acceleration and deceleration
-    // Using a delta-aware damping factor
     currentTRef.current = THREE.MathUtils.damp(
       currentTRef.current,
       targetT,
@@ -44,6 +54,28 @@ export default function CameraController() {
     // 3. Compute spline points for camera and look-at
     cameraSpline.getPointAt(clampedT, targetCamPosRef.current);
     lookAtSpline.getPointAt(clampedT, targetLookAtRef.current);
+
+    // If still in opening sequence before pullback and scroll is 0, frame floating screens closely
+    if (
+      clampedT < 0.01 &&
+      (currentStep === 'screen_1' ||
+        currentStep === 'screen_2' ||
+        currentStep === 'screen_3' ||
+        currentStep === 'frozen' ||
+        currentStep === 'stop_text' ||
+        currentStep === 'you_did_text')
+    ) {
+      if (currentStep === 'screen_1') {
+        targetCamPosRef.current.set(-0.6, 2.1, 13.2);
+        targetLookAtRef.current.set(-1.0, 2.1, 8.0);
+      } else if (currentStep === 'screen_2') {
+        targetCamPosRef.current.set(0.6, 2.0, 11.5);
+        targetLookAtRef.current.set(1.0, 2.0, 6.0);
+      } else {
+        targetCamPosRef.current.set(0.0, 2.1, 9.8);
+        targetLookAtRef.current.set(0.0, 2.1, 3.0);
+      }
+    }
 
     // 4. Subtle mouse parallax: drifts gently with cursor
     const targetMouseX = state.pointer.x * 0.45;
