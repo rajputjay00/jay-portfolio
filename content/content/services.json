@@ -1,0 +1,10 @@
+{
+  "services": [
+    { "id": "smm", "name": "Social Media Management", "description": "Account strategy, content planning, publishing and optimization." },
+    { "id": "strategy", "name": "Content Strategy", "description": "Content pillars, formats, trends, calendars and platform strategy." },
+    { "id": "short-form", "name": "Short-Form Content", "description": "Reels, hooks, scripts, editing direction and retention-focused storytelling." },
+    { "id": "campaigns", "name": "Creative Campaigns", "description": "Campaign concepts, social-first execution and content systems." },
+    { "id": "brand-social", "name": "Brand Social", "description": "Developing a consistent voice, visual identity and content language." },
+    { "id": "analytics", "name": "Analytics & Growth", "description": "Performance analysis, insights and iteration based on what actually works." }
+  ]
+}

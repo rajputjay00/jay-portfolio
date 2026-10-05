@@ -1,0 +1,36 @@
+{
+  "_note": "The three phone monoliths on the Range Wall. Each needs 3-6 post/Reel samples and 1-2 caption samples.",
+  "voices": [
+    {
+      "id": "community",
+      "name": "Community",
+      "positioning": "Make people feel seen. Relatable, highly shareable internet-native content.",
+      "proof": ["Indian Corporate Life", "Relatable Office Memes"],
+      "caseStudy": "creativefuel",
+      "samples": ["TODO: media/images/community-01.jpg", "TODO: media/reels/community-01.mp4"],
+      "captionSamples": ["TODO: paste one real caption you wrote for this voice"]
+    },
+    {
+      "id": "character",
+      "name": "Character",
+      "positioning": "Give a social community a recognizable personality and recurring content language.",
+      "proof": ["Corporate Dadi", "Corporate Nani"],
+      "caseStudy": "creativefuel",
+      "samples": ["TODO: media/images/character-01.jpg"],
+      "captionSamples": ["TODO: paste one real Corporate Dadi / Nani caption"]
+    },
+    {
+      "id": "brand",
+      "name": "Brand",
+      "positioning": "Make advertising and product communication feel native to the feed.",
+      "proof": ["Flipkart", "Realme", "Lava", "Jio Hotstar", "Wellbeing Nutrition"],
+      "caseStudy": "brand-social",
+      "samples": ["TODO: media/reels/brand-01.mp4"],
+      "captionSamples": ["TODO: paste one real brand caption"]
+    }
+  ],
+  "additionalRange": [
+    { "id": "culture", "name": "Culture", "proof": ["TEDxIPSA Indore", "GDGOC IPSA"], "caseStudy": "campus-community" },
+    { "id": "creator", "name": "Creator", "proof": ["Strictly For Corporate"], "caseStudy": "strictly-for-corporate" }
+  ]
+}

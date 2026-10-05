@@ -1,0 +1,19 @@
+{
+  "_rule": "Drop video files in media/reels/. Compress to 1080x1920, H.264/MP4 under ~8 MB each. Only fill numbers you can see in Insights.",
+  "reels": [
+    { "slot": 1, "role": "Highest reach / views", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO: first line / first visual", "status": "needed" },
+    { "slot": 2, "role": "Highest shares", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 3, "role": "Strongest retention (use in Retention Theatre)", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 4, "role": "Best creative / most original", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 5, "role": "Strongest client / brand Reel", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 6, "role": "Best trend adaptation", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 7, "role": "Best storytelling / narrative", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 8, "role": "Best conversion / CTA", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
+    { "slot": 9, "role": "Optional: TEDxIPSA / GDGOC community Reel", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "optional" },
+    { "slot": 10, "role": "Optional: different niche or visual style", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "optional" }
+  ],
+  "openingClips": {
+    "_note": "3 short clips (3-5 s each) for the STOP. YOU DID. opening. Pick the most visually striking moments.",
+    "clips": ["TODO: media/reels/opening-01.mp4", "TODO: media/reels/opening-02.mp4", "TODO: media/reels/opening-03.mp4"]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_rule": "For the Retention Theatre. Read the curve from your Instagram Insights retention screenshot; enter % still watching at each second you can read.",
+  "reelSlot": 3,
+  "file": "TODO: media/reels/retention.mp4",
+  "insightsScreenshot": "TODO: media/insights/retention-curve.png",
+  "durationSeconds": null,
+  "curve": [
+    { "t": 0, "pct": 100 },
+    { "t": 1, "pct": "TODO" },
+    { "t": 3, "pct": "TODO" },
+    { "t": 5, "pct": "TODO" },
+    { "t": 10, "pct": "TODO" },
+    { "t": "TODO: end", "pct": "TODO" }
+  ],
+  "moments": [
+    { "t": "TODO", "type": "hook", "note": "TODO: what happens in the first second and why it stops the scroll" },
+    { "t": "TODO", "type": "pattern-interrupt", "note": "TODO: the cut / visual change that resets attention" },
+    { "t": "TODO", "type": "reveal", "note": "TODO" },
+    { "t": "TODO", "type": "payoff", "note": "TODO" },
+    { "t": "TODO", "type": "cta", "note": "TODO: what you asked viewers to do (share / save / follow / comment)" }
+  ]
+}
