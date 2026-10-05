@@ -3,6 +3,7 @@ import './globals.css';
 import CanvasContainer from '@/components/canvas/CanvasContainer';
 import SmoothScrollProvider from '@/components/providers/SmoothScrollProvider';
 import DevFpsCounter from '@/components/dev/DevFpsCounter';
+import DevZoneNav from '@/components/dev/DevZoneNav';
 
 export const metadata: Metadata = {
   title: 'The Attention Lab — Jay Rajput',
@@ -30,8 +31,9 @@ export default function RootLayout({
           {/* Persistent full-screen 3D canvas */}
           <CanvasContainer />
 
-          {/* Development FPS counter badge */}
+          {/* Development FPS counter & navigation */}
           <DevFpsCounter />
+          <DevZoneNav />
 
           {/* Page UI Content layer */}
           <main className="ui-layer">
