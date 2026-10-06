@@ -4,9 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { ZONES } from '@/constants/zones';
 import { scrollManager } from '@/store/scrollStore';
 import OpeningOverlay from '@/components/ui/OpeningOverlay';
+import DevPerfPanel from '@/components/dev/DevPerfPanel';
 
 export default function HomePage() {
   const [currentZoneIdx, setCurrentZoneIdx] = useState(0);
+  const isDev = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
     return scrollManager.subscribe((progress) => {
@@ -27,10 +29,13 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '1000vh' }}>
-      {/* Opening Sequence Layer */}
+      {/* Opening Sequence & Clean Identity Layer */}
       <OpeningOverlay />
 
-      {/* Fixed HUD Navigation Overlay */}
+      {/* Dev-Only Performance Toggle Panel */}
+      <DevPerfPanel />
+
+      {/* Minimal Clean HUD Navigation Overlay */}
       <div
         className="interactive"
         style={{
@@ -65,123 +70,51 @@ export default function HomePage() {
                 letterSpacing: '0.25em',
                 textTransform: 'uppercase',
                 color: 'var(--text-muted)',
-                marginBottom: '0.25rem',
-                fontWeight: 600,
+                fontWeight: 700,
               }}
             >
               The Attention Lab
             </div>
-            <h1
-              style={{
-                fontSize: '1.2rem',
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                color: '#ffffff',
-              }}
-            >
-              Jay Rajput
-            </h1>
           </div>
 
-          {/* Current Zone Tag */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              background: 'rgba(15, 15, 20, 0.7)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              padding: '0.4rem 0.9rem',
-              borderRadius: '9999px',
-            }}
-          >
-            <span
+          {/* Dev-Only Zone Pill */}
+          {isDev && (
+            <div
               style={{
-                display: 'inline-block',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#ff4757',
-                boxShadow: '0 0 8px #ff4757',
-              }}
-            />
-            <span
-              style={{
-                fontSize: '0.75rem',
-                color: '#e4e4e7',
-                letterSpacing: '0.08em',
-                fontWeight: 600,
-                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                background: 'rgba(15, 15, 20, 0.75)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '0.35rem 0.85rem',
+                borderRadius: '9999px',
               }}
             >
-              {currentZone.label}
-            </span>
-          </div>
-        </header>
-
-        {/* Center Guide / Scroll hint */}
-        <div
-          style={{
-            maxWidth: '520px',
-            margin: 'auto 0',
-            opacity: currentZoneIdx === 0 ? 1 : 0.4,
-            transition: 'opacity 0.4s ease',
-            pointerEvents: 'auto',
-          }}
-        >
-          {currentZoneIdx === 0 ? (
-            <div>
-              <div
+              <span
                 style={{
                   display: 'inline-block',
-                  padding: '0.3rem 0.75rem',
-                  borderRadius: '4px',
-                  background: 'rgba(255, 71, 87, 0.1)',
-                  border: '1px solid rgba(255, 71, 87, 0.3)',
-                  color: '#ff4757',
-                  fontSize: '0.75rem',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#ff4757',
+                  boxShadow: '0 0 6px #ff4757',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  color: '#e4e4e7',
+                  letterSpacing: '0.08em',
                   fontWeight: 600,
-                  letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  marginBottom: '1rem',
                 }}
               >
-                Lab Architecture & Camera Path Active
-              </div>
-              <h2
-                style={{
-                  fontSize: 'clamp(2rem, 4vw, 3rem)',
-                  fontWeight: 800,
-                  lineHeight: 1.1,
-                  letterSpacing: '-0.03em',
-                  marginBottom: '1rem',
-                  color: '#ffffff',
-                }}
-              >
-                The Attention Lab
-              </h2>
-              <p
-                style={{
-                  color: 'var(--text-muted)',
-                  fontSize: '1rem',
-                  lineHeight: 1.6,
-                }}
-              >
-                Scroll down to glide through the architectural gallery and explore the 9 marked room zones along the CatmullRom spline path.
-              </p>
-            </div>
-          ) : (
-            <div style={{ background: 'rgba(10, 10, 15, 0.6)', backdropFilter: 'blur(8px)', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <div style={{ fontSize: '0.75rem', color: '#ff4757', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                Zone {currentZoneIdx} of 9
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
-                {currentZone.name}
-              </div>
+                {currentZone.label}
+              </span>
             </div>
           )}
-        </div>
+        </header>
 
         {/* Footer Info */}
         <footer
@@ -195,19 +128,17 @@ export default function HomePage() {
             pointerEvents: 'auto',
           }}
         >
-          <div>
-            <span>Architectural Studio · 9 Zones Marked</span>
-          </div>
+          <div />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>Scroll to glide</span>
+            <span>Scroll to explore</span>
             <span style={{ fontSize: '0.9rem' }}>↓</span>
           </div>
         </footer>
       </div>
 
       {/* Invisible scroll track checkpoints for Lenis scroll */}
-      {ZONES.map((zone, idx) => (
+      {ZONES.map((zone) => (
         <div
           key={`track-${zone.id}`}
           style={{

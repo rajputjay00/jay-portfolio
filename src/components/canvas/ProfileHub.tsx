@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useRef, useState, useEffect } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Text, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { scrollManager } from '@/store/scrollStore';
+import { perfStore, PerfSettings } from '@/store/perfStore';
 import profileData from '@/../content/profile.json';
 import resultsData from '@/../content/results.json';
 
 // Shared geometry and materials for performance
-const tileGeometry = new THREE.PlaneGeometry(2.35, 1.38);
-const tileBoxGeometry = new THREE.BoxGeometry(2.4, 1.42, 0.04);
+const tileGeometry = new THREE.PlaneGeometry(2.5, 1.48);
+const tileBoxGeometry = new THREE.BoxGeometry(2.56, 1.54, 0.04);
 
 interface GridTileData {
   id: string;
@@ -123,12 +124,13 @@ interface HighlightRingData {
   position: [number, number, number];
 }
 
+// Five highlight rings laid completely flat on the floor
 const HIGHLIGHTS: HighlightRingData[] = [
-  { id: 'work', name: 'Work', targetT: 0.22, position: [-3.6, 0.02, -5.5] },
-  { id: 'strategy', name: 'Strategy', targetT: 0.55, position: [-1.8, 0.02, -5.5] },
-  { id: 'results', name: 'Results', targetT: 0.77, position: [0.0, 0.02, -5.5] },
-  { id: 'services', name: 'Services', targetT: 0.88, position: [1.8, 0.02, -5.5] },
-  { id: 'about', name: 'About', targetT: 0.88, position: [3.6, 0.02, -5.5] },
+  { id: 'work', name: 'Work', targetT: 0.22, position: [-3.8, 0.02, -6.5] },
+  { id: 'strategy', name: 'Strategy', targetT: 0.55, position: [-1.9, 0.02, -6.5] },
+  { id: 'results', name: 'Results', targetT: 0.77, position: [0.0, 0.02, -6.5] },
+  { id: 'services', name: 'Services', targetT: 0.88, position: [1.9, 0.02, -6.5] },
+  { id: 'about', name: 'About', targetT: 0.88, position: [3.8, 0.02, -6.5] },
 ];
 
 function GridTile({
@@ -139,34 +141,29 @@ function GridTile({
   position: [number, number, number];
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const [hovered, setHovered] = useState(false);
+  const hoveredRef = useRef(false);
   const currentRotX = useRef(0);
   const currentRotY = useRef(0);
-  const currentEmissive = useRef(0);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Spring-eased tilt towards cursor on hover
     let targetRotX = 0;
     let targetRotY = 0;
-    let targetEmissive = 0.08;
 
-    if (hovered) {
-      targetRotX = (state.pointer.y * 0.35 - position[1] * 0.05);
-      targetRotY = (state.pointer.x * 0.35 - position[0] * 0.05);
-      targetEmissive = 0.8;
+    if (hoveredRef.current) {
+      targetRotX = (state.pointer.y * 0.3 - position[1] * 0.04);
+      targetRotY = (state.pointer.x * 0.3 - position[0] * 0.04);
     }
 
-    currentRotX.current = THREE.MathUtils.damp(currentRotX.current, targetRotX, 8, delta);
-    currentRotY.current = THREE.MathUtils.damp(currentRotY.current, targetRotY, 8, delta);
-    currentEmissive.current = THREE.MathUtils.damp(currentEmissive.current, targetEmissive, 6, delta);
+    currentRotX.current = THREE.MathUtils.damp(currentRotX.current, targetRotX, 7, delta);
+    currentRotY.current = THREE.MathUtils.damp(currentRotY.current, targetRotY, 7, delta);
 
     groupRef.current.rotation.x = currentRotX.current;
     groupRef.current.rotation.y = currentRotY.current;
     groupRef.current.position.z = THREE.MathUtils.damp(
       groupRef.current.position.z,
-      hovered ? position[2] + 0.12 : position[2],
+      hoveredRef.current ? position[2] + 0.14 : position[2],
       6,
       delta
     );
@@ -183,47 +180,41 @@ function GridTile({
       position={position}
       onPointerOver={(e) => {
         e.stopPropagation();
-        setHovered(true);
+        hoveredRef.current = true;
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
-        setHovered(false);
+        hoveredRef.current = false;
         document.body.style.cursor = 'auto';
       }}
       onClick={handleClick}
     >
-      {/* Background Frame / Bezel */}
+      {/* Background Bezel Frame */}
       <mesh geometry={tileBoxGeometry}>
         <meshStandardMaterial
-          color={hovered ? '#161722' : '#0e0f17'}
+          color="#10111a"
           roughness={0.2}
           metalness={0.8}
           emissive={tile.accentColor}
-          emissiveIntensity={hovered ? 0.25 : 0.02}
+          emissiveIntensity={0.03}
         />
       </mesh>
 
       {/* Screen Face */}
       <mesh position={[0, 0, 0.022]} geometry={tileGeometry}>
-        <meshBasicMaterial
-          color={hovered ? '#181924' : '#11121b'}
-        />
+        <meshBasicMaterial color="#12131e" />
       </mesh>
 
       {/* Accent Top Border Line */}
-      <mesh position={[0, 0.67, 0.024]}>
-        <planeGeometry args={[2.25, 0.025]} />
-        <meshBasicMaterial
-          color={tile.accentColor}
-          transparent
-          opacity={hovered ? 0.9 : 0.4}
-        />
+      <mesh position={[0, 0.72, 0.024]}>
+        <planeGeometry args={[2.4, 0.025]} />
+        <meshBasicMaterial color={tile.accentColor} transparent opacity={0.6} />
       </mesh>
 
       {/* Header Tag + Index */}
       <Text
-        position={[-1.02, 0.52, 0.025]}
-        fontSize={0.075}
+        position={[-1.1, 0.56, 0.026]}
+        fontSize={0.085}
         letterSpacing={0.12}
         color={tile.accentColor}
         anchorX="left"
@@ -235,24 +226,24 @@ function GridTile({
 
       {/* Main Tile Title */}
       <Text
-        position={[-1.02, 0.32, 0.025]}
-        fontSize={0.165}
+        position={[-1.1, 0.36, 0.026]}
+        fontSize={0.185}
         letterSpacing={-0.01}
         color="#ffffff"
         anchorX="left"
         anchorY="top"
         fontWeight={700}
-        maxWidth={2.1}
+        maxWidth={2.2}
       >
         {tile.title}
       </Text>
 
       {/* Big Headline Metric */}
       <Text
-        position={[-1.02, -0.05, 0.025]}
-        fontSize={0.28}
+        position={[-1.1, -0.04, 0.026]}
+        fontSize={0.32}
         letterSpacing={-0.02}
-        color={hovered ? '#ffffff' : '#e4e4e7'}
+        color="#f4f4f5"
         anchorX="left"
         anchorY="top"
         fontWeight={800}
@@ -262,49 +253,24 @@ function GridTile({
 
       {/* Metric Label / Subtitle */}
       <Text
-        position={[-1.02, -0.38, 0.025]}
-        fontSize={0.08}
+        position={[-1.1, -0.42, 0.026]}
+        fontSize={0.09}
         letterSpacing={0.02}
-        color="#8e8ea0"
+        color="#9ca3af"
         anchorX="left"
         anchorY="top"
-        maxWidth={2.05}
+        maxWidth={2.2}
         lineHeight={1.2}
       >
         {tile.metricLabel}
       </Text>
-
-      {/* Hover prompt */}
-      {hovered && (
-        <Text
-          position={[1.02, -0.52, 0.025]}
-          fontSize={0.07}
-          letterSpacing={0.08}
-          color={tile.accentColor}
-          anchorX="right"
-          anchorY="bottom"
-          fontWeight={600}
-        >
-          EXPLORE →
-        </Text>
-      )}
     </group>
   );
 }
 
 function HighlightRing({ ring }: { ring: HighlightRingData }) {
-  const [hovered, setHovered] = useState(false);
+  const hoveredRef = useRef(false);
   const meshRef = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    if (!meshRef.current) return;
-    meshRef.current.position.y = THREE.MathUtils.damp(
-      meshRef.current.position.y,
-      hovered ? 0.06 : 0.02,
-      8,
-      delta
-    );
-  });
 
   const handleClick = (e: any) => {
     e.stopPropagation();
@@ -317,44 +283,44 @@ function HighlightRing({ ring }: { ring: HighlightRingData }) {
       position={ring.position}
       onPointerOver={(e) => {
         e.stopPropagation();
-        setHovered(true);
+        hoveredRef.current = true;
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
-        setHovered(false);
+        hoveredRef.current = false;
         document.body.style.cursor = 'auto';
       }}
       onClick={handleClick}
     >
-      {/* Outer Lit Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Outer Lit Ring (Completely flat on the floor) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <ringGeometry args={[0.55, 0.58, 36]} />
         <meshBasicMaterial
-          color={hovered ? '#ff4757' : '#ffffff'}
+          color="#ffffff"
           transparent
-          opacity={hovered ? 0.85 : 0.3}
+          opacity={0.35}
           side={THREE.DoubleSide}
         />
       </mesh>
 
       {/* Inner Soft Glow Disc */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <circleGeometry args={[0.55, 32]} />
         <meshBasicMaterial
-          color={hovered ? '#ff4757' : '#ffffff'}
+          color="#ffffff"
           transparent
-          opacity={hovered ? 0.12 : 0.03}
+          opacity={0.03}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Ring Label */}
+      {/* Ring Label lying flat on the floor */}
       <Text
-        position={[0, 0.01, 0.78]}
+        position={[0, 0.01, 0.85]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.16}
         letterSpacing={0.1}
-        color={hovered ? '#ffffff' : '#a1a1aa'}
+        color="#a1a1aa"
         anchorX="center"
         anchorY="middle"
         fontWeight={600}
@@ -366,15 +332,29 @@ function HighlightRing({ ring }: { ring: HighlightRingData }) {
 }
 
 export default function ProfileHub() {
-  const { name, title, shortBio } = profileData;
+  const { camera } = useThree();
+  const groupRef = useRef<THREE.Group>(null);
+  const [perfSettings, setPerfSettings] = useState<PerfSettings>(perfStore.getSettings());
 
-  // Verified proof numbers from results.json
+  useEffect(() => {
+    return perfStore.subscribe((s) => setPerfSettings(s));
+  }, []);
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    // Distance culling: hide if camera has traveled past this room down the corridor
+    const camZ = camera.position.z;
+    const isVisible = camZ > -32 && camZ < 18;
+    groupRef.current.visible = isVisible && perfSettings.profileHub;
+  });
+
+  const { name, title, shortBio } = profileData;
   const verifiedStats = resultsData.results.filter((r) => r.verified);
 
   return (
-    <group position={[0, 0, -10]}>
+    <group ref={groupRef} position={[0, 0, -10]}>
       {/* 1. MONUMENTAL MEDIA WALL BACKDROP */}
-      <RoundedBox args={[10.8, 8.8, 0.15]} position={[0, 4.4, -0.1]} radius={0.12} smoothness={4}>
+      <RoundedBox args={[11.2, 9.4, 0.15]} position={[0, 4.6, -0.1]} radius={0.12} smoothness={4}>
         <meshStandardMaterial
           color="#08080c"
           roughness={0.7}
@@ -382,22 +362,18 @@ export default function ProfileHub() {
         />
       </RoundedBox>
 
-      {/* Perimeter Wall Accent Glow Rim */}
-      <mesh position={[0, 4.4, -0.01]}>
-        <planeGeometry args={[10.82, 8.82]} />
-        <meshBasicMaterial
-          color="#1a1c29"
-          transparent
-          opacity={0.4}
-        />
+      {/* Perimeter Wall Rim */}
+      <mesh position={[0, 4.6, -0.01]}>
+        <planeGeometry args={[11.22, 9.42]} />
+        <meshBasicMaterial color="#1a1c29" transparent opacity={0.3} />
       </mesh>
 
       {/* 2. TOP PROFILE HEADER */}
-      <group position={[0, 7.3, 0.02]}>
+      <group position={[0, 7.6, 0.02]}>
         {/* Profile Tag */}
         <Text
-          position={[-4.7, 0.7, 0]}
-          fontSize={0.11}
+          position={[-4.9, 0.75, 0]}
+          fontSize={0.12}
           letterSpacing={0.18}
           color="#ff4757"
           anchorX="left"
@@ -409,8 +385,8 @@ export default function ProfileHub() {
 
         {/* Profile Name */}
         <Text
-          position={[-4.7, 0.48, 0]}
-          fontSize={0.38}
+          position={[-4.9, 0.52, 0]}
+          fontSize={0.42}
           letterSpacing={-0.03}
           color="#ffffff"
           anchorX="left"
@@ -422,27 +398,27 @@ export default function ProfileHub() {
 
         {/* Short Bio */}
         <Text
-          position={[-4.7, -0.02, 0]}
-          fontSize={0.13}
+          position={[-4.9, -0.04, 0]}
+          fontSize={0.145}
           letterSpacing={0.01}
           color="#9ca3af"
           anchorX="left"
           anchorY="top"
-          maxWidth={4.8}
+          maxWidth={5.0}
           lineHeight={1.4}
         >
           {shortBio}
         </Text>
 
         {/* 3 Proof Metric Counters (Right Side of Header) */}
-        <group position={[1.4, 0.45, 0]}>
+        <group position={[1.4, 0.5, 0]}>
           {verifiedStats.slice(0, 3).map((stat, idx) => {
-            const posX = idx * 1.6;
+            const posX = idx * 1.7;
             return (
               <group key={stat.id} position={[posX, 0, 0]}>
                 <Text
                   position={[0, 0, 0]}
-                  fontSize={0.32}
+                  fontSize={0.36}
                   letterSpacing={-0.02}
                   color="#ffffff"
                   anchorX="left"
@@ -452,13 +428,13 @@ export default function ProfileHub() {
                   {stat.value}
                 </Text>
                 <Text
-                  position={[0, -0.36, 0]}
-                  fontSize={0.09}
+                  position={[0, -0.4, 0]}
+                  fontSize={0.095}
                   letterSpacing={0.04}
                   color="#8e8ea0"
                   anchorX="left"
                   anchorY="top"
-                  maxWidth={1.4}
+                  maxWidth={1.5}
                   lineHeight={1.2}
                 >
                   {stat.label}
@@ -470,8 +446,8 @@ export default function ProfileHub() {
       </group>
 
       {/* Divider Line under Profile Header */}
-      <mesh position={[0, 6.2, 0.02]}>
-        <planeGeometry args={[9.5, 0.015]} />
+      <mesh position={[0, 6.4, 0.02]}>
+        <planeGeometry args={[10.0, 0.015]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={0.12} />
       </mesh>
 
@@ -481,8 +457,8 @@ export default function ProfileHub() {
           const col = idx % 3; // 0, 1, 2
           const row = Math.floor(idx / 3); // 0, 1, 2
 
-          const posX = (col - 1) * 3.1; // -3.1, 0, 3.1
-          const posY = 5.2 - row * 1.7; // 5.2, 3.5, 1.8
+          const posX = (col - 1) * 3.3; // -3.3, 0, 3.3
+          const posY = 5.3 - row * 1.8; // 5.3, 3.5, 1.7
           const posZ = 0.04;
 
           return (
@@ -495,7 +471,7 @@ export default function ProfileHub() {
         })}
       </group>
 
-      {/* 4. HIGHLIGHTS FLOOR RINGS */}
+      {/* 4. HIGHLIGHTS FLOOR RINGS (Lying flat on the floor) */}
       <group position={[0, 0, 0]}>
         {HIGHLIGHTS.map((ring) => (
           <HighlightRing key={ring.id} ring={ring} />

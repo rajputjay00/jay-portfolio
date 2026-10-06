@@ -23,8 +23,8 @@ export const ZONES: ZoneInfo[] = [
     name: 'Profile Hub',
     label: '01 // PROFILE HUB',
     t: 0.11,
-    cameraPos: [0, 2.2, 0],
-    targetLookAt: [0, 2.2, -10],
+    cameraPos: [0, 3.4, -2.2],
+    targetLookAt: [0, 3.4, -10],
   },
   {
     id: 'case-files',

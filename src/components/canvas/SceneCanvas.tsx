@@ -10,7 +10,7 @@ export default function SceneCanvas() {
 
   return (
     <Canvas
-      dpr={[1, 2]}
+      dpr={[1, 1.5]}
       gl={{
         antialias: true,
         alpha: false,

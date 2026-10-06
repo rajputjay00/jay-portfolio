@@ -93,8 +93,12 @@ export default function OpeningOverlay() {
 
     const unsub = openingStore.subscribe((s) => {
       setStep(s);
-      if (s === 'identity' || s === 'completed') {
+      if (s === 'identity') {
         setShowIdentity(true);
+        setShowSkip(false);
+        setIsBlackout(false);
+      } else if (s === 'completed') {
+        setShowIdentity(false);
         setShowSkip(false);
         setIsBlackout(false);
       }
@@ -122,7 +126,7 @@ export default function OpeningOverlay() {
         position: 'fixed',
         inset: 0,
         zIndex: 50,
-        pointerEvents: 'none',
+        pointerEvents: showIdentity || showSkip || isBlackout ? 'auto' : 'none',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
@@ -153,7 +157,7 @@ export default function OpeningOverlay() {
             right: '2.5rem',
             zIndex: 100,
             pointerEvents: 'auto',
-            background: 'rgba(20, 20, 28, 0.7)',
+            background: 'rgba(20, 20, 28, 0.75)',
             backdropFilter: 'blur(12px)',
             border: '1px solid rgba(255, 255, 255, 0.15)',
             color: '#ffffff',
@@ -171,7 +175,7 @@ export default function OpeningOverlay() {
             e.currentTarget.style.borderColor = 'rgba(255, 71, 87, 0.5)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(20, 20, 28, 0.7)';
+            e.currentTarget.style.background = 'rgba(20, 20, 28, 0.75)';
             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
           }}
         >
@@ -230,178 +234,208 @@ export default function OpeningOverlay() {
         </div>
       )}
 
-      {/* 4. Identity Screen & CTAs (Step 5) */}
+      {/* 4. Single Clean Identity Screen & CTAs (Step 5) with Dim Calm 3D Backdrop */}
       {showIdentity && (
         <div
           style={{
+            position: 'absolute',
+            inset: 0,
             zIndex: 70,
             display: 'flex',
             flexDirection: 'column',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            textAlign: 'center',
-            maxWidth: '840px',
-            padding: '2rem',
+            padding: '2.5rem',
+            boxSizing: 'border-box',
+            background: 'rgba(6, 6, 8, 0.72)',
+            backdropFilter: 'blur(8px)',
             pointerEvents: 'auto',
-            animation: 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            animation: 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
           }}
         >
-          {/* Accent Label */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.35rem 0.9rem',
-              borderRadius: '9999px',
-              background: 'rgba(255, 71, 87, 0.12)',
-              border: '1px solid rgba(255, 71, 87, 0.35)',
-              color: '#ff4757',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: '1.5rem',
-            }}
-          >
-            <span
+          {/* Top-Left Brand Mark */}
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
+            <div
               style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#ff4757',
-                boxShadow: '0 0 6px #ff4757',
+                fontSize: '0.75rem',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                fontWeight: 700,
               }}
-            />
-            {title}
+            >
+              The Attention Lab
+            </div>
           </div>
 
-          {/* Main Hero Name */}
-          <h1
-            style={{
-              fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.02,
-              color: '#ffffff',
-              marginBottom: '1.25rem',
-              textShadow: '0 10px 40px rgba(0, 0, 0, 0.8)',
-            }}
-          >
-            {name}
-          </h1>
-
-          {/* Tags String */}
-          <p
-            style={{
-              fontSize: 'clamp(0.95rem, 2vw, 1.25rem)',
-              color: 'var(--text-muted)',
-              letterSpacing: '0.04em',
-              marginBottom: '2.5rem',
-              maxWidth: '620px',
-              fontWeight: 400,
-            }}
-          >
-            {tags.join(' · ')}
-          </p>
-
-          {/* Action Buttons */}
+          {/* Centered Identity */}
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
-              gap: '1rem',
-              justifyContent: 'center',
+              flexDirection: 'column',
               alignItems: 'center',
+              textAlign: 'center',
+              maxWidth: '820px',
+              margin: 'auto 0',
             }}
           >
-            {/* Explore Lab CTA */}
-            <button
-              onClick={handleExploreLab}
+            {/* Centered Hero Name (Appears ONCE) */}
+            <h1
               style={{
-                background: 'linear-gradient(135deg, #ff4757 0%, #e0283b 100%)',
+                fontSize: 'clamp(3rem, 7.5vw, 5.8rem)',
+                fontWeight: 800,
+                letterSpacing: '-0.04em',
+                lineHeight: 1.0,
                 color: '#ffffff',
-                border: 'none',
-                padding: '0.85rem 2rem',
-                borderRadius: '9999px',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                letterSpacing: '0.02em',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(255, 71, 87, 0.35)',
-                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                e.currentTarget.style.boxShadow = '0 12px 32px rgba(255, 71, 87, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 71, 87, 0.35)';
+                marginBottom: '0.75rem',
+                textShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
               }}
             >
-              <span>Explore the Lab</span>
-              <span style={{ fontSize: '1.1rem' }}>↓</span>
-            </button>
+              {name}
+            </h1>
 
-            {/* View Work Directly CTA */}
-            <button
-              onClick={() => {
-                // Smoothly glide to Case Files (zone 2)
-                scrollManager.scrollToProgress(0.22, 1.8);
-                openingStore.setStep('completed');
-              }}
+            {/* Title / Role */}
+            <div
               style={{
-                background: 'rgba(20, 20, 30, 0.7)',
-                backdropFilter: 'blur(10px)',
-                color: '#e4e4e7',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                padding: '0.85rem 1.8rem',
-                borderRadius: '9999px',
-                fontSize: '0.95rem',
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)',
+                color: '#ff4757',
                 fontWeight: 600,
-                letterSpacing: '0.02em',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                e.currentTarget.style.color = '#ffffff';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(20, 20, 30, 0.7)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.color = '#e4e4e7';
+                letterSpacing: '0.04em',
+                marginBottom: '1rem',
               }}
             >
-              View work directly →
-            </button>
+              {title}
+            </div>
 
-            {/* Replay Intro (Dev helper) */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* Roles Line */}
+            <p
+              style={{
+                fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
+                color: 'var(--text-muted)',
+                letterSpacing: '0.05em',
+                marginBottom: '2.5rem',
+                maxWidth: '620px',
+                fontWeight: 400,
+                lineHeight: 1.5,
+              }}
+            >
+              {tags.join(' · ')}
+            </p>
+
+            {/* Two Action Buttons */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              {/* Explore Lab CTA */}
               <button
-                onClick={() => {
-                  openingStore.resetSeen();
-                  startSequence();
-                }}
-                title="Replay opening sequence"
+                onClick={handleExploreLab}
                 style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  color: '#71717a',
-                  padding: '0.5rem 0.9rem',
+                  background: 'linear-gradient(135deg, #ff4757 0%, #e0283b 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0.9rem 2.2rem',
                   borderRadius: '9999px',
-                  fontSize: '0.75rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
                   cursor: 'pointer',
-                  marginLeft: '0.5rem',
+                  boxShadow: '0 8px 24px rgba(255, 71, 87, 0.35)',
+                  transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 12px 32px rgba(255, 71, 87, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 71, 87, 0.35)';
                 }}
               >
-                ↻ Replay
+                <span>Explore the Lab</span>
+                <span style={{ fontSize: '1.1rem' }}>↓</span>
               </button>
-            )}
+
+              {/* View Work Directly CTA */}
+              <button
+                onClick={() => {
+                  openingStore.setStep('completed');
+                  scrollManager.scrollToProgress(0.22, 1.8);
+                }}
+                style={{
+                  background: 'rgba(20, 20, 30, 0.8)',
+                  backdropFilter: 'blur(10px)',
+                  color: '#e4e4e7',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  padding: '0.9rem 2rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(20, 20, 30, 0.8)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                  e.currentTarget.style.color = '#e4e4e7';
+                }}
+              >
+                View work directly →
+              </button>
+
+              {/* Replay Intro (Dev helper) */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={() => {
+                    openingStore.resetSeen();
+                    startSequence();
+                  }}
+                  title="Replay opening sequence"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#71717a',
+                    padding: '0.5rem 0.9rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    marginLeft: '0.5rem',
+                  }}
+                >
+                  ↻ Replay
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Footer hint */}
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              fontSize: '0.75rem',
+              color: 'var(--text-muted)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>Scroll to explore</span>
+              <span style={{ fontSize: '0.9rem' }}>↓</span>
+            </div>
           </div>
         </div>
       )}
@@ -431,7 +465,7 @@ export default function OpeningOverlay() {
         @keyframes fadeInUp {
           from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(16px);
           }
           to {
             opacity: 1;

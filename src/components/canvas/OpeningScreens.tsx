@@ -7,13 +7,12 @@ import { RoundedBox } from '@react-three/drei';
 import { openingStore, OpeningStep } from '@/store/openingStore';
 import reelsData from '@/../content/reels.json';
 
-// Shader for procedural high-end social media gradient when video is TODO / missing
-const ProceduralClipShader = {
+// Premium near-black luxury placeholder shader with subtle warm-white grain and sharp #ff4757 accent line
+const PremiumClipShader = {
   uniforms: {
     uTime: { value: 0 },
-    uFreeze: { value: 0 }, // 1 = frozen
-    uHue: { value: 0.0 },
-    uSpeed: { value: 1.0 },
+    uFreeze: { value: 0 },
+    uSpeed: { value: 0.5 },
     uOpacity: { value: 1.0 },
   },
   vertexShader: `
@@ -26,40 +25,44 @@ const ProceduralClipShader = {
   fragmentShader: `
     uniform float uTime;
     uniform float uFreeze;
-    uniform float uHue;
     uniform float uSpeed;
     uniform float uOpacity;
     varying vec2 vUv;
 
+    // Pseudo-random noise for fine warm film grain
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
     void main() {
-      float t = uFreeze > 0.5 ? 4.2 : uTime * uSpeed;
+      float t = uFreeze > 0.5 ? 2.5 : uTime * uSpeed;
       vec2 uv = vUv;
-      
-      // Moving dynamic social wave pattern
-      float wave1 = sin(uv.y * 6.0 + t * 1.5 + sin(uv.x * 4.0 + t));
-      float wave2 = cos(uv.x * 5.0 - t * 1.2 + cos(uv.y * 3.0));
-      float pattern = (wave1 + wave2) * 0.5;
 
-      // Dark luxury editorial color scheme with vibrant neon core
-      vec3 col1 = vec3(0.08, 0.08, 0.12);
-      vec3 col2 = vec3(0.95, 0.15, 0.35); // Instagram-inspired vibrant punch
-      vec3 col3 = vec3(0.35, 0.10, 0.85); // Deep violet
-      vec3 col4 = vec3(1.00, 0.55, 0.20); // Warm amber highlight
+      // Base near-black tone
+      vec3 bg = vec3(0.045, 0.045, 0.06);
 
-      vec3 color = mix(col1, col3, smoothstep(-0.6, 0.6, pattern));
-      color = mix(color, col2, smoothstep(0.2, 0.9, sin(uv.y * 4.0 + t * 0.8)));
-      color = mix(color, col4, smoothstep(0.7, 1.0, wave1 * wave2));
+      // Subtle slow ambient luminance drift
+      float ambientWave = sin(uv.y * 3.0 + t * 0.8) * cos(uv.x * 2.5 - t * 0.6);
+      vec3 tone = mix(bg, vec3(0.08, 0.08, 0.11), smoothstep(-1.0, 1.0, ambientWave));
 
-      // Subtle scanline / social interface vignette
-      float scanline = sin(uv.y * 400.0) * 0.03;
-      color -= scanline;
+      // Crisp thin #ff4757 horizontal radar / accent line sweeping slowly down
+      float linePos = fract(t * 0.18);
+      float lineDist = abs(uv.y - linePos);
+      float redLine = smoothstep(0.006, 0.0, lineDist);
+      vec3 accentColor = vec3(1.0, 0.278, 0.341); // #ff4757
 
-      // Dark border vignette
-      float edgeVignette = smoothstep(0.0, 0.1, uv.x) * smoothstep(1.0, 0.9, uv.x) *
-                           smoothstep(0.0, 0.08, uv.y) * smoothstep(1.0, 0.92, uv.y);
-      color *= edgeVignette;
+      tone = mix(tone, accentColor, redLine * 0.85);
 
-      gl_FragColor = vec4(color, uOpacity);
+      // Subtle warm-white film grain
+      float grain = (hash(uv * 500.0 + fract(uTime * 15.0)) - 0.5) * 0.04;
+      tone += vec3(grain * 1.0, grain * 0.95, grain * 0.9);
+
+      // Dark edge vignette
+      float edgeVignette = smoothstep(0.0, 0.06, uv.x) * smoothstep(1.0, 0.94, uv.x) *
+                           smoothstep(0.0, 0.05, uv.y) * smoothstep(1.0, 0.95, uv.y);
+      tone *= edgeVignette;
+
+      gl_FragColor = vec4(tone, uOpacity);
     }
   `,
 };
@@ -87,24 +90,21 @@ function FloatingScreen({
   const shaderMatRef = useRef<THREE.ShaderMaterial>(null);
   const frozenTimeRef = useRef<number>(0);
 
-  const isVideoTodo = !clipPath || clipPath.includes('TODO');
-
   const customMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uFreeze: { value: 0 },
-        uHue: { value: index * 0.3 },
-        uSpeed: { value: 1.0 + index * 0.2 },
+        uSpeed: { value: 0.6 + index * 0.1 },
         uOpacity: { value: 1.0 },
       },
-      vertexShader: ProceduralClipShader.vertexShader,
-      fragmentShader: ProceduralClipShader.fragmentShader,
+      vertexShader: PremiumClipShader.vertexShader,
+      fragmentShader: PremiumClipShader.fragmentShader,
       transparent: true,
     });
   }, [index]);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (shaderMatRef.current) {
       if (!isFrozen) {
         frozenTimeRef.current = state.clock.elapsedTime;
@@ -118,20 +118,20 @@ function FloatingScreen({
     }
 
     if (meshRef.current && !isFrozen) {
-      // Subtle float
+      // Gentle calm float
       meshRef.current.position.y =
-        position[1] + Math.sin(state.clock.elapsedTime * 1.5 + index) * 0.04;
+        position[1] + Math.sin(state.clock.elapsedTime * 1.2 + index) * 0.03;
     }
   });
 
-  if (!visible && opacity <= 0.01) return null;
+  if (!visible || opacity <= 0.01) return null;
 
   return (
     <group ref={meshRef} position={position} rotation={rotation}>
-      {/* Phone Body Frame */}
-      <RoundedBox args={[1.82, 3.24, 0.06]} radius={0.08} smoothness={4}>
+      {/* Phone Bezel Frame */}
+      <RoundedBox args={[1.82, 3.24, 0.05]} radius={0.06} smoothness={4}>
         <meshStandardMaterial
-          color="#0c0d12"
+          color="#0d0e14"
           metalness={0.9}
           roughness={0.2}
           transparent
@@ -139,19 +139,19 @@ function FloatingScreen({
         />
       </RoundedBox>
 
-      {/* Screen Surface */}
-      <mesh position={[0, 0, 0.032]}>
-        <planeGeometry args={[1.74, 3.12]} />
+      {/* Screen Surface with Premium Crisp Material */}
+      <mesh position={[0, 0, 0.027]}>
+        <planeGeometry args={[1.74, 3.14]} />
         <primitive object={customMaterial} ref={shaderMatRef} attach="material" />
       </mesh>
 
-      {/* Screen Glow Rim */}
-      <mesh position={[0, 0, 0.035]}>
-        <ringGeometry args={[0.85, 0.88, 32]} />
+      {/* Subtle Rim Accent */}
+      <mesh position={[0, 0, 0.029]}>
+        <ringGeometry args={[0.82, 0.84, 32]} />
         <meshBasicMaterial
           color="#ff4757"
           transparent
-          opacity={opacity * 0.3}
+          opacity={opacity * 0.2}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
@@ -167,39 +167,18 @@ export default function OpeningScreens() {
     return openingStore.subscribe((s) => setStep(s));
   }, []);
 
+  // Rule: When opening finishes or is skipped, unmount/hide the screens so they never block Profile Hub
+  const isOpeningDone = step === 'pullback' || step === 'identity' || step === 'completed';
+  if (isOpeningDone) {
+    return null;
+  }
+
   const clips = reelsData?.openingClips?.clips || [];
 
-  // Determine visibility and frozen state based on sequence step
-  const showScreen1 =
-    step !== 'idle';
-  const showScreen2 =
-    step === 'screen_2' ||
-    step === 'screen_3' ||
-    step === 'frozen' ||
-    step === 'stop_text' ||
-    step === 'you_did_text' ||
-    step === 'pullback' ||
-    step === 'identity' ||
-    step === 'completed';
-  const showScreen3 =
-    step === 'screen_3' ||
-    step === 'frozen' ||
-    step === 'stop_text' ||
-    step === 'you_did_text' ||
-    step === 'pullback' ||
-    step === 'identity' ||
-    step === 'completed';
-
-  const isFrozen =
-    step === 'frozen' ||
-    step === 'stop_text' ||
-    step === 'you_did_text' ||
-    step === 'pullback' ||
-    step === 'identity' ||
-    step === 'completed';
-
-  // Fade out screens slightly during step 5 / after pull back so they stay as architectural elements
-  const opacity = step === 'pullback' || step === 'identity' || step === 'completed' ? 0.45 : 1.0;
+  const showScreen1 = step !== 'idle';
+  const showScreen2 = step === 'screen_2' || step === 'screen_3' || step === 'frozen' || step === 'stop_text' || step === 'you_did_text';
+  const showScreen3 = step === 'screen_3' || step === 'frozen' || step === 'stop_text' || step === 'you_did_text';
+  const isFrozen = step === 'frozen' || step === 'stop_text' || step === 'you_did_text';
 
   return (
     <group position={[0, 0, 0]}>
@@ -211,7 +190,7 @@ export default function OpeningScreens() {
         clipPath={clips[0]}
         visible={showScreen1}
         isFrozen={isFrozen}
-        opacity={opacity}
+        opacity={1.0}
       />
 
       {/* Screen 2: Mid right */}
@@ -222,7 +201,7 @@ export default function OpeningScreens() {
         clipPath={clips[1]}
         visible={showScreen2}
         isFrozen={isFrozen}
-        opacity={opacity}
+        opacity={1.0}
       />
 
       {/* Screen 3: Deep center */}
@@ -233,7 +212,7 @@ export default function OpeningScreens() {
         clipPath={clips[2]}
         visible={showScreen3}
         isFrozen={isFrozen}
-        opacity={opacity}
+        opacity={1.0}
       />
     </group>
   );

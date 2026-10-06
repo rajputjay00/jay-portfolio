@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { perfStore } from '@/store/perfStore';
 
 export default function DevFpsCounter() {
   const [fps, setFps] = useState<number>(60);
   const [frameTime, setFrameTime] = useState<number>(16.6);
-  const frameCountRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
+  const [gpuName, setGpuName] = useState<string>('');
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -31,8 +31,13 @@ export default function DevFpsCounter() {
 
     rafRef.current = requestAnimationFrame(loop);
 
+    const unsub = perfStore.subscribe((s) => {
+      setGpuName(s.gpuName);
+    });
+
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      unsub();
     };
   }, []);
 
@@ -52,8 +57,11 @@ export default function DevFpsCounter() {
       style={{
         color: getStatusColor(fps),
         borderColor: `${getStatusColor(fps)}40`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
       }}
-      title="Live WebGL & DOM Render Performance (Visible only in Development)"
+      title={`Live WebGL & DOM Render Performance | GPU: ${gpuName || 'Detecting...'}`}
     >
       <span
         className="fps-dot"
@@ -64,7 +72,24 @@ export default function DevFpsCounter() {
       />
       <span style={{ fontWeight: 700 }}>{fps} FPS</span>
       <span style={{ color: '#888', fontSize: '0.7rem' }}>({frameTime}ms)</span>
-      <span style={{ color: '#555', fontSize: '0.65rem', marginLeft: '2px' }}>DEV</span>
+      {gpuName && (
+        <span
+          style={{
+            color: '#71717a',
+            fontSize: '0.65rem',
+            maxWidth: '120px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            paddingLeft: '0.5rem',
+          }}
+          title={gpuName}
+        >
+          {gpuName}
+        </span>
+      )}
+      <span style={{ color: '#555', fontSize: '0.65rem' }}>DEV</span>
     </div>
   );
 }

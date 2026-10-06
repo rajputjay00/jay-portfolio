@@ -78,8 +78,8 @@ export default function CameraController() {
     }
 
     // 4. Subtle mouse parallax: drifts gently with cursor
-    const targetMouseX = state.pointer.x * 0.45;
-    const targetMouseY = state.pointer.y * 0.25;
+    const targetMouseX = state.pointer.x * 0.4;
+    const targetMouseY = state.pointer.y * 0.2;
 
     mouseOffsetRef.current.x = THREE.MathUtils.damp(
       mouseOffsetRef.current.x,
@@ -94,50 +94,50 @@ export default function CameraController() {
       delta
     );
 
-    // Apply mouse parallax to camera position and target
-    const finalCamPos = targetCamPosRef.current.clone();
-    finalCamPos.x += mouseOffsetRef.current.x;
-    finalCamPos.y += mouseOffsetRef.current.y;
+    // Apply mouse parallax to camera position and target without allocating new objects
+    const finalCamX = targetCamPosRef.current.x + mouseOffsetRef.current.x;
+    const finalCamY = targetCamPosRef.current.y + mouseOffsetRef.current.y;
+    const finalCamZ = targetCamPosRef.current.z;
 
-    const finalLookAt = targetLookAtRef.current.clone();
-    finalLookAt.x += mouseOffsetRef.current.x * 0.3;
-    finalLookAt.y += mouseOffsetRef.current.y * 0.3;
+    const finalLookX = targetLookAtRef.current.x + mouseOffsetRef.current.x * 0.25;
+    const finalLookY = targetLookAtRef.current.y + mouseOffsetRef.current.y * 0.25;
+    const finalLookZ = targetLookAtRef.current.z;
 
     // 5. Smoothly damp current camera coordinates
     currentCamPosRef.current.x = THREE.MathUtils.damp(
       currentCamPosRef.current.x,
-      finalCamPos.x,
+      finalCamX,
       4.5,
       delta
     );
     currentCamPosRef.current.y = THREE.MathUtils.damp(
       currentCamPosRef.current.y,
-      finalCamPos.y,
+      finalCamY,
       4.5,
       delta
     );
     currentCamPosRef.current.z = THREE.MathUtils.damp(
       currentCamPosRef.current.z,
-      finalCamPos.z,
+      finalCamZ,
       4.5,
       delta
     );
 
     currentLookAtRef.current.x = THREE.MathUtils.damp(
       currentLookAtRef.current.x,
-      finalLookAt.x,
+      finalLookX,
       4.5,
       delta
     );
     currentLookAtRef.current.y = THREE.MathUtils.damp(
       currentLookAtRef.current.y,
-      finalLookAt.y,
+      finalLookY,
       4.5,
       delta
     );
     currentLookAtRef.current.z = THREE.MathUtils.damp(
       currentLookAtRef.current.z,
-      finalLookAt.z,
+      finalLookZ,
       4.5,
       delta
     );

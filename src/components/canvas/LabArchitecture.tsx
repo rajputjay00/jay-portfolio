@@ -1,11 +1,57 @@
 'use client';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { MeshReflectorMaterial, Text } from '@react-three/drei';
 import { ZONES } from '@/constants/zones';
+import { perfStore, PerfSettings } from '@/store/perfStore';
+
+// Custom Soft Volumetric Light Beam Shader with smooth vertical & radial falloff
+const SoftBeamShader = {
+  uniforms: {
+    uColor: { value: new THREE.Color('#fff2e6') },
+    uOpacity: { value: 0.03 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vPosition = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+
+    void main() {
+      // Smooth vertical fade: bright at the ceiling fixture (uv.y = 1.0), fading softly to zero at the floor (uv.y = 0.0)
+      float verticalFade = smoothstep(0.0, 0.95, vUv.y);
+
+      // Radial edge fade to eliminate any hard cone polygon silhouette
+      float edgeFade = pow(vUv.y, 0.5);
+
+      float alpha = uOpacity * verticalFade * edgeFade;
+
+      gl_FragColor = vec4(uColor, alpha);
+    }
+  `,
+};
 
 export default function LabArchitecture() {
+  const [perfSettings, setPerfSettings] = useState<PerfSettings>(perfStore.getSettings());
+
+  useEffect(() => {
+    return perfStore.subscribe((s) => setPerfSettings(s));
+  }, []);
+
   const columnsCount = 28;
   const columnSpacing = 6;
   const startZ = 20;
@@ -66,24 +112,47 @@ export default function LabArchitecture() {
     [0, 11, -136],
   ], []);
 
+  const softBeamMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color('#fff4e8') },
+        uOpacity: { value: 0.028 },
+      },
+      vertexShader: SoftBeamShader.vertexShader,
+      fragmentShader: SoftBeamShader.fragmentShader,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+  }, []);
+
   return (
     <group>
       {/* 1. POLISHED REFLECTIVE FLOOR */}
       <mesh position={[0, -0.01, -70]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[20, 220]} />
-        <MeshReflectorMaterial
-          blur={[300, 100]}
-          resolution={512}
-          mirror={0.4}
-          mixBlur={0.85}
-          mixStrength={1.5}
-          roughness={0.3}
-          metalness={0.75}
-          depthScale={1.2}
-          minDepthThreshold={0.4}
-          maxDepthThreshold={1.4}
-          color="#0a0a0e"
-        />
+        {perfSettings.floorReflection ? (
+          <MeshReflectorMaterial
+            blur={[0, 0]}
+            resolution={256}
+            mirror={0.35}
+            mixBlur={0.8}
+            mixStrength={1.2}
+            roughness={0.35}
+            metalness={0.7}
+            depthScale={1.1}
+            minDepthThreshold={0.4}
+            maxDepthThreshold={1.4}
+            color="#08080c"
+          />
+        ) : (
+          <meshStandardMaterial
+            color="#08080c"
+            roughness={0.4}
+            metalness={0.6}
+          />
+        )}
       </mesh>
 
       {/* 2. TALL ARCHITECTURAL WALLS (Dark Concrete / Matte Plaster) */}
@@ -91,8 +160,8 @@ export default function LabArchitecture() {
       <mesh position={[-9, 6.5, -70]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[220, 15]} />
         <meshStandardMaterial
-          color="#0d0d12"
-          roughness={0.85}
+          color="#0b0b10"
+          roughness={0.9}
           metalness={0.1}
         />
       </mesh>
@@ -101,8 +170,8 @@ export default function LabArchitecture() {
       <mesh position={[9, 6.5, -70]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[220, 15]} />
         <meshStandardMaterial
-          color="#0d0d12"
-          roughness={0.85}
+          color="#0b0b10"
+          roughness={0.9}
           metalness={0.1}
         />
       </mesh>
@@ -111,8 +180,8 @@ export default function LabArchitecture() {
       <mesh position={[0, 6.5, -170]}>
         <planeGeometry args={[20, 15]} />
         <meshStandardMaterial
-          color="#09090d"
-          roughness={0.9}
+          color="#07070a"
+          roughness={0.95}
           metalness={0.05}
         />
       </mesh>
@@ -121,69 +190,79 @@ export default function LabArchitecture() {
       <mesh position={[0, 13.5, -70]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[20, 220]} />
         <meshStandardMaterial
-          color="#050508"
-          roughness={0.95}
+          color="#040406"
+          roughness={0.98}
           metalness={0.0}
         />
       </mesh>
 
       {/* 3. INSTANCED ARCHITECTURAL COLUMNS (1 draw call per side) */}
-      <instancedMesh
-        ref={leftInstancedMeshRef}
-        args={[undefined, undefined, columnsCount]}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color="#13131b"
-          roughness={0.7}
-          metalness={0.2}
-        />
-      </instancedMesh>
-
-      <instancedMesh
-        ref={rightInstancedMeshRef}
-        args={[undefined, undefined, columnsCount]}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color="#13131b"
-          roughness={0.7}
-          metalness={0.2}
-        />
-      </instancedMesh>
-
-      {/* 4. SOFT VOLUMETRIC LIGHT BEAMS */}
-      {lightBeamPositions.map((pos, idx) => (
-        <group key={`beam-${idx}`} position={pos}>
-          {/* Ceiling recessed light fixture */}
-          <mesh position={[0, 0, 0]}>
-            <cylinderGeometry args={[0.7, 0.7, 0.1, 16]} />
+      {perfSettings.wallFins && (
+        <>
+          <instancedMesh
+            ref={leftInstancedMeshRef}
+            args={[undefined, undefined, columnsCount]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial
-              color="#ffffff"
-              emissive="#ffeedd"
-              emissiveIntensity={1.8}
-              toneMapped={false}
+              color="#111118"
+              roughness={0.7}
+              metalness={0.2}
             />
-          </mesh>
+          </instancedMesh>
 
-          {/* Soft volumetric conical beam */}
-          <mesh position={[0, -5.5, 0]}>
-            <coneGeometry args={[2.5, 11, 16, 1, true]} />
-            <meshBasicMaterial
-              color="#ffeedd"
-              transparent
-              opacity={0.035}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-              blending={THREE.AdditiveBlending}
+          <instancedMesh
+            ref={rightInstancedMeshRef}
+            args={[undefined, undefined, columnsCount]}
+          >
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial
+              color="#111118"
+              roughness={0.7}
+              metalness={0.2}
             />
-          </mesh>
-        </group>
-      ))}
+          </instancedMesh>
+        </>
+      )}
+
+      {/* 4. SOFT VOLUMETRIC LIGHT BEAMS & FLOOR LIGHT POOLS */}
+      {perfSettings.lightBeams &&
+        lightBeamPositions.map((pos, idx) => (
+          <group key={`beam-${idx}`} position={pos}>
+            {/* Ceiling recessed fixture */}
+            <mesh position={[0, 0, 0]}>
+              <cylinderGeometry args={[0.6, 0.6, 0.08, 16]} />
+              <meshStandardMaterial
+                color="#ffffff"
+                emissive="#ffecd9"
+                emissiveIntensity={1.4}
+                toneMapped={false}
+              />
+            </mesh>
+
+            {/* Soft volumetric beam with vertical falloff */}
+            <mesh position={[0, -5.5, 0]}>
+              <cylinderGeometry args={[0.6, 3.2, 11, 24, 1, true]} />
+              <primitive object={softBeamMaterial} attach="material" />
+            </mesh>
+
+            {/* Soft light pool on the floor beneath the beam */}
+            <mesh position={[0, -10.98, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[2.8, 32]} />
+              <meshBasicMaterial
+                color="#ffecd9"
+                transparent
+                opacity={0.03}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+              />
+            </mesh>
+          </group>
+        ))}
 
       {/* 5. 9 ZONE FLOOR MARKERS */}
-      {ZONES.slice(1).map((zone, idx) => {
-        const targetZ = zone.targetLookAt[2] + 4; // Position marker on floor in zone
+      {ZONES.slice(1).map((zone) => {
+        const targetZ = zone.targetLookAt[2] + 4;
         const targetX = zone.targetLookAt[0];
 
         return (
