@@ -6,6 +6,7 @@ export interface PerfSettings {
   lightBeams: boolean;
   fog: boolean;
   wallFins: boolean;
+  hubText: boolean;
   profileHub: boolean;
   gpuName: string;
 }
@@ -19,6 +20,7 @@ class PerfStore {
     lightBeams: true,
     fog: true,
     wallFins: true,
+    hubText: true,
     profileHub: true,
     gpuName: 'Detecting GPU...',
   };

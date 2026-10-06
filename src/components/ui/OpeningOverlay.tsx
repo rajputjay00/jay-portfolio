@@ -234,7 +234,7 @@ export default function OpeningOverlay() {
         </div>
       )}
 
-      {/* 4. Single Clean Identity Screen & CTAs (Step 5) with Dim Calm 3D Backdrop */}
+      {/* 4. Single Clean Identity Screen & CTAs (Step 5) with soft radial vignette (no full-screen blur) */}
       {showIdentity && (
         <div
           style={{
@@ -247,8 +247,6 @@ export default function OpeningOverlay() {
             alignItems: 'center',
             padding: '2.5rem',
             boxSizing: 'border-box',
-            background: 'rgba(6, 6, 8, 0.72)',
-            backdropFilter: 'blur(8px)',
             pointerEvents: 'auto',
             animation: 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
           }}
@@ -268,7 +266,7 @@ export default function OpeningOverlay() {
             </div>
           </div>
 
-          {/* Centered Identity */}
+          {/* Centered Identity with soft localized radial vignette (no blur) */}
           <div
             style={{
               display: 'flex',
@@ -277,6 +275,9 @@ export default function OpeningOverlay() {
               textAlign: 'center',
               maxWidth: '820px',
               margin: 'auto 0',
+              padding: '2.5rem 3rem',
+              borderRadius: '24px',
+              background: 'radial-gradient(ellipse 75% 65% at 50% 50%, rgba(6, 6, 8, 0.88) 0%, rgba(6, 6, 8, 0.5) 55%, rgba(6, 6, 8, 0) 100%)',
             }}
           >
             {/* Centered Hero Name (Appears ONCE) */}

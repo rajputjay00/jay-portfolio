@@ -77,9 +77,12 @@ export default function CameraController() {
       }
     }
 
-    // 4. Subtle mouse parallax: drifts gently with cursor
-    const targetMouseX = state.pointer.x * 0.4;
-    const targetMouseY = state.pointer.y * 0.2;
+    // 4. Subtle mouse parallax + very slow subtle idle camera drift
+    const idleDriftX = Math.sin(state.clock.elapsedTime * 0.3) * 0.12;
+    const idleDriftY = Math.cos(state.clock.elapsedTime * 0.25) * 0.08;
+
+    const targetMouseX = state.pointer.x * 0.35 + idleDriftX;
+    const targetMouseY = state.pointer.y * 0.18 + idleDriftY;
 
     mouseOffsetRef.current.x = THREE.MathUtils.damp(
       mouseOffsetRef.current.x,
@@ -94,7 +97,7 @@ export default function CameraController() {
       delta
     );
 
-    // Apply mouse parallax to camera position and target without allocating new objects
+    // Apply mouse parallax and idle drift to camera position and target without allocating new objects
     const finalCamX = targetCamPosRef.current.x + mouseOffsetRef.current.x;
     const finalCamY = targetCamPosRef.current.y + mouseOffsetRef.current.y;
     const finalCamZ = targetCamPosRef.current.z;

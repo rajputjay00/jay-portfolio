@@ -99,16 +99,17 @@ export default function LabArchitecture() {
     }
   }, [instancedLeft, instancedRight]);
 
-  // Light beam positions corresponding to architectural key sections
+  // Light beam positions flanking key architectural sections without cutting across tiles
   const lightBeamPositions: [number, number, number][] = useMemo(() => [
     [0, 11, 8],
-    [0, 11, -10],
-    [-2, 11, -28],
-    [2, 11, -46],
-    [-2, 11, -64],
-    [2, 11, -82],
-    [-2, 11, -100],
-    [2, 11, -118],
+    [-6.2, 11, -8.0],
+    [6.2, 11, -8.0],
+    [-3.0, 11, -26],
+    [3.0, 11, -44],
+    [-3.0, 11, -62],
+    [3.0, 11, -80],
+    [-3.0, 11, -98],
+    [3.0, 11, -116],
     [0, 11, -136],
   ], []);
 
