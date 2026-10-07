@@ -6,32 +6,46 @@ import resultsData from '@/../content/results.json';
 import OpeningOverlay from '@/components/ui/OpeningOverlay';
 import DevPerfPanel from '@/components/dev/DevPerfPanel';
 import { openingStore } from '@/store/openingStore';
+import { perfStore } from '@/store/perfStore';
 
 export default function HomePage() {
-  const { name, title, tags, hero, shortBio } = profileData;
+  const { name, title, tags } = profileData;
   const [heroVisible, setHeroVisible] = React.useState(true);
+  const [isGlassBlur, setIsGlassBlur] = React.useState(perfStore.getSettings().glassBlur);
+  const [isDesktop, setIsDesktop] = React.useState(true);
 
   React.useEffect(() => {
     setHeroVisible(openingStore.isSeen());
-    const unsub = openingStore.subscribe((s) => {
+    const unsubOpening = openingStore.subscribe((s) => {
       if (s === 'completed') {
         setHeroVisible(true);
       } else if (s === 'screen_1') {
         setHeroVisible(false);
       }
     });
-    return unsub;
+
+    const unsubPerf = perfStore.subscribe((s) => {
+      setIsGlassBlur(s.glassBlur);
+    });
+
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+
+    return () => {
+      unsubOpening();
+      unsubPerf();
+      window.removeEventListener('resize', checkDesktop);
+    };
   }, []);
 
-  // First sentence of short bio from profile.json
-  const bioFirstSentence = shortBio
-    ? shortBio.split('.')[0] + '.'
-    : 'Social Media Manager focused on Instagram, content, strategy and growth.';
-
-  // Only entries with verified: true in results.json
-  const verifiedResults = (resultsData?.results || []).filter(
-    (item) => item.verified === true
-  );
+  const resultsList = resultsData?.results || [];
+  const resultsMap: Record<string, { value: string; account?: string; label?: string }> = {};
+  resultsList.forEach((item) => {
+    resultsMap[item.id] = item;
+  });
 
   const handleSmoothScroll = (targetId: string) => {
     const el = document.getElementById(targetId);
@@ -50,7 +64,7 @@ export default function HomePage() {
 
       {/* 01 & 02: HERO SECTION ("THE FEED THAT STOPS") */}
       <section id="hero" className="hero-section">
-        {/* Left Block (HTML ~45% width, non-overlapping with 3D Feed on the right) */}
+        {/* Left Block (HTML ~48% width, non-overlapping with 3D Feed on the right) */}
         <div
           className="hero-content"
           style={{
@@ -59,31 +73,46 @@ export default function HomePage() {
             pointerEvents: heroVisible ? 'auto' : 'none',
           }}
         >
-          <div className="hero-label">The Attention Lab</div>
-
-          <h1 className="hero-headline">{hero}</h1>
-
-          <div className="hero-author-row">
-            <span className="hero-name">{name}</span>
-            <span style={{ color: 'var(--text-muted)' }}>—</span>
-            <span className="hero-title">{title}</span>
+          {/* a. Label pill */}
+          <div className="hero-label-pill glass-fake">
+            THE ATTENTION LAB
           </div>
 
-          <div className="hero-roles">{tags.join(' · ')}</div>
+          {/* b. Headline */}
+          <h1 className="hero-headline">
+            <span className="headline-line-1">I make people</span>
+            <span className="headline-line-2">
+              stop scrolling<span style={{ color: 'var(--accent)' }}>.</span>
+            </span>
+          </h1>
 
-          <p className="hero-bio">{bioFirstSentence}</p>
-
-          {/* Proof Row: Verified metrics only from results.json */}
-          <div className="hero-proof-row">
-            {verifiedResults.map((result) => (
-              <div key={result.id} className="hero-proof-item">
-                <span className="hero-proof-value">{result.value}</span>
-                <span className="hero-proof-label">{result.label}</span>
-              </div>
-            ))}
+          {/* c. Name & Roles */}
+          <div className="hero-author-block">
+            <div className="hero-name">{name}</div>
+            <div className="hero-roles-line">
+              {title} · {tags.join(' · ')}
+            </div>
           </div>
 
-          {/* Action CTAs */}
+          {/* d. Numbers Card */}
+          <div className={`hero-numbers-card ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
+            <div className="number-col">
+              <span className="number-val">{resultsMap.icl?.value || '401K'}</span>
+              <span className="number-lbl">{resultsMap.icl?.account || 'Indian Corporate Life'}</span>
+            </div>
+            <div className="number-divider" />
+            <div className="number-col">
+              <span className="number-val">{resultsMap.sfc?.value || '39.5K'}</span>
+              <span className="number-lbl">{resultsMap.sfc?.account || 'Strictly For Corporate'}</span>
+            </div>
+            <div className="number-divider" />
+            <div className="number-col">
+              <span className="number-val">{resultsMap.brands?.value || '5'}</span>
+              <span className="number-lbl">brands</span>
+            </div>
+          </div>
+
+          {/* e. Buttons */}
           <div className="hero-actions">
             <a
               href="#case-studies"
@@ -91,10 +120,9 @@ export default function HomePage() {
                 e.preventDefault();
                 handleSmoothScroll('case-studies');
               }}
-              className="btn-primary"
+              className="btn-accent"
             >
-              <span>See my work</span>
-              <span style={{ fontSize: '1.1rem' }}>↓</span>
+              See my work
             </a>
 
             <a
@@ -103,7 +131,7 @@ export default function HomePage() {
                 e.preventDefault();
                 handleSmoothScroll('dm');
               }}
-              className="btn-secondary"
+              className="btn-glass glass-fake"
             >
               Message me
             </a>
@@ -115,16 +143,7 @@ export default function HomePage() {
                   openingStore.resetSeen();
                 }}
                 title="Replay opening sequence"
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#71717a',
-                  padding: '0.45rem 0.85rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.72rem',
-                  cursor: 'pointer',
-                  marginLeft: '0.5rem',
-                }}
+                className="btn-replay glass-fake"
               >
                 ↻ Replay Intro
               </button>

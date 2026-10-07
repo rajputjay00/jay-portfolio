@@ -1,14 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import { Syne } from 'next/font/google';
+import { Inter_Tight, Instrument_Serif } from 'next/font/google';
 import './globals.css';
 import CanvasContainer from '@/components/canvas/CanvasContainer';
 import SmoothScrollProvider from '@/components/providers/SmoothScrollProvider';
 import DevFpsCounter from '@/components/dev/DevFpsCounter';
 
-const syne = Syne({
+const interTight = Inter_Tight({
   subsets: ['latin'],
-  variable: '--font-syne',
-  weight: ['700', '800'],
+  variable: '--font-inter-tight',
+  weight: ['400', '500', '600'],
+  display: 'swap',
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  variable: '--font-instrument-serif',
+  weight: ['400'],
+  style: ['normal', 'italic'],
   display: 'swap',
 });
 
@@ -23,7 +31,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#08090C',
+  themeColor: '#0B0A09',
 };
 
 export default function RootLayout({
@@ -32,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={syne.variable}>
+    <html lang="en" className={`${interTight.variable} ${instrumentSerif.variable}`}>
       <body>
         <SmoothScrollProvider>
           {/* Persistent full-screen 3D canvas (frameloop active only in hero) */}

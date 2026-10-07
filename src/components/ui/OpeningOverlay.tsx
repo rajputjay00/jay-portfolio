@@ -132,7 +132,7 @@ export default function OpeningOverlay() {
         style={{
           position: 'absolute',
           inset: 0,
-          background: '#08090C',
+          background: '#0B0A09',
           opacity: isBlackout ? 1 : 0,
           transition: 'opacity 0.5s ease',
           pointerEvents: isBlackout ? 'auto' : 'none',
@@ -150,9 +150,10 @@ export default function OpeningOverlay() {
             right: '2.5rem',
             zIndex: 100,
             pointerEvents: 'auto',
-            background: 'rgba(20, 20, 28, 0.92)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            color: '#ffffff',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.16)',
+            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+            color: '#F5EFE6',
             padding: '0.45rem 1.1rem',
             borderRadius: '9999px',
             fontSize: '0.75rem',
@@ -163,12 +164,12 @@ export default function OpeningOverlay() {
             transition: 'all 0.2s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 71, 87, 0.25)';
-            e.currentTarget.style.borderColor = 'rgba(255, 71, 87, 0.5)';
+            e.currentTarget.style.background = 'rgba(255, 90, 43, 0.25)';
+            e.currentTarget.style.borderColor = 'rgba(255, 90, 43, 0.5)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(20, 20, 28, 0.75)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.16)';
           }}
         >
           Skip Intro →
@@ -188,12 +189,13 @@ export default function OpeningOverlay() {
           <div
             style={{
               fontSize: 'clamp(3.5rem, 10vw, 8.5rem)',
-              fontWeight: 900,
+              fontWeight: 600,
+              fontFamily: 'var(--font-main)',
               letterSpacing: '-0.04em',
               lineHeight: 0.95,
-              color: '#ffffff',
+              color: '#F5EFE6',
               textTransform: 'uppercase',
-              textShadow: '0 0 40px rgba(0,0,0,0.8), 0 0 80px rgba(255,71,87,0.3)',
+              textShadow: '0 0 40px rgba(0,0,0,0.8), 0 0 80px rgba(255,90,43,0.3)',
               transform: 'scale(1)',
               animation: 'textPop 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
@@ -201,7 +203,7 @@ export default function OpeningOverlay() {
             {stopTextState === 'stop' && stopText}
             {(stopTextState === 'youdid' || stopTextState === 'tagline') && (
               <>
-                <span style={{ color: '#ff4757' }}>{stopText} </span>
+                <span style={{ color: '#FF5A2B' }}>{stopText} </span>
                 <span>{youDidText}</span>
               </>
             )}
@@ -211,9 +213,9 @@ export default function OpeningOverlay() {
             <div
               style={{
                 fontSize: 'clamp(1.2rem, 3vw, 2.2rem)',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 500,
-                color: '#d4d4d8',
+                fontFamily: 'var(--font-serif)',
+                fontWeight: 400,
+                color: '#938C82',
                 marginTop: '1.25rem',
                 letterSpacing: '-0.01em',
                 fontStyle: 'italic',

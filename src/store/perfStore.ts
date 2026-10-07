@@ -4,6 +4,7 @@ export interface PerfSettings {
   postprocessing: boolean;
   fakeReflection: boolean;
   feedHover: boolean;
+  glassBlur: boolean;
   dprMax: number;
   gpuName: string;
 }
@@ -15,6 +16,7 @@ class PerfStore {
     postprocessing: false, // Off by default for 60fps zero-lag budget
     fakeReflection: true,
     feedHover: true,
+    glassBlur: true,
     dprMax: 1.5,
     gpuName: 'Detecting GPU...',
   };

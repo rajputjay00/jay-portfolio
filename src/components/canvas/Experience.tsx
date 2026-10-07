@@ -22,8 +22,8 @@ export default function Experience({ isDev = false }: ExperienceProps) {
 
   return (
     <>
-      {/* 1. Deep cinematic background (#08090C) */}
-      <color attach="background" args={['#08090c']} />
+      {/* 1. Deep cinematic background (#0B0A09) */}
+      <color attach="background" args={['#0B0A09']} />
 
       {/* 2. Opening Floating Screens */}
       <OpeningScreens />

@@ -317,6 +317,7 @@ export default function DevPerfPanel() {
                 { key: 'postprocessing', label: 'Post-Processing (Bloom/Vignette)' },
                 { key: 'feedHover', label: 'Feed 3D Vertex Hover' },
                 { key: 'fakeReflection', label: 'Fake Soft Floor Reflection' },
+                { key: 'glassBlur', label: 'Glass blur (Numbers Card)' },
               ].map(({ key, label }) => {
                 const isEnabled = settings[key as keyof Omit<PerfSettings, 'gpuName' | 'dprMax'>];
                 return (
