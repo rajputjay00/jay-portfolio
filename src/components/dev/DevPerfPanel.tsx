@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { perfStore, PerfSettings } from '@/store/perfStore';
 
 interface BenchmarkResult {
@@ -60,11 +60,10 @@ export default function DevPerfPanel() {
     return null;
   }
 
-  const toggle = (key: keyof Omit<PerfSettings, 'gpuName'>) => {
+  const toggle = (key: keyof Omit<PerfSettings, 'gpuName' | 'dprMax'>) => {
     perfStore.setSetting(key, !settings[key]);
   };
 
-  // Helper to measure FPS accurately over a time duration in ms
   const measureFps = (durationMs: number): Promise<{ avgFps: number; avgMs: number }> => {
     return new Promise((resolve) => {
       let frames = 0;
@@ -82,7 +81,6 @@ export default function DevPerfPanel() {
         }
       };
 
-      // Allow 1 frame for state/DOM to settle before recording
       requestAnimationFrame(() => {
         startTime = performance.now();
         requestAnimationFrame(onFrame);
@@ -96,82 +94,53 @@ export default function DevPerfPanel() {
     setBenchmarkResults(null);
     setIsOpen(true);
 
-    const testDuration = 2500; // 2.5s per step for high accuracy
+    const testDuration = 2000;
     const results: BenchmarkResult[] = [];
 
-    const defaultState: Omit<PerfSettings, 'gpuName'> = {
-      floorReflection: true,
-      postprocessing: true,
-      lightBeams: true,
-      fog: true,
-      wallFins: true,
-      hubText: true,
-      profileHub: true,
-    };
-
-    const applyState = (overrides: Partial<Omit<PerfSettings, 'gpuName'>>) => {
+    const applyState = (overrides: Partial<Omit<PerfSettings, 'gpuName' | 'dprMax'>>) => {
+      const defaultState = {
+        postprocessing: false,
+        fakeReflection: true,
+        feedHover: true,
+      };
       const next = { ...defaultState, ...overrides };
       Object.entries(next).forEach(([k, v]) => {
-        perfStore.setSetting(k as keyof Omit<PerfSettings, 'gpuName'>, v);
+        perfStore.setSetting(k as keyof Omit<PerfSettings, 'gpuName' | 'dprMax'>, v);
       });
     };
 
     try {
-      // 1. Baseline: Everything ON
-      setCurrentBenchStep('1/8: Baseline (All ON)...');
-      applyState({});
+      // 1. Path B Standard Hero (Postprocessing OFF, Hover ON)
+      setCurrentBenchStep('1/4: Standard Path B Hero...');
+      applyState({ postprocessing: false, feedHover: true, fakeReflection: true });
       const r1 = await measureFps(testDuration);
-      results.push({ name: 'Baseline (All ON)', ...r1 });
+      results.push({ name: 'Path B Hero (Default)', ...r1 });
 
-      // 2. Off: Reflective Floor
-      setCurrentBenchStep('2/8: No Reflective Floor...');
-      applyState({ floorReflection: false });
+      // 2. Feed Hover Active Stress
+      setCurrentBenchStep('2/4: Hero with Vertex Hover...');
+      applyState({ postprocessing: false, feedHover: true, fakeReflection: true });
       const r2 = await measureFps(testDuration);
-      results.push({ name: 'No Floor Reflection', ...r2 });
+      results.push({ name: 'Vertex Hover Active', ...r2 });
 
-      // 3. Off: Postprocessing
-      setCurrentBenchStep('3/8: No Post-Processing...');
-      applyState({ postprocessing: false });
+      // 3. Post-Processing Enabled
+      setCurrentBenchStep('3/4: With Post-Processing ON...');
+      applyState({ postprocessing: true, feedHover: true, fakeReflection: true });
       const r3 = await measureFps(testDuration);
-      results.push({ name: 'No Post-Processing', ...r3 });
+      results.push({ name: 'With Post-Processing', ...r3 });
 
-      // 4. Off: Light Beams
-      setCurrentBenchStep('4/8: No Light Beams...');
-      applyState({ lightBeams: false });
+      // 4. Ultra Lean (No reflection, no hover)
+      setCurrentBenchStep('4/4: Ultra Lean...');
+      applyState({ postprocessing: false, feedHover: false, fakeReflection: false });
       const r4 = await measureFps(testDuration);
-      results.push({ name: 'No Light Beams', ...r4 });
+      results.push({ name: 'Ultra Lean Mode', ...r4 });
 
-      // 5. Off: Fog
-      setCurrentBenchStep('5/8: No Scene Fog...');
-      applyState({ fog: false });
-      const r5 = await measureFps(testDuration);
-      results.push({ name: 'No Scene Fog', ...r5 });
-
-      // 6. Off: Wall Fins
-      setCurrentBenchStep('6/8: No Wall Fins...');
-      applyState({ wallFins: false });
-      const r6 = await measureFps(testDuration);
-      results.push({ name: 'No Wall Fins', ...r6 });
-
-      // 7. Off: Hub Text
-      setCurrentBenchStep('7/8: No Hub Text...');
-      applyState({ hubText: false });
-      const r7 = await measureFps(testDuration);
-      results.push({ name: 'No Hub 3D Text', ...r7 });
-
-      // 8. Off: Whole Profile Hub
-      setCurrentBenchStep('8/8: No Profile Hub Room...');
-      applyState({ profileHub: false });
-      const r8 = await measureFps(testDuration);
-      results.push({ name: 'No Profile Hub Room', ...r8 });
-
-      // Restore all
-      applyState({});
+      // Restore default
+      applyState({ postprocessing: false, feedHover: true, fakeReflection: true });
       setBenchmarkResults(results);
     } catch (e) {
       console.error(e);
     } finally {
-      applyState({});
+      applyState({ postprocessing: false, feedHover: true, fakeReflection: true });
       setIsBenchmarking(false);
       setCurrentBenchStep('');
     }
@@ -189,8 +158,7 @@ export default function DevPerfPanel() {
     >
       <div
         style={{
-          background: 'rgba(10, 10, 15, 0.94)',
-          backdropFilter: 'blur(16px)',
+          background: 'rgba(10, 10, 15, 0.96)',
           border: '1px solid rgba(255, 255, 255, 0.14)',
           borderRadius: '12px',
           padding: '0.65rem 0.95rem',
@@ -253,7 +221,7 @@ export default function DevPerfPanel() {
                 GPU: <span style={{ color: '#60a5fa' }}>{settings.gpuName}</span>
               </div>
               <div style={{ fontSize: '0.68rem', color: '#a1a1aa' }}>
-                DPR: <span style={{ color: '#fff' }}>{viewportInfo.dpr}x</span> · Viewport: <span style={{ color: '#fff' }}>{viewportInfo.width}×{viewportInfo.height}px</span>
+                DPR: <span style={{ color: '#fff' }}>{viewportInfo.dpr}x (capped 1.5x)</span> · Viewport: <span style={{ color: '#fff' }}>{viewportInfo.width}×{viewportInfo.height}px</span>
               </div>
             </div>
 
@@ -282,7 +250,7 @@ export default function DevPerfPanel() {
                   transition: 'all 0.2s ease',
                 }}
               >
-                <span>{isBenchmarking ? 'Running Benchmark...' : '▶ Run Benchmark (3s Tests)'}</span>
+                <span>{isBenchmarking ? 'Running Benchmark...' : '▶ Run Benchmark (Path B)'}</span>
               </button>
 
               {isBenchmarking && (
@@ -342,23 +310,19 @@ export default function DevPerfPanel() {
             {/* Manual Feature Toggles */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <div style={{ fontSize: '0.62rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Manual Feature Toggles
+                Feature Toggles
               </div>
 
               {[
-                { key: 'floorReflection', label: 'Reflective Floor' },
-                { key: 'postprocessing', label: 'Post-Processing' },
-                { key: 'lightBeams', label: 'Light Beams' },
-                { key: 'fog', label: 'Scene Fog' },
-                { key: 'wallFins', label: 'Wall Fins (Instanced)' },
-                { key: 'hubText', label: 'Hub 3D Text' },
-                { key: 'profileHub', label: 'Profile Hub Room' },
+                { key: 'postprocessing', label: 'Post-Processing (Bloom/Vignette)' },
+                { key: 'feedHover', label: 'Feed 3D Vertex Hover' },
+                { key: 'fakeReflection', label: 'Fake Soft Floor Reflection' },
               ].map(({ key, label }) => {
-                const isEnabled = settings[key as keyof Omit<PerfSettings, 'gpuName'>];
+                const isEnabled = settings[key as keyof Omit<PerfSettings, 'gpuName' | 'dprMax'>];
                 return (
                   <div
                     key={key}
-                    onClick={() => toggle(key as keyof Omit<PerfSettings, 'gpuName'>)}
+                    onClick={() => toggle(key as keyof Omit<PerfSettings, 'gpuName' | 'dprMax'>)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',

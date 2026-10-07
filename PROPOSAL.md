@@ -1,5 +1,9 @@
 # The Attention Lab — Final Portfolio Proposal for Jay Rajput
 
+## Direction update (Path B)
+
+The full 3D corridor of rooms is replaced. Structure is now: 01 Opening (3D), 02 Hero lab (3D), then smooth scroll sections: 03 Proof strip, 04 Case studies, 05 Retention theatre, 06 Range wall, 07 About and services, 08 DM ending. Sections 03-08 are HTML/CSS with GSAP + Lenis motion and light 3D touches (tilt, depth, parallax), not 3D rooms. The Zero-lag budget, the /content rules and the 5-part case study format still apply.
+
 Oct 5, 2026
 
 ## Executive summary

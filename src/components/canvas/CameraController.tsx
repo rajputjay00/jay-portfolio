@@ -1,24 +1,22 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { cameraSpline, lookAtSpline } from '@/constants/zones';
-import { scrollManager } from '@/store/scrollStore';
 import { openingStore, OpeningStep } from '@/store/openingStore';
 
 export default function CameraController() {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
+  const isMobile = size.width < 768;
 
-  const currentTRef = useRef(0);
-  const targetCamPosRef = useRef(new THREE.Vector3());
-  const currentCamPosRef = useRef(new THREE.Vector3());
-  const targetLookAtRef = useRef(new THREE.Vector3());
-  const currentLookAtRef = useRef(new THREE.Vector3());
+  const targetCamPosRef = useRef(new THREE.Vector3(0, 0, 5.0));
+  const currentCamPosRef = useRef(new THREE.Vector3(0, 0, 5.0));
+  const targetLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
+  const currentLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
   const mouseOffsetRef = useRef(new THREE.Vector2());
   const openingStepRef = useRef<OpeningStep>(openingStore.getStep());
 
-  React.useEffect(() => {
+  useEffect(() => {
     openingStepRef.current = openingStore.getStep();
     const unsub = openingStore.subscribe((s) => {
       openingStepRef.current = s;
@@ -27,9 +25,10 @@ export default function CameraController() {
   }, []);
 
   // Initialize camera position on first load
-  React.useEffect(() => {
-    const initialCam = new THREE.Vector3(0, 2.1, 13.0);
-    const initialLook = new THREE.Vector3(0, 2.0, 4.0);
+  useEffect(() => {
+    const isSeen = openingStore.isSeen();
+    const initialCam = isSeen ? new THREE.Vector3(0, 0, 5.0) : new THREE.Vector3(0, 0.4, 6.5);
+    const initialLook = new THREE.Vector3(0, 0, 0);
     camera.position.copy(initialCam);
     camera.lookAt(initialLook);
     currentCamPosRef.current.copy(initialCam);
@@ -37,52 +36,43 @@ export default function CameraController() {
   }, [camera]);
 
   useFrame((state, delta) => {
-    // 1. Get raw scroll progress (0..1)
-    const targetT = scrollManager.getProgress();
     const currentStep = openingStepRef.current;
+    const isOpeningIntro =
+      currentStep === 'screen_1' ||
+      currentStep === 'screen_2' ||
+      currentStep === 'screen_3' ||
+      currentStep === 'frozen' ||
+      currentStep === 'stop_text' ||
+      currentStep === 'you_did_text';
 
-    // 2. Smoothly damp progress for buttery eased acceleration and deceleration
-    currentTRef.current = THREE.MathUtils.damp(
-      currentTRef.current,
-      targetT,
-      3.2,
-      delta
-    );
-
-    const clampedT = Math.max(0, Math.min(0.9999, currentTRef.current));
-
-    // 3. Compute spline points for camera and look-at
-    cameraSpline.getPointAt(clampedT, targetCamPosRef.current);
-    lookAtSpline.getPointAt(clampedT, targetLookAtRef.current);
-
-    // If still in opening sequence before pullback and scroll is 0, frame floating screens closely
-    if (
-      clampedT < 0.01 &&
-      (currentStep === 'screen_1' ||
-        currentStep === 'screen_2' ||
-        currentStep === 'screen_3' ||
-        currentStep === 'frozen' ||
-        currentStep === 'stop_text' ||
-        currentStep === 'you_did_text')
-    ) {
+    if (isOpeningIntro) {
       if (currentStep === 'screen_1') {
-        targetCamPosRef.current.set(-0.6, 2.1, 13.2);
-        targetLookAtRef.current.set(-1.0, 2.1, 8.0);
+        targetCamPosRef.current.set(-0.6, 0.2, 5.8);
+        targetLookAtRef.current.set(-0.9, 0.1, 0.0);
       } else if (currentStep === 'screen_2') {
-        targetCamPosRef.current.set(0.6, 2.0, 11.5);
-        targetLookAtRef.current.set(1.0, 2.0, 6.0);
+        targetCamPosRef.current.set(0.6, 0.0, 5.2);
+        targetLookAtRef.current.set(0.9, 0.0, 0.0);
       } else {
-        targetCamPosRef.current.set(0.0, 2.1, 9.8);
-        targetLookAtRef.current.set(0.0, 2.1, 3.0);
+        targetCamPosRef.current.set(0.0, 0.1, 4.4);
+        targetLookAtRef.current.set(0.0, 0.1, 0.0);
+      }
+    } else {
+      // Hero Framing: desktop camera positioned so left text and right feed wall are in balanced harmony
+      if (isMobile) {
+        targetCamPosRef.current.set(0, 0, 5.6);
+        targetLookAtRef.current.set(0, 0, 0);
+      } else {
+        targetCamPosRef.current.set(0.0, 0.0, 5.0);
+        targetLookAtRef.current.set(0.2, 0.0, 0.0);
       }
     }
 
-    // 4. Subtle mouse parallax + very slow subtle idle camera drift
-    const idleDriftX = Math.sin(state.clock.elapsedTime * 0.3) * 0.12;
-    const idleDriftY = Math.cos(state.clock.elapsedTime * 0.25) * 0.08;
+    // Subtle mouse parallax + very slow idle breathing
+    const idleDriftX = Math.sin(state.clock.elapsedTime * 0.25) * 0.04;
+    const idleDriftY = Math.cos(state.clock.elapsedTime * 0.2) * 0.03;
 
-    const targetMouseX = state.pointer.x * 0.35 + idleDriftX;
-    const targetMouseY = state.pointer.y * 0.18 + idleDriftY;
+    const targetMouseX = isMobile ? 0 : state.pointer.x * 0.18 + idleDriftX;
+    const targetMouseY = isMobile ? 0 : state.pointer.y * 0.12 + idleDriftY;
 
     mouseOffsetRef.current.x = THREE.MathUtils.damp(
       mouseOffsetRef.current.x,
@@ -97,51 +87,49 @@ export default function CameraController() {
       delta
     );
 
-    // Apply mouse parallax and idle drift to camera position and target without allocating new objects
     const finalCamX = targetCamPosRef.current.x + mouseOffsetRef.current.x;
     const finalCamY = targetCamPosRef.current.y + mouseOffsetRef.current.y;
     const finalCamZ = targetCamPosRef.current.z;
 
-    const finalLookX = targetLookAtRef.current.x + mouseOffsetRef.current.x * 0.25;
-    const finalLookY = targetLookAtRef.current.y + mouseOffsetRef.current.y * 0.25;
+    const finalLookX = targetLookAtRef.current.x + mouseOffsetRef.current.x * 0.3;
+    const finalLookY = targetLookAtRef.current.y + mouseOffsetRef.current.y * 0.3;
     const finalLookZ = targetLookAtRef.current.z;
 
-    // 5. Smoothly damp current camera coordinates
     currentCamPosRef.current.x = THREE.MathUtils.damp(
       currentCamPosRef.current.x,
       finalCamX,
-      4.5,
+      3.5,
       delta
     );
     currentCamPosRef.current.y = THREE.MathUtils.damp(
       currentCamPosRef.current.y,
       finalCamY,
-      4.5,
+      3.5,
       delta
     );
     currentCamPosRef.current.z = THREE.MathUtils.damp(
       currentCamPosRef.current.z,
       finalCamZ,
-      4.5,
+      3.5,
       delta
     );
 
     currentLookAtRef.current.x = THREE.MathUtils.damp(
       currentLookAtRef.current.x,
       finalLookX,
-      4.5,
+      3.5,
       delta
     );
     currentLookAtRef.current.y = THREE.MathUtils.damp(
       currentLookAtRef.current.y,
       finalLookY,
-      4.5,
+      3.5,
       delta
     );
     currentLookAtRef.current.z = THREE.MathUtils.damp(
       currentLookAtRef.current.z,
       finalLookZ,
-      4.5,
+      3.5,
       delta
     );
 

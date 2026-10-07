@@ -1,13 +1,10 @@
 'use client';
 
 export interface PerfSettings {
-  floorReflection: boolean;
   postprocessing: boolean;
-  lightBeams: boolean;
-  fog: boolean;
-  wallFins: boolean;
-  hubText: boolean;
-  profileHub: boolean;
+  fakeReflection: boolean;
+  feedHover: boolean;
+  dprMax: number;
   gpuName: string;
 }
 
@@ -15,13 +12,10 @@ type PerfListener = (settings: PerfSettings) => void;
 
 class PerfStore {
   private settings: PerfSettings = {
-    floorReflection: true,
-    postprocessing: true,
-    lightBeams: true,
-    fog: true,
-    wallFins: true,
-    hubText: true,
-    profileHub: true,
+    postprocessing: false, // Off by default for 60fps zero-lag budget
+    fakeReflection: true,
+    feedHover: true,
+    dprMax: 1.5,
     gpuName: 'Detecting GPU...',
   };
 

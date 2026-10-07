@@ -1,100 +1,15 @@
-import * as THREE from 'three';
-
-export interface ZoneInfo {
+export interface SectionItem {
   id: string;
   name: string;
   label: string;
-  t: number; // Progress along spline 0..1
-  cameraPos: [number, number, number];
-  targetLookAt: [number, number, number];
 }
 
-export const ZONES: ZoneInfo[] = [
-  {
-    id: 'opening',
-    name: 'Opening Sequence',
-    label: '00 // OPENING',
-    t: 0.0,
-    cameraPos: [1.8, 2.8, 14.0],
-    targetLookAt: [-0.2, 2.6, 0.0],
-  },
-  {
-    id: 'hub',
-    name: 'Profile Hub',
-    label: '01 // PROFILE HUB',
-    t: 0.11,
-    cameraPos: [2.2, 2.7, 3.5],
-    targetLookAt: [-0.4, 3.5, -10.0],
-  },
-  {
-    id: 'case-files',
-    name: 'Case Files',
-    label: '02 // CASE FILES',
-    t: 0.22,
-    cameraPos: [-2.5, 2.2, -18],
-    targetLookAt: [0, 2.2, -28],
-  },
-  {
-    id: 'retention',
-    name: 'Retention Theatre',
-    label: '03 // RETENTION THEATRE',
-    t: 0.33,
-    cameraPos: [3.0, 2.0, -36],
-    targetLookAt: [0, 2.0, -46],
-  },
-  {
-    id: 'range',
-    name: 'Range Wall',
-    label: '04 // RANGE WALL',
-    t: 0.44,
-    cameraPos: [-3.0, 2.2, -54],
-    targetLookAt: [0, 2.2, -64],
-  },
-  {
-    id: 'strategy',
-    name: 'Strategy Room',
-    label: '05 // STRATEGY ROOM',
-    t: 0.55,
-    cameraPos: [2.5, 2.4, -72],
-    targetLookAt: [0, 2.0, -82],
-  },
-  {
-    id: 'report',
-    name: 'Report Room',
-    label: '06 // REPORT ROOM',
-    t: 0.66,
-    cameraPos: [-2.8, 2.2, -90],
-    targetLookAt: [0, 2.2, -100],
-  },
-  {
-    id: 'results',
-    name: 'Results Wall',
-    label: '07 // RESULTS WALL',
-    t: 0.77,
-    cameraPos: [2.8, 2.2, -108],
-    targetLookAt: [0, 2.2, -118],
-  },
-  {
-    id: 'about',
-    name: 'About + Services',
-    label: '08 // ABOUT + SERVICES',
-    t: 0.88,
-    cameraPos: [-1.5, 2.0, -126],
-    targetLookAt: [0, 2.0, -136],
-  },
-  {
-    id: 'dm',
-    name: 'DM Exit',
-    label: '09 // DM EXIT',
-    t: 1.0,
-    cameraPos: [0, 1.8, -144],
-    targetLookAt: [0, 1.8, -156],
-  },
+export const SECTIONS: SectionItem[] = [
+  { id: 'hero', name: 'The Attention Lab', label: '01 // HERO' },
+  { id: 'proof', name: 'Proof Strip', label: '02 // PROOF' },
+  { id: 'case-studies', name: 'Case Studies', label: '03 // CASE STUDIES' },
+  { id: 'retention', name: 'Retention Theatre', label: '04 // RETENTION' },
+  { id: 'range', name: 'Range Wall', label: '05 // RANGE' },
+  { id: 'about', name: 'About & Services', label: '06 // ABOUT' },
+  { id: 'dm', name: 'Direct Message', label: '07 // DM' },
 ];
-
-// Construct smooth CatmullRom spline paths for camera position & look-at
-const camPoints = ZONES.map((z) => new THREE.Vector3(...z.cameraPos));
-const lookPoints = ZONES.map((z) => new THREE.Vector3(...z.targetLookAt));
-
-export const cameraSpline = new THREE.CatmullRomCurve3(camPoints, false, 'catmullrom', 0.5);
-export const lookAtSpline = new THREE.CatmullRomCurve3(lookPoints, false, 'catmullrom', 0.5);

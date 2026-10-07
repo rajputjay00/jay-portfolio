@@ -1,153 +1,179 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { ZONES } from '@/constants/zones';
-import { scrollManager } from '@/store/scrollStore';
+import React from 'react';
+import profileData from '@/../content/profile.json';
+import resultsData from '@/../content/results.json';
 import OpeningOverlay from '@/components/ui/OpeningOverlay';
 import DevPerfPanel from '@/components/dev/DevPerfPanel';
+import { openingStore } from '@/store/openingStore';
 
 export default function HomePage() {
-  const [currentZoneIdx, setCurrentZoneIdx] = useState(0);
-  const isDev = process.env.NODE_ENV === 'development';
+  const { name, title, tags, hero, shortBio } = profileData;
+  const [heroVisible, setHeroVisible] = React.useState(true);
 
-  useEffect(() => {
-    return scrollManager.subscribe((progress) => {
-      let closestIdx = 0;
-      let minDiff = Infinity;
-      ZONES.forEach((z, idx) => {
-        const diff = Math.abs(z.t - progress);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestIdx = idx;
-        }
-      });
-      setCurrentZoneIdx(closestIdx);
+  React.useEffect(() => {
+    setHeroVisible(openingStore.isSeen());
+    const unsub = openingStore.subscribe((s) => {
+      if (s === 'completed') {
+        setHeroVisible(true);
+      } else if (s === 'screen_1') {
+        setHeroVisible(false);
+      }
     });
+    return unsub;
   }, []);
 
-  const currentZone = ZONES[currentZoneIdx];
+  // First sentence of short bio from profile.json
+  const bioFirstSentence = shortBio
+    ? shortBio.split('.')[0] + '.'
+    : 'Social Media Manager focused on Instagram, content, strategy and growth.';
+
+  // Only entries with verified: true in results.json
+  const verifiedResults = (resultsData?.results || []).filter(
+    (item) => item.verified === true
+  );
+
+  const handleSmoothScroll = (targetId: string) => {
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: '1000vh' }}>
-      {/* Opening Sequence & Clean Identity Layer */}
+    <div style={{ position: 'relative', width: '100%', background: 'transparent' }}>
+      {/* Opening Sequence Overlay */}
       <OpeningOverlay />
 
-      {/* Dev-Only Performance Toggle Panel */}
-      <DevPerfPanel />
+      {/* Dev-Only Performance Toggle & Benchmark Panel */}
+      {heroVisible && <DevPerfPanel />}
 
-      {/* Minimal Clean HUD Navigation Overlay */}
-      <div
-        className="interactive"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '2rem 2.5rem',
-          pointerEvents: 'none',
-          boxSizing: 'border-box',
-          zIndex: 20,
-        }}
-      >
-        {/* Top Header */}
-        <header
+      {/* 01 & 02: HERO SECTION ("THE FEED THAT STOPS") */}
+      <section id="hero" className="hero-section">
+        {/* Left Block (HTML ~45% width, non-overlapping with 3D Feed on the right) */}
+        <div
+          className="hero-content"
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            width: '100%',
-            pointerEvents: 'auto',
+            opacity: heroVisible ? 1 : 0,
+            transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            pointerEvents: heroVisible ? 'auto' : 'none',
           }}
         >
-          <div>
-            <div
-              style={{
-                fontSize: '0.75rem',
-                letterSpacing: '0.25em',
-                textTransform: 'uppercase',
-                color: 'var(--text-muted)',
-                fontWeight: 700,
-              }}
-            >
-              The Attention Lab
-            </div>
+          <div className="hero-label">The Attention Lab</div>
+
+          <h1 className="hero-headline">{hero}</h1>
+
+          <div className="hero-author-row">
+            <span className="hero-name">{name}</span>
+            <span style={{ color: 'var(--text-muted)' }}>—</span>
+            <span className="hero-title">{title}</span>
           </div>
 
-          {/* Dev-Only Zone Pill */}
-          {isDev && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                background: 'rgba(15, 15, 20, 0.75)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '0.35rem 0.85rem',
-                borderRadius: '9999px',
+          <div className="hero-roles">{tags.join(' · ')}</div>
+
+          <p className="hero-bio">{bioFirstSentence}</p>
+
+          {/* Proof Row: Verified metrics only from results.json */}
+          <div className="hero-proof-row">
+            {verifiedResults.map((result) => (
+              <div key={result.id} className="hero-proof-item">
+                <span className="hero-proof-value">{result.value}</span>
+                <span className="hero-proof-label">{result.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Action CTAs */}
+          <div className="hero-actions">
+            <a
+              href="#case-studies"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSmoothScroll('case-studies');
               }}
+              className="btn-primary"
             >
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#ff4757',
-                  boxShadow: '0 0 6px #ff4757',
+              <span>See my work</span>
+              <span style={{ fontSize: '1.1rem' }}>↓</span>
+            </a>
+
+            <a
+              href="#dm"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSmoothScroll('dm');
+              }}
+              className="btn-secondary"
+            >
+              Message me
+            </a>
+
+            {/* Dev Intro Replay button */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={() => {
+                  openingStore.resetSeen();
                 }}
-              />
-              <span
+                title="Replay opening sequence"
                 style={{
-                  fontSize: '0.7rem',
-                  color: '#e4e4e7',
-                  letterSpacing: '0.08em',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#71717a',
+                  padding: '0.45rem 0.85rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.72rem',
+                  cursor: 'pointer',
+                  marginLeft: '0.5rem',
                 }}
               >
-                {currentZone.label}
-              </span>
-            </div>
-          )}
-        </header>
-
-        {/* Footer Info */}
-        <footer
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            width: '100%',
-            fontSize: '0.75rem',
-            color: 'var(--text-muted)',
-            pointerEvents: 'auto',
-          }}
-        >
-          <div />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>Scroll to explore</span>
-            <span style={{ fontSize: '0.9rem' }}>↓</span>
+                ↻ Replay Intro
+              </button>
+            )}
           </div>
-        </footer>
-      </div>
+        </div>
+      </section>
 
-      {/* Invisible scroll track checkpoints for Lenis scroll */}
-      {ZONES.map((zone) => (
-        <div
-          key={`track-${zone.id}`}
-          style={{
-            height: '100vh',
-            width: '100%',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
+      {/* 03: PROOF */}
+      <section id="proof" className="skeleton-section">
+        <div className="skeleton-header">
+          <h2 className="skeleton-title">Proof</h2>
+        </div>
+      </section>
+
+      {/* 04: CASE STUDIES */}
+      <section id="case-studies" className="skeleton-section">
+        <div className="skeleton-header">
+          <h2 className="skeleton-title">Case studies</h2>
+        </div>
+      </section>
+
+      {/* 05: RETENTION THEATRE */}
+      <section id="retention" className="skeleton-section">
+        <div className="skeleton-header">
+          <h2 className="skeleton-title">Retention theatre</h2>
+        </div>
+      </section>
+
+      {/* 06: RANGE WALL */}
+      <section id="range" className="skeleton-section">
+        <div className="skeleton-header">
+          <h2 className="skeleton-title">Range wall</h2>
+        </div>
+      </section>
+
+      {/* 07: ABOUT AND SERVICES */}
+      <section id="about" className="skeleton-section">
+        <div className="skeleton-header">
+          <h2 className="skeleton-title">About and services</h2>
+        </div>
+      </section>
+
+      {/* 08: DM ENDING */}
+      <section id="dm" className="skeleton-section">
+        <div className="skeleton-header">
+          <h2 className="skeleton-title">Message me</h2>
+        </div>
+      </section>
     </div>
   );
 }
