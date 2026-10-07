@@ -27,41 +27,106 @@ async function main() {
   });
 
   try {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1440, height: 900 });
+    // ==========================================
+    // STATE A: FRESH VISITOR (empty localStorage)
+    // ==========================================
+    console.log('\n--- TESTING STATE A: FRESH VISITOR ---');
+    const pageFresh = await browser.newPage();
+    await pageFresh.setViewport({ width: 1440, height: 900 });
 
-    // 1. Capture Opening Sequence Line 3: "That's the job."
-    await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded' });
-    await page.evaluate(() => {
-      localStorage.removeItem('attention_lab_opening_seen');
-      location.reload();
+    const freshErrors = [];
+    const freshWarnings = [];
+
+    pageFresh.on('console', (msg) => {
+      const type = msg.type();
+      const text = msg.text();
+      if (type === 'error') freshErrors.push(text);
+      if (type === 'warning') freshWarnings.push(text);
+      console.log(`[Fresh Browser ${type.toUpperCase()}]: ${text}`);
     });
 
-    console.log('Waiting for opening sequence line 3 (That\'s the job.)...');
-    // In OpeningOverlay: 4.2s "STOP.", 5.4s "YOU DID.", 6.6s "That's the job."
-    await sleep(7200);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'opening-03.png') });
+    pageFresh.on('pageerror', (err) => {
+      freshErrors.push(err.toString());
+      console.error(`[Fresh Page Error]:`, err);
+    });
+
+    pageFresh.on('response', (res) => {
+      if (res.status() === 404) {
+        console.log('[404 URL]:', res.url());
+      }
+    });
+
+    // Ensure empty localStorage before document loads
+    await pageFresh.evaluateOnNewDocument(() => {
+      localStorage.clear();
+    });
+
+    await pageFresh.goto('http://localhost:3000', { waitUntil: 'domcontentloaded' });
+
+    console.log('Capturing opening-01.png (around 4.6s - "STOP.")...');
+    await sleep(4600);
+    await pageFresh.screenshot({ path: path.join(SCREENSHOT_DIR, 'opening-01.png') });
+    console.log('Saved opening-01.png');
+
+    console.log('Capturing opening-03.png (around 7.2s - "STOP. YOU DID. That\'s the job.")...');
+    await sleep(2600);
+    await pageFresh.screenshot({ path: path.join(SCREENSHOT_DIR, 'opening-03.png') });
     console.log('Saved opening-03.png');
 
-    // 2. Wait for sequence to complete and capture Desktop Hero (1440px)
-    console.log('Waiting for hero reveal at 1440px...');
+    console.log('Waiting for opening sequence completion and hero reveal (~9.5s)...');
     await sleep(2500);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'hero-1440.png') });
-    console.log('Saved hero-1440.png');
+    await pageFresh.screenshot({ path: path.join(SCREENSHOT_DIR, 'hero-1440-fresh-after-opening.png') });
+    console.log('Saved hero-1440-fresh-after-opening.png');
 
-    // 3. Hover over the middle of the feed (e.g. x: 1050, y: 450)
-    console.log('Moving mouse to hover middle of feed (1050, 450)...');
-    await page.mouse.move(1050, 450);
+    await pageFresh.close();
+
+    // ==========================================
+    // STATE B: RETURNING VISITOR (key set in localStorage)
+    // ==========================================
+    console.log('\n--- TESTING STATE B: RETURNING VISITOR ---');
+    const pageReturning = await browser.newPage();
+    await pageReturning.setViewport({ width: 1440, height: 900 });
+
+    const returningErrors = [];
+    const returningWarnings = [];
+
+    pageReturning.on('console', (msg) => {
+      const type = msg.type();
+      const text = msg.text();
+      if (type === 'error') freshErrors.push(text);
+      if (type === 'warning') returningWarnings.push(text);
+      console.log(`[Returning Browser ${type.toUpperCase()}]: ${text}`);
+    });
+
+    pageReturning.on('pageerror', (err) => {
+      returningErrors.push(err.toString());
+      console.error(`[Returning Page Error]:`, err);
+    });
+
+    // Set localStorage before page load using evaluateOnNewDocument
+    await pageReturning.evaluateOnNewDocument(() => {
+      localStorage.setItem('attention_lab_opening_seen', 'true');
+    });
+
+    await pageReturning.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
     await sleep(1000);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'hero-1440-hover.png') });
-    console.log('Saved hero-1440-hover.png');
 
-    // 4. Capture Mobile Hero (390px)
-    console.log('Capturing mobile hero at 390px...');
-    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
-    await sleep(1500);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'hero-390.png') });
+    console.log('Capturing hero-1440-returning.png...');
+    await pageReturning.screenshot({ path: path.join(SCREENSHOT_DIR, 'hero-1440-returning.png') });
+    console.log('Saved hero-1440-returning.png');
+
+    // Also capture mobile hero at 390px
+    console.log('Capturing hero-390.png (mobile returning)...');
+    await pageReturning.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await sleep(1000);
+    await pageReturning.screenshot({ path: path.join(SCREENSHOT_DIR, 'hero-390.png') });
     console.log('Saved hero-390.png');
+
+    await pageReturning.close();
+
+    console.log('\n--- CONSOLE AUDIT SUMMARY ---');
+    console.log(`Fresh visitor errors: ${freshErrors.length}, warnings: ${freshWarnings.length}`);
+    console.log(`Returning visitor errors: ${returningErrors.length}, warnings: ${returningWarnings.length}`);
 
   } catch (err) {
     console.error('Capture error:', err);

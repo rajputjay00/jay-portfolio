@@ -7,7 +7,7 @@ import profileData from '@/../content/profile.json';
 export default function OpeningOverlay() {
   const [step, setStep] = useState<OpeningStep>('idle');
   const [showSkip, setShowSkip] = useState(false);
-  const [isBlackout, setIsBlackout] = useState(true);
+  const [isBlackout, setIsBlackout] = useState(false);
   const [stopTextState, setStopTextState] = useState<'none' | 'stop' | 'youdid' | 'tagline'>('none');
   const [isComplete, setIsComplete] = useState(false);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);

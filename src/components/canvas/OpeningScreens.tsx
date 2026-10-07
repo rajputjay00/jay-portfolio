@@ -40,7 +40,9 @@ const PremiumClipShader = {
       float ambientWave = sin(uv.y * 3.0 + t * 0.8) * cos(uv.x * 2.5 - t * 0.6);
       vec3 tone = mix(bg, vec3(0.08, 0.08, 0.11), smoothstep(-1.0, 1.0, ambientWave));
 
-      float redLine = smoothstep(0.006, 0.0, lineDist);
+      float linePos = fract(t * 0.18);
+      float lineDist = abs(uv.y - linePos);
+      float redLine = 1.0 - smoothstep(0.0, 0.006, lineDist);
       vec3 accentColor = vec3(1.0, 0.353, 0.169); // #FF5A2B
 
       tone = mix(tone, accentColor, redLine * 0.85);

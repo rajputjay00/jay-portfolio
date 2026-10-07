@@ -4,12 +4,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { perfStore } from '@/store/perfStore';
 
 export default function DevFpsCounter() {
+  const [mounted, setMounted] = useState(false);
   const [fps, setFps] = useState<number>(60);
   const [frameTime, setFrameTime] = useState<number>(16.6);
   const [gpuName, setGpuName] = useState<string>('');
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     let lastTime = performance.now();
     let frames = 0;
 
@@ -41,7 +43,7 @@ export default function DevFpsCounter() {
     };
   }, []);
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (!mounted || process.env.NODE_ENV !== 'development') {
     return null;
   }
 

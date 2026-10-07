@@ -41,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${interTight.variable} ${instrumentSerif.variable}`}>
-      <body>
+      <body className={interTight.className}>
         <SmoothScrollProvider>
           {/* Persistent full-screen 3D canvas (frameloop active only in hero) */}
           <CanvasContainer />

@@ -10,6 +10,7 @@ interface BenchmarkResult {
 }
 
 export default function DevPerfPanel() {
+  const [mounted, setMounted] = useState(false);
   const [settings, setSettings] = useState<PerfSettings>(perfStore.getSettings());
   const [isOpen, setIsOpen] = useState(false);
   const [isBenchmarking, setIsBenchmarking] = useState(false);
@@ -18,6 +19,7 @@ export default function DevPerfPanel() {
   const [viewportInfo, setViewportInfo] = useState({ dpr: 1, width: 0, height: 0 });
 
   useEffect(() => {
+    setMounted(true);
     // Detect GPU Renderer Name & Viewport Info
     if (typeof window !== 'undefined') {
       try {
@@ -146,6 +148,10 @@ export default function DevPerfPanel() {
     }
   };
 
+  if (!mounted || process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
   return (
     <div
       style={{
@@ -153,7 +159,7 @@ export default function DevPerfPanel() {
         bottom: '4.5rem',
         left: '1.25rem',
         zIndex: 99999,
-        fontFamily: 'var(--font-display)',
+        fontFamily: 'var(--font-main)',
       }}
     >
       <div

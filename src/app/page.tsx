@@ -10,19 +10,24 @@ import { perfStore } from '@/store/perfStore';
 
 export default function HomePage() {
   const { name, title, tags } = profileData;
-  const [heroVisible, setHeroVisible] = React.useState(true);
   const [isGlassBlur, setIsGlassBlur] = React.useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = React.useState(true);
+  const [heroVisible, setHeroVisible] = React.useState(true);
 
   React.useEffect(() => {
-    setHeroVisible(openingStore.isSeen());
+    if (!openingStore.isSeen()) {
+      setHeroVisible(false);
+    }
+
     const unsubOpening = openingStore.subscribe((s) => {
       if (s === 'completed') {
         setHeroVisible(true);
-      } else if (s === 'screen_1') {
-        setHeroVisible(false);
       }
     });
+
+    const fallbackTimer = setTimeout(() => {
+      setHeroVisible(true);
+    }, 9000);
 
     const unsubPerf = perfStore.subscribe((s) => {
       setIsGlassBlur(s.glassBlur);
@@ -37,6 +42,7 @@ export default function HomePage() {
     return () => {
       unsubOpening();
       unsubPerf();
+      clearTimeout(fallbackTimer);
       window.removeEventListener('resize', checkDesktop);
     };
   }, []);
@@ -60,7 +66,7 @@ export default function HomePage() {
       <OpeningOverlay />
 
       {/* Dev-Only Performance Toggle & Benchmark Panel */}
-      {heroVisible && <DevPerfPanel />}
+      <DevPerfPanel />
 
       {/* 01 & 02: HERO SECTION ("THE FEED THAT STOPS") */}
       <section id="hero" className="hero-section">
