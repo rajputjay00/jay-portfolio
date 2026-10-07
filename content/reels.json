@@ -1,19 +1,20 @@
 {
   "_rule": "Drop video files in media/reels/. Compress to 1080x1920, H.264/MP4 under ~8 MB each. Only fill numbers you can see in Insights.",
   "reels": [
-    { "slot": 1, "role": "Highest reach / views", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO: first line / first visual", "status": "needed" },
-    { "slot": 2, "role": "Highest shares", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 3, "role": "Strongest retention (use in Retention Theatre)", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 4, "role": "Best creative / most original", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 5, "role": "Strongest client / brand Reel", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 6, "role": "Best trend adaptation", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 7, "role": "Best storytelling / narrative", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 8, "role": "Best conversion / CTA", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "needed" },
-    { "slot": 9, "role": "Optional: TEDxIPSA / GDGOC community Reel", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "optional" },
-    { "slot": 10, "role": "Optional: different niche or visual style", "file": "TODO", "account": "TODO", "views": null, "shares": null, "saves": null, "hook": "TODO", "status": "optional" }
+    { "slot": 1, "role": "Highest reach / views", "file": "", "account": "Indian Corporate Life", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "The exact moment you realize it's only Tuesday.", "status": "needed", "dummy": true },
+    { "slot": 2, "role": "Highest shares", "file": "", "account": "Relatable Office Memes", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "POV: Joining the call 2 minutes late with coffee.", "status": "needed", "dummy": true },
+    { "slot": 3, "role": "Strongest retention (use in Retention Theatre)", "file": "", "account": "Strictly For Corporate", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Stop doing this in your 1-on-1 meetings.", "status": "needed", "dummy": true },
+    { "slot": 4, "role": "Best creative / most original", "file": "", "account": "Corporate Dadi", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Dadi reacts to your quarterly performance review.", "status": "needed", "dummy": true },
+    { "slot": 5, "role": "Strongest client / brand Reel", "file": "", "account": "Brand Social", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Unboxing the drop before the sale goes live.", "status": "needed", "dummy": true },
+    { "slot": 6, "role": "Best trend adaptation", "file": "", "account": "Indian Corporate Life", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Audio trend adapted to corporate appraisals.", "status": "needed", "dummy": true },
+    { "slot": 7, "role": "Best storytelling / narrative", "file": "", "account": "Corporate Nani", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "A 30-second story about leaving on time.", "status": "needed", "dummy": true },
+    { "slot": 8, "role": "Best conversion / CTA", "file": "", "account": "Strictly For Corporate", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Comment TEMPLATE for the exact sheet I use.", "status": "needed", "dummy": true },
+    { "slot": 9, "role": "Optional: TEDxIPSA / GDGOC community Reel", "file": "", "account": "TEDxIPSA Indore", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Speaker announcement teaser.", "status": "optional", "dummy": true },
+    { "slot": 10, "role": "Optional: different niche or visual style", "file": "", "account": "Brand Social", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Behind the scenes product shoot breakdown.", "status": "optional", "dummy": true }
   ],
   "openingClips": {
     "_note": "3 short clips (3-5 s each) for the STOP. YOU DID. opening. Pick the most visually striking moments.",
-    "clips": ["TODO: media/reels/opening-01.mp4", "TODO: media/reels/opening-02.mp4", "TODO: media/reels/opening-03.mp4"]
+    "clips": ["/media/images/dummy-01.jpg", "/media/images/dummy-02.jpg", "/media/images/dummy-03.jpg"],
+    "dummy": true
   }
 }

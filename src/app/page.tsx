@@ -5,6 +5,7 @@ import profileData from '@/../content/profile.json';
 import resultsData from '@/../content/results.json';
 import OpeningOverlay from '@/components/ui/OpeningOverlay';
 import DevPerfPanel from '@/components/dev/DevPerfPanel';
+import DevDummyBadge from '@/components/dev/DevDummyBadge';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 
@@ -62,6 +63,9 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', background: 'transparent' }}>
+      {/* Dev-Only Dummy Content Badge */}
+      <DevDummyBadge />
+
       {/* Opening Sequence Overlay */}
       <OpeningOverlay />
 

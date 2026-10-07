@@ -8,22 +8,22 @@ role: "Founder and sole operator"
 headline:
   value: "39.5K"
   label: "followers built on an independent corporate-culture page"
-heroImage: "TODO: media/images/sfc-hero.jpg"
-reels: ["TODO"]
+heroImage: "/media/images/dummy-03.jpg"
+reels: [3, 8]
 ---
 
 ## Brief and baseline
 An independent corporate-culture Instagram property, created and run by Jay.
 
-TODO: When you started it and the follower count at start (probably 0). How long it took to reach 39.5K.
+[DUMMY] Founded and scaled an independent Instagram property from zero to 39.5K followers, focusing on workplace culture and corporate satire.
 
 ## Insight and idea
-TODO: What gap did you see in corporate meme content? What makes your page different?
+[DUMMY] Identified an untapped niche for clean, relatable corporate commentary that resonated across early-career professionals and managers alike.
 
 ## Execution and distribution
-TODO: Posting frequency, best-performing formats, any collabs or growth tactics.
+[DUMMY] Maintained an agile publishing rhythm of XX reels and carousels per week, optimizing hooks in the first 1.5 seconds for maximum save-and-share velocity.
 
 ## Results and learning
-- ~39.5K followers (as of TODO: YYYY-MM)
+- ~39.5K followers (as of 2024-XX)
 
-TODO: Your biggest Reel (views/shares from Insights) and one honest learning.
+[DUMMY] Scaled to XXK monthly reach, confirming that authentic niche storytelling drives compounding audience loyalty.

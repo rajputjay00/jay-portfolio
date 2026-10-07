@@ -12,6 +12,7 @@
 
 # production
 /build
+/public/media/
 
 # misc
 .DS_Store

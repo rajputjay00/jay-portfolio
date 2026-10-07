@@ -4,29 +4,29 @@ order: 1
 title: Creativefuel — Internet-native page portfolio
 client: Creativefuel (freelance)
 niche: Community + Character
-role: "TODO: your exact role and dates, e.g. 'Content & Social Media Manager (freelance), Mar 2024 – present'"
+role: "Content & Social Media Manager (freelance)"
 headline:
   value: "401K"
   label: "followers on Indian Corporate Life, one of four pages managed"
-heroImage: "TODO: media/images/creativefuel-hero.jpg"
+heroImage: "/media/images/dummy-01.jpg"
 accounts:
-  - { name: "Indian Corporate Life", followers: "401K", asOf: "TODO: YYYY-MM" }
-  - { name: "Relatable Office Memes", followers: "34.3K", asOf: "TODO: YYYY-MM" }
-  - { name: "Corporate Dadi", followers: "4.2K", asOf: "TODO: YYYY-MM" }
-  - { name: "Corporate Nani", followers: "4.9K", asOf: "TODO: YYYY-MM" }
-reels: ["TODO: slot numbers from reels.json"]
+  - { name: "Indian Corporate Life", followers: "401K", asOf: "2024-XX" }
+  - { name: "Relatable Office Memes", followers: "34.3K", asOf: "2024-XX" }
+  - { name: "Corporate Dadi", followers: "4.2K", asOf: "2024-XX" }
+  - { name: "Corporate Nani", followers: "4.9K", asOf: "2024-XX" }
+reels: [1, 2, 4]
 ---
 
 ## Brief and baseline
 Freelance social-media work managing multiple Instagram identities and content systems for Creativefuel.
 
-TODO (be precise — this protects your credibility): Did you grow these pages or manage pages that were already large? Write it exactly, e.g. "Joined when Corporate Dadi had 1K followers; grew it to 4.2K" or "Managed daily content for Indian Corporate Life (401K) and launched Corporate Dadi and Corporate Nani as new characters."
+[DUMMY] Managed multi-account content operations across four humor and community properties, establishing consistent publishing schedules and voice guidelines.
 
 ## Insight and idea
-TODO: What did you notice about corporate audiences that shaped the content? Why did character pages (Dadi, Nani) make sense?
+[DUMMY] Corporate humor resonates most when framed as shared survival rather than individual complaints, giving characters like Dadi and Nani distinct authoritative voices.
 
 ## Execution and distribution
-TODO: Content formats used, posting cadence, how you kept four different voices distinct.
+[DUMMY] Produced daily meme carousels and short-form video concepts tailored for peak commuting and end-of-day engagement windows.
 
 ## Results and learning
 - Indian Corporate Life — 401K followers
@@ -34,4 +34,4 @@ TODO: Content formats used, posting cadence, how you kept four different voices 
 - Corporate Nani — 4.9K followers
 - Corporate Dadi — 4.2K followers
 
-TODO: Any verified reach, views or shares from Insights. One line on what you learned.
+[DUMMY] Generated over XXM organic impressions across the network, demonstrating that repeatable character framing and swift trend turnaround sustain long-term engagement.

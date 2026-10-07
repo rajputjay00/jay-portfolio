@@ -11,14 +11,16 @@
   "bio": "I'm a Social Media Manager focused on Instagram, short-form content and digital storytelling. I work at the intersection of strategy, creativity and internet culture — turning ideas into content people actually stop to watch, share and remember.",
   "shortBio": "Social Media Manager focused on Instagram, content, strategy and growth. I turn ideas into content people stop scrolling for.",
   "contact": {
-    "email": "TODO: YOUR_EMAIL@example.com",
-    "instagram": "TODO: your Instagram handle, e.g. @jayrajput",
-    "linkedin": "TODO: LinkedIn URL (optional)",
-    "cvFile": "TODO: media/cv.pdf (optional)"
+    "email": "hello@example.com",
+    "instagram": "@yourhandle",
+    "linkedin": "",
+    "cvFile": "",
+    "dummy": true
   },
   "about": {
-    "story": "TODO: 3-4 sentences — how you got into social media, what you love about internet culture, how you work.",
-    "philosophy": "TODO: one line, e.g. 'Attention is earned in the first second and kept by every second after.'",
-    "photo": "TODO: media/images/jay.jpg"
+    "story": "Managed digital storytelling and community-driven content systems across high-growth social media channels. Focused on testing formats, understanding algorithmic behavior, and turning internet culture into repeatable engagement patterns. Passionate about creating social-first media that earns and retains genuine audience attention.",
+    "philosophy": "Attention is earned in the first second and kept by every second after.",
+    "photo": "",
+    "dummy": true
   }
 }

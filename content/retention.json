@@ -1,22 +1,27 @@
 {
   "_rule": "For the Retention Theatre. Read the curve from your Instagram Insights retention screenshot; enter % still watching at each second you can read.",
   "reelSlot": 3,
-  "file": "TODO: media/reels/retention.mp4",
-  "insightsScreenshot": "TODO: media/insights/retention-curve.png",
-  "durationSeconds": null,
+  "file": "",
+  "insightsScreenshot": "",
+  "durationSeconds": 30,
+  "dummy": true,
   "curve": [
     { "t": 0, "pct": 100 },
-    { "t": 1, "pct": "TODO" },
-    { "t": 3, "pct": "TODO" },
-    { "t": 5, "pct": "TODO" },
-    { "t": 10, "pct": "TODO" },
-    { "t": "TODO: end", "pct": "TODO" }
+    { "t": 1, "pct": 92 },
+    { "t": 2, "pct": 84 },
+    { "t": 4, "pct": 75 },
+    { "t": 7, "pct": 66 },
+    { "t": 10, "pct": 59 },
+    { "t": 13, "pct": 53 },
+    { "t": 15, "pct": 49 },
+    { "t": 18, "pct": 45 },
+    { "t": 22, "pct": 41 },
+    { "t": 26, "pct": 38 },
+    { "t": 30, "pct": 35 }
   ],
   "moments": [
-    { "t": "TODO", "type": "hook", "note": "TODO: what happens in the first second and why it stops the scroll" },
-    { "t": "TODO", "type": "pattern-interrupt", "note": "TODO: the cut / visual change that resets attention" },
-    { "t": "TODO", "type": "reveal", "note": "TODO" },
-    { "t": "TODO", "type": "payoff", "note": "TODO" },
-    { "t": "TODO", "type": "cta", "note": "TODO: what you asked viewers to do (share / save / follow / comment)" }
+    { "t": 2, "type": "hook", "note": "Immediate visual trigger to stop fast scrolling.", "dummy": true },
+    { "t": 15, "type": "reveal", "note": "Core concept payoff and perspective shift.", "dummy": true },
+    { "t": 27, "type": "cta", "note": "Direct action prompt for shares and comments.", "dummy": true }
   ]
 }
