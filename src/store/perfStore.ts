@@ -7,6 +7,7 @@ export interface PerfSettings {
   glassBlur: boolean;
   dprMax: number;
   gpuName: string;
+  debug: boolean;
 }
 
 type PerfListener = (settings: PerfSettings) => void;
@@ -19,7 +20,17 @@ class PerfStore {
     glassBlur: true,
     dprMax: 1.5,
     gpuName: 'Detecting GPU...',
+    debug: false,
   };
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('debug') === '1') {
+        this.settings.debug = true;
+      }
+    }
+  }
 
   private listeners: Set<PerfListener> = new Set();
 

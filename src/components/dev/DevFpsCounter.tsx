@@ -5,6 +5,7 @@ import { perfStore } from '@/store/perfStore';
 
 export default function DevFpsCounter() {
   const [mounted, setMounted] = useState(false);
+  const [isDebug, setIsDebug] = useState(perfStore.getSettings().debug);
   const [fps, setFps] = useState<number>(60);
   const [frameTime, setFrameTime] = useState<number>(16.6);
   const [gpuName, setGpuName] = useState<string>('');
@@ -35,6 +36,7 @@ export default function DevFpsCounter() {
 
     const unsub = perfStore.subscribe((s) => {
       setGpuName(s.gpuName);
+      setIsDebug(s.debug);
     });
 
     return () => {
@@ -43,7 +45,7 @@ export default function DevFpsCounter() {
     };
   }, []);
 
-  if (!mounted || process.env.NODE_ENV !== 'development') {
+  if (!mounted || !isDebug || process.env.NODE_ENV !== 'development') {
     return null;
   }
 

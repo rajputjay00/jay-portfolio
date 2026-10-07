@@ -24,6 +24,6 @@ An independent corporate-culture Instagram property, created and run by Jay.
 [DUMMY] Maintained an agile publishing rhythm of XX reels and carousels per week, optimizing hooks in the first 1.5 seconds for maximum save-and-share velocity.
 
 ## Results and learning
-- ~39.5K followers (as of 2024-XX)
+- ~39.5K followers
 
 [DUMMY] Scaled to XXK monthly reach, confirming that authentic niche storytelling drives compounding audience loyalty.

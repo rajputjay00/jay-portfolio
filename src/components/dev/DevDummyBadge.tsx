@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { perfStore } from '@/store/perfStore';
 
 export default function DevDummyBadge() {
   const [mounted, setMounted] = useState(false);
+  const [isDebug, setIsDebug] = useState(perfStore.getSettings().debug);
 
   useEffect(() => {
     setMounted(true);
+    return perfStore.subscribe((s) => setIsDebug(s.debug));
   }, []);
 
-  if (!mounted || process.env.NODE_ENV !== 'development') {
+  if (!mounted || !isDebug || process.env.NODE_ENV !== 'development') {
     return null;
   }
 

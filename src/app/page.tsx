@@ -12,6 +12,7 @@ import { perfStore } from '@/store/perfStore';
 export default function HomePage() {
   const { name, title, tags } = profileData;
   const [isGlassBlur, setIsGlassBlur] = React.useState(perfStore.getSettings().glassBlur);
+  const [isDebug, setIsDebug] = React.useState(perfStore.getSettings().debug);
   const [isDesktop, setIsDesktop] = React.useState(true);
   const [heroVisible, setHeroVisible] = React.useState(true);
 
@@ -32,6 +33,7 @@ export default function HomePage() {
 
     const unsubPerf = perfStore.subscribe((s) => {
       setIsGlassBlur(s.glassBlur);
+      setIsDebug(s.debug);
     });
 
     const checkDesktop = () => {
@@ -63,6 +65,26 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', background: 'transparent' }}>
+      {/* Dev-Only Fixed Replay Intro Button at Top Left */}
+      {process.env.NODE_ENV === 'development' && isDebug && (
+        <button
+          onClick={() => {
+            openingStore.resetSeen();
+          }}
+          title="Replay opening sequence"
+          style={{
+            position: 'fixed',
+            top: '1.25rem',
+            left: '1.25rem',
+            zIndex: 99999,
+            cursor: 'pointer',
+          }}
+          className="btn-replay glass-fake"
+        >
+          ↻ Replay Intro
+        </button>
+      )}
+
       {/* Dev-Only Dummy Content Badge */}
       <DevDummyBadge />
 
@@ -145,19 +167,6 @@ export default function HomePage() {
             >
               Message me
             </a>
-
-            {/* Dev Intro Replay button */}
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                onClick={() => {
-                  openingStore.resetSeen();
-                }}
-                title="Replay opening sequence"
-                className="btn-replay glass-fake"
-              >
-                ↻ Replay Intro
-              </button>
-            )}
           </div>
         </div>
       </section>

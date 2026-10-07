@@ -37,21 +37,6 @@ export default function Experience({ isDev = false }: ExperienceProps) {
       {/* 5. Adaptive Performance System */}
       <AdaptivePerfManager />
 
-      {/* 6. In-Canvas Perf Monitor (Development Only) */}
-      {isDev && (
-        <Perf
-          position="bottom-right"
-          minimal={false}
-          deepAnalyze={false}
-          matrixUpdate={false}
-          style={{
-            zIndex: 99999,
-            transform: 'scale(0.85)',
-            transformOrigin: 'bottom right',
-          }}
-        />
-      )}
-
       {/* 7. Post-Processing (Off by default for zero-lag 60fps budget) */}
       {perfSettings.postprocessing && (
         <EffectComposer multisampling={0}>

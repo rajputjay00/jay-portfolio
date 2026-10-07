@@ -148,7 +148,7 @@ export default function DevPerfPanel() {
     }
   };
 
-  if (!mounted || process.env.NODE_ENV !== 'development') {
+  if (!mounted || !settings.debug || process.env.NODE_ENV !== 'development') {
     return null;
   }
 

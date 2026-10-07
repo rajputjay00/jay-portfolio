@@ -12,26 +12,27 @@ const FeedShader = {
     uTime: { value: 0 },
     uMouse: { value: new THREE.Vector3(999, 999, 0) },
     uHoverStrength: { value: 1.0 },
-    uOpacity: { value: 1.0 },
+    uOpacity: { value: 0.0 }, // Starts at 0.0 for clean 0.6s fade-in
     uIsMobile: { value: 0.0 },
     uAccentColor: { value: new THREE.Color('#FF5A2B') },
     uBgColor: { value: new THREE.Color('#0B0A09') },
   },
   vertexShader: `
+    attribute float aIsLight;
     uniform vec3 uMouse;
     uniform float uHoverStrength;
     
     varying vec2 vUv;
     varying float vHover;
     varying float vWorldY;
-    varying float vSeed;
+    varying float vIsLight;
 
     void main() {
       vUv = uv;
+      vIsLight = aIsLight;
 
       // Extract instance center in model space
       vec4 instPos = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-      vSeed = fract(sin(dot(instPos.xy, vec2(12.9898, 78.233))) * 43758.5453);
       
       // Calculate distance between instance center and mouse position in feed plane
       float dist = distance(instPos.xy, uMouse.xy);
@@ -58,7 +59,7 @@ const FeedShader = {
     varying vec2 vUv;
     varying float vHover;
     varying float vWorldY;
-    varying float vSeed;
+    varying float vIsLight;
 
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -71,8 +72,8 @@ const FeedShader = {
       float edgeDist = min(edgeX * 1.25, edgeY);
       float cardMask = smoothstep(0.008, 0.02, edgeDist);
 
-      // 2. 60% Off-White (#ECE8E1) / 40% Near-Black (#121214)
-      bool isLight = vSeed > 0.40;
+      // 2. Exactly 60% Off-White (#ECE8E1) / 40% Near-Black (#121214) via aIsLight attribute
+      bool isLight = vIsLight > 0.5;
       vec3 cardBg = isLight ? vec3(0.925, 0.910, 0.882) : vec3(0.071, 0.071, 0.078);
       vec3 textBarColor = isLight ? vec3(0.18, 0.18, 0.20) : vec3(0.85, 0.84, 0.82);
       vec3 imageBlockColor = isLight ? vec3(0.68, 0.67, 0.65) : vec3(0.18, 0.18, 0.20);
@@ -90,8 +91,8 @@ const FeedShader = {
       }
 
       // Text bars
-      float w1 = mix(0.58, 0.80, fract(vSeed * 7.3));
-      float w2 = mix(0.38, 0.68, fract(vSeed * 13.7));
+      float w1 = isLight ? 0.72 : 0.65;
+      float w2 = isLight ? 0.48 : 0.56;
       if (vUv.x > 0.10 && vUv.x < (0.10 + w1) && abs(vUv.y - 0.80) < 0.010) {
         col = textBarColor;
       }
@@ -133,7 +134,7 @@ const FeedShader = {
   `,
 };
 
-// 2. Soft Radial Glow Shader behind the wall
+// 2. Soft Radial Glow Shader behind the wall (Max 0.2 alpha at center)
 const SoftGlowShader = {
   uniforms: {
     uColor: { value: new THREE.Color('#FF5A2B') },
@@ -221,6 +222,18 @@ export default function HeroFeedWall() {
   const hoverFactorRef = useRef(0);
   const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
 
+  // Deterministic 60% light (#ECE8E1), 40% dark (#121214) evenly distributed across columns
+  const isLightArray = useMemo(() => {
+    const arr = new Float32Array(totalCount);
+    for (let i = 0; i < totalCount; i++) {
+      const col = Math.floor(i / rowsPerCol);
+      const row = i % rowsPerCol;
+      // Pattern produces exactly 60% light cards without clumps in any column
+      arr[i] = (col * 2 + row) % 5 < 3 ? 1.0 : 0.0;
+    }
+    return arr;
+  }, [totalCount, rowsPerCol]);
+
   // Feed Shader Material
   const feedMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -228,7 +241,7 @@ export default function HeroFeedWall() {
         uTime: { value: 0 },
         uMouse: { value: new THREE.Vector3(999, 999, 0) },
         uHoverStrength: { value: 1.0 },
-        uOpacity: { value: isMobile ? 0.35 : 1.0 },
+        uOpacity: { value: 0.0 }, // Starts at 0.0, smoothly fades in over 0.6s
         uIsMobile: { value: isMobile ? 1.0 : 0.0 },
         uAccentColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
@@ -240,7 +253,7 @@ export default function HeroFeedWall() {
     });
   }, [isMobile]);
 
-  // Soft Radial Glow behind feed
+  // Soft Radial Glow behind feed (Max 0.20 alpha at center)
   const glowMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
@@ -278,9 +291,38 @@ export default function HeroFeedWall() {
     return colOffs;
   }, [cols, strideY]);
 
+  // Apply initial instance matrices immediately on mount to prevent 1-frame origin pile-up flicker
+  useEffect(() => {
+    if (!meshRef.current) return;
+    let instanceIndex = 0;
+    const colSpacing = screenWidth + gapX;
+    const xStart = -((cols - 1) * colSpacing) / 2;
+
+    for (let c = 0; c < cols; c++) {
+      const colX = xStart + c * colSpacing;
+      const colYOffset = colOffsets[c];
+      for (let r = 0; r < rowsPerCol; r++) {
+        const baseY = (r - rowsPerCol / 2) * strideY + colYOffset;
+        tempMatrix.makeTranslation(colX, baseY, 0);
+        meshRef.current.setMatrixAt(instanceIndex, tempMatrix);
+        instanceIndex++;
+      }
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [cols, rowsPerCol, strideY, colOffsets, tempMatrix]);
+
   // Dynamic frame loop
   useFrame((state, delta) => {
     if (!meshRef.current || !shaderMatRef.current) return;
+
+    // 0. Smoothly fade in opacity over 0.6s
+    const targetOpacity = isMobile ? 0.35 : 1.0;
+    shaderMatRef.current.uniforms.uOpacity.value = THREE.MathUtils.damp(
+      shaderMatRef.current.uniforms.uOpacity.value,
+      targetOpacity,
+      5.0,
+      delta
+    );
 
     // 1. Time uniform update
     shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
@@ -390,8 +432,8 @@ export default function HeroFeedWall() {
     <group position={groupPosition}>
       <group ref={groupRef}>
         {/* Soft Radial Glow of Accent Colour behind the Feed Wall */}
-        <mesh position={[0, 0, -0.4]}>
-          <planeGeometry args={[8.0, 7.0]} />
+        <mesh position={[0, 0, -0.3]}>
+          <planeGeometry args={[6.0, 5.5]} />
           <primitive object={glowMaterial} ref={glowMatRef} attach="material" />
         </mesh>
 
@@ -401,7 +443,12 @@ export default function HeroFeedWall() {
           args={[undefined, undefined, totalCount]}
           frustumCulled={false}
         >
-          <planeGeometry args={[screenWidth, screenHeight]} />
+          <planeGeometry args={[screenWidth, screenHeight]}>
+            <instancedBufferAttribute
+              attach="attributes-aIsLight"
+              args={[isLightArray, 1]}
+            />
+          </planeGeometry>
           <primitive object={feedMaterial} ref={shaderMatRef} attach="material" />
         </instancedMesh>
 

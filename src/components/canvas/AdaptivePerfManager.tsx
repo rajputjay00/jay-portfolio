@@ -1,18 +1,23 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdaptiveDpr, AdaptiveEvents, PerformanceMonitor } from '@react-three/drei';
 
 export default function AdaptivePerfManager() {
-  const [dpr, setDpr] = useState(1.5);
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setEnabled(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!enabled) return null;
 
   return (
     <>
       <PerformanceMonitor
-        onIncline={() => setDpr(2)}
-        onDecline={() => setDpr(1)}
         flipflops={3}
-        onFallback={() => setDpr(0.75)}
+        iterations={8}
       />
       <AdaptiveDpr pixelated={false} />
       <AdaptiveEvents />

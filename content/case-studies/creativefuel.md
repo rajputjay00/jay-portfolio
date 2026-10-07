@@ -10,10 +10,10 @@ headline:
   label: "followers on Indian Corporate Life, one of four pages managed"
 heroImage: "/media/images/dummy-01.jpg"
 accounts:
-  - { name: "Indian Corporate Life", followers: "401K", asOf: "2024-XX" }
-  - { name: "Relatable Office Memes", followers: "34.3K", asOf: "2024-XX" }
-  - { name: "Corporate Dadi", followers: "4.2K", asOf: "2024-XX" }
-  - { name: "Corporate Nani", followers: "4.9K", asOf: "2024-XX" }
+  - { name: "Indian Corporate Life", followers: "401K", asOf: "" }
+  - { name: "Relatable Office Memes", followers: "34.3K", asOf: "" }
+  - { name: "Corporate Dadi", followers: "4.2K", asOf: "" }
+  - { name: "Corporate Nani", followers: "4.9K", asOf: "" }
 reels: [1, 2, 4]
 ---
 

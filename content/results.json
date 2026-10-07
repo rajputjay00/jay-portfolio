@@ -1,9 +1,9 @@
 {
   "_rule": "Only verified numbers go here. Every figure needs a source screenshot in media/insights/ and an as-of date.",
   "results": [
-    { "id": "icl", "value": "401K", "label": "followers", "account": "Indian Corporate Life", "caseStudy": "creativefuel", "source": "media/insights/icl-profile.png", "asOf": "2024-XX", "verified": true },
-    { "id": "sfc", "value": "39.5K", "label": "followers", "account": "Strictly For Corporate", "caseStudy": "strictly-for-corporate", "source": "media/insights/sfc-profile.png", "asOf": "2024-XX", "verified": true },
-    { "id": "rom", "value": "34.3K", "label": "followers", "account": "Relatable Office Memes", "caseStudy": "creativefuel", "source": "media/insights/rom-profile.png", "asOf": "2024-XX", "verified": true },
+    { "id": "icl", "value": "401K", "label": "followers", "account": "Indian Corporate Life", "caseStudy": "creativefuel", "source": "media/insights/icl-profile.png", "asOf": "", "verified": true },
+    { "id": "sfc", "value": "39.5K", "label": "followers", "account": "Strictly For Corporate", "caseStudy": "strictly-for-corporate", "source": "media/insights/sfc-profile.png", "asOf": "", "verified": true },
+    { "id": "rom", "value": "34.3K", "label": "followers", "account": "Relatable Office Memes", "caseStudy": "creativefuel", "source": "media/insights/rom-profile.png", "asOf": "", "verified": true },
     { "id": "brands", "value": "5", "label": "national brands", "account": "Flipkart, Realme, Lava, Jio Hotstar, Wellbeing Nutrition", "caseStudy": "brand-social", "verified": true },
     { "id": "reach-best-reel", "value": "XXK", "label": "views on a single Reel", "caseStudy": "creativefuel", "source": "", "verified": false, "dummy": true },
     { "id": "shares-best-reel", "value": "XXK", "label": "shares on a single Reel", "caseStudy": "creativefuel", "source": "", "verified": false, "dummy": true }
