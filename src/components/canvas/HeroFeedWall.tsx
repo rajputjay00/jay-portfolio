@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { perfStore, PerfSettings } from '@/store/perfStore';
 import { openingStore, OpeningStep } from '@/store/openingStore';
+import { windowPointerState } from '@/store/pointerStore';
 
 // 1. Black & White Social Post Card Shader
 const FeedShader = {
@@ -327,13 +328,17 @@ export default function HeroFeedWall() {
     // 1. Time uniform update
     shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
 
-    // 2. Mouse position and feed hover interaction
-    const pointerX = state.pointer.x; // -1 to +1
-    const pointerY = state.pointer.y; // -1 to +1
+    // 2. Mouse position and feed hover interaction from window-level listener
+    const pointerX = windowPointerState.hasPointer ? windowPointerState.x : -999;
+    const pointerY = windowPointerState.hasPointer ? windowPointerState.y : -999;
 
     // Check if mouse is on the right feed side on desktop (pointer.x > -0.15)
+    // On touch devices: touches on right side slow down feed, touch release resumes
     const isMouseNearFeed =
-      !isMobile && !prefersReducedMotion && pointerX > -0.15 && perfSettings.feedHover;
+      !prefersReducedMotion &&
+      windowPointerState.hasPointer &&
+      pointerX > -0.15 &&
+      perfSettings.feedHover;
     const targetSpeed = isMouseNearFeed || prefersReducedMotion ? 0.0 : 0.32;
 
     // Spring / Eased deceleration when hovering feed
@@ -407,8 +412,10 @@ export default function HeroFeedWall() {
 
     // 4. Subtle mouse parallax on the whole wall
     if (groupRef.current) {
-      const targetRotY = (isMobile ? 0 : 0.32) + pointerX * 0.04;
-      const targetRotX = -pointerY * 0.025;
+      const rotPointerX = windowPointerState.hasPointer ? windowPointerState.x : 0;
+      const rotPointerY = windowPointerState.hasPointer ? windowPointerState.y : 0;
+      const targetRotY = (isMobile ? 0 : 0.32) + rotPointerX * 0.04;
+      const targetRotX = -rotPointerY * 0.025;
       groupRef.current.rotation.y = THREE.MathUtils.damp(
         groupRef.current.rotation.y,
         targetRotY,

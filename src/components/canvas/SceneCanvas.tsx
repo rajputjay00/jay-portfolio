@@ -5,19 +5,24 @@ import { Canvas } from '@react-three/fiber';
 import { Preload } from '@react-three/drei';
 import Experience from './Experience';
 import { scrollManager } from '@/store/scrollStore';
+import { initWindowPointerListener, setHeroInView } from '@/store/pointerStore';
 
 export default function SceneCanvas() {
   const isDev = process.env.NODE_ENV === 'development';
   const [isHeroActive, setIsHeroActive] = useState(true);
 
   useEffect(() => {
+    initWindowPointerListener();
+
     // Observe hero visibility or scroll position to pause frameloop when scrolled away
     const heroEl = document.getElementById('hero');
     if (heroEl && 'IntersectionObserver' in window) {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            setIsHeroActive(entry.isIntersecting);
+            const inView = entry.isIntersecting;
+            setIsHeroActive(inView);
+            setHeroInView(inView);
           });
         },
         { threshold: 0.01 }
@@ -27,7 +32,9 @@ export default function SceneCanvas() {
     } else {
       // Fallback to scroll progress subscription
       return scrollManager.subscribe((progress) => {
-        setIsHeroActive(progress < 0.15);
+        const inView = progress < 0.15;
+        setIsHeroActive(inView);
+        setHeroInView(inView);
       });
     }
   }, []);
@@ -53,7 +60,7 @@ export default function SceneCanvas() {
       style={{
         width: '100%',
         height: '100%',
-        pointerEvents: isHeroActive ? 'auto' : 'none',
+        pointerEvents: 'none',
         visibility: isHeroActive ? 'visible' : 'hidden',
       }}
     >

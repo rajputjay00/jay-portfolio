@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { openingStore, OpeningStep } from '@/store/openingStore';
+import { windowPointerState } from '@/store/pointerStore';
 
 export default function CameraController() {
   const { camera, size } = useThree();
@@ -71,8 +72,11 @@ export default function CameraController() {
     const idleDriftX = Math.sin(state.clock.elapsedTime * 0.25) * 0.04;
     const idleDriftY = Math.cos(state.clock.elapsedTime * 0.2) * 0.03;
 
-    const targetMouseX = isMobile ? 0 : state.pointer.x * 0.18 + idleDriftX;
-    const targetMouseY = isMobile ? 0 : state.pointer.y * 0.12 + idleDriftY;
+    const pointerX = windowPointerState.hasPointer ? windowPointerState.x : 0;
+    const pointerY = windowPointerState.hasPointer ? windowPointerState.y : 0;
+
+    const targetMouseX = isMobile ? 0 : (windowPointerState.hasPointer ? pointerX * 0.18 : 0) + idleDriftX;
+    const targetMouseY = isMobile ? 0 : (windowPointerState.hasPointer ? pointerY * 0.12 : 0) + idleDriftY;
 
     mouseOffsetRef.current.x = THREE.MathUtils.damp(
       mouseOffsetRef.current.x,
