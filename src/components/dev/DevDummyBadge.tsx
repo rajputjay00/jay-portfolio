@@ -18,6 +18,7 @@ export default function DevDummyBadge() {
 
   return (
     <div
+      className="dev-dummy-badge"
       style={{
         position: 'fixed',
         top: '1.25rem',

@@ -40,6 +40,7 @@ export default function HomePage() {
   const [isDebug, setIsDebug] = React.useState(perfStore.getSettings().debug);
   const [isDesktop, setIsDesktop] = React.useState(true);
   const [heroVisible, setHeroVisible] = React.useState(true);
+  const [mounted, setMounted] = React.useState(false);
 
   // Extract statement interlude texts from profile.json
   const interlude1Text = profileData.about?.philosophy || "Attention is earned in the first second and kept by every second after.";
@@ -47,6 +48,7 @@ export default function HomePage() {
   const interlude2Text = shortBioSentences[1] || "I turn ideas into content people stop scrolling for.";
 
   React.useEffect(() => {
+    setMounted(true);
     if (!openingStore.isSeen()) {
       setHeroVisible(false);
     }
@@ -140,7 +142,7 @@ export default function HomePage() {
       <ExitStopOverlay />
 
       {/* Dev-Only Fixed Replay Intro Button at Top Left */}
-      {process.env.NODE_ENV === 'development' && isDebug && (
+      {process.env.NODE_ENV === 'development' && mounted && isDebug && (
         <button
           onClick={() => {
             openingStore.resetSeen();

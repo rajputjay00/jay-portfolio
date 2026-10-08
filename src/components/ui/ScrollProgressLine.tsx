@@ -18,6 +18,7 @@ export default function ScrollProgressLine() {
 
   return (
     <div
+      id="scroll-progress-line"
       ref={lineRef}
       aria-hidden="true"
       style={{

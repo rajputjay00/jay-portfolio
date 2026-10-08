@@ -84,6 +84,7 @@ export default function ViewCursor() {
 
   return (
     <div
+      id="view-cursor"
       ref={cursorRef}
       aria-hidden="true"
       className="view-cursor-follow"

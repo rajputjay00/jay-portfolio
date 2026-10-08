@@ -22,6 +22,7 @@ export default function Toast() {
 
   return (
     <div
+      id="toast-container"
       role="status"
       aria-live="polite"
       className={`global-toast ${message ? 'toast-visible' : 'toast-hidden'}`}
