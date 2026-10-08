@@ -1,16 +1,25 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import retentionData from '@/../content/retention.json';
+import { perfStore } from '@/store/perfStore';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function RetentionTheatreSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [isHoveringChart, setIsHoveringChart] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
+  const [isDesktop, setIsDesktop] = useState(true);
 
   const duration = retentionData.durationSeconds || 30;
   const curvePoints = retentionData.curve || [];
@@ -27,8 +36,17 @@ export default function RetentionTheatreSection() {
   const plotWidth = svgWidth - marginLeft - marginRight;
   const plotHeight = svgHeight - marginTop - marginBottom;
 
-  // Track section visibility
+  // Track settings and section visibility
   useEffect(() => {
+    const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsInView(entry.isIntersecting);
@@ -44,7 +62,66 @@ export default function RetentionTheatreSection() {
       observer.observe(sectionRef.current);
     }
 
-    return () => observer.disconnect();
+    if (!prefersReducedMotion && sectionRef.current) {
+      const ctx = gsap.context(() => {
+        // Title mask reveal & curve draw-in
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top 75%',
+          once: true,
+          onEnter: () => {
+            gsap.from('.retention-title-reveal', {
+              y: '100%',
+              duration: 0.7,
+              ease: 'power3.out',
+            });
+
+            if (pathRef.current) {
+              const length = pathRef.current.getTotalLength() || 1500;
+              gsap.fromTo(
+                pathRef.current,
+                { strokeDasharray: length, strokeDashoffset: length },
+                { strokeDashoffset: 0, duration: 1.2, ease: 'power2.out' }
+              );
+            }
+
+            gsap.from('.moment-marker', {
+              opacity: 0,
+              y: -8,
+              duration: 0.5,
+              stagger: 0.1,
+              delay: 0.8,
+              ease: 'power2.out',
+            });
+          },
+        });
+
+        // Ambient glow scroll scrub
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            const yOffset = (self.progress - 0.5) * 60;
+            gsap.set('.retention-glow', { y: yOffset });
+          },
+        });
+      }, sectionRef);
+
+      return () => {
+        unsub();
+        observer.disconnect();
+        window.removeEventListener('resize', checkDesktop);
+        ctx.revert();
+      };
+    }
+
+    return () => {
+      unsub();
+      observer.disconnect();
+      window.removeEventListener('resize', checkDesktop);
+    };
   }, []);
 
   // Autonomous animation loop when no video file exists
@@ -169,10 +246,24 @@ export default function RetentionTheatreSection() {
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
+        overflow: 'hidden',
       }}
     >
+      {/* Soft Ambient Glow in Background */}
+      <div
+        className="ambient-glow drift-1 retention-glow"
+        style={{
+          top: '15%',
+          left: '20%',
+          width: '600px',
+          height: '600px',
+        }}
+      />
+
       <div className="section-container">
-        <h2 className="section-title">Retention theatre</h2>
+        <div className="title-mask-wrapper">
+          <h2 className="section-title retention-title-reveal">Retention theatre</h2>
+        </div>
 
         <div className="theatre-layout">
           {/* Left: 9:16 Video Frame */}
@@ -207,8 +298,8 @@ export default function RetentionTheatreSection() {
             )}
           </div>
 
-          {/* Right: Glass Panel with Chart */}
-          <div className="chart-panel glass-fake">
+          {/* Right: Glass Panel with Chart (.glass-real on desktop) */}
+          <div className={`chart-panel ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
             <div className="chart-header">
               <h3 className="chart-title">Who stayed, second by second</h3>
               <div className="chart-live-metric">
@@ -223,8 +314,6 @@ export default function RetentionTheatreSection() {
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                 className="retention-svg"
                 onClick={handleSeek}
-                onMouseEnter={() => setIsHoveringChart(true)}
-                onMouseLeave={() => setIsHoveringChart(false)}
               >
                 {/* Horizontal grid lines & Y-axis labels */}
                 {[100, 75, 50, 25, 0].map((val) => {
@@ -285,7 +374,7 @@ export default function RetentionTheatreSection() {
                       : m.type;
 
                   return (
-                    <g key={`moment-${idx}`}>
+                    <g key={`moment-${idx}`} className="moment-marker">
                       <line
                         x1={x}
                         y1={marginTop}
@@ -322,6 +411,7 @@ export default function RetentionTheatreSection() {
 
                 {/* Main Retention Curve */}
                 <path
+                  ref={pathRef}
                   d={svgPath}
                   fill="none"
                   stroke="var(--accent)"
@@ -370,6 +460,8 @@ export default function RetentionTheatreSection() {
           max-width: 1248px;
           margin: 0 auto;
           width: 100%;
+          position: relative;
+          z-index: 1;
         }
         .section-title {
           font-family: var(--font-main);
@@ -377,7 +469,6 @@ export default function RetentionTheatreSection() {
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
-          margin-bottom: 3.5rem;
           line-height: 1.1;
         }
         .theatre-layout {
@@ -436,35 +527,15 @@ export default function RetentionTheatreSection() {
           justify-content: center;
           background: radial-gradient(circle at 50% 30%, #1c1b1f 0%, #121214 100%);
         }
-        .empty-frame-content {
+        .empty-play-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.04);
           display: flex;
-          flex-direction: column;
           align-items: center;
-          gap: 12px;
-          text-align: center;
-        }
-        .slot-badge {
-          font-family: var(--font-main);
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          color: var(--accent);
-          padding: 6px 14px;
-          border-radius: 999px;
-        }
-        .slot-label {
-          font-family: var(--font-main);
-          font-size: 15px;
-          color: var(--muted);
-          font-weight: 400;
-        }
-        .slot-time-counter {
-          font-family: var(--font-main);
-          font-size: 13px;
-          color: var(--muted);
-          opacity: 0.7;
-          font-variant-numeric: tabular-nums;
+          justify-content: center;
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .chart-panel {
           flex: 1;
@@ -542,7 +613,6 @@ export default function RetentionTheatreSection() {
           }
           .section-title {
             font-size: 32px;
-            margin-bottom: 2.5rem;
           }
           .theatre-layout {
             flex-direction: column;

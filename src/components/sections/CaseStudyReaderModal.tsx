@@ -15,6 +15,14 @@ export default function CaseStudyReaderModal({
 }: CaseStudyReaderModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [isClosing, setIsClosing] = React.useState(false);
+
+  const handleTriggerClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 200);
+  };
 
   useEffect(() => {
     if (!study) return;
@@ -31,7 +39,7 @@ export default function CaseStudyReaderModal({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleTriggerClose();
       }
       // Focus Trap
       if (e.key === 'Tab' && modalRef.current) {
@@ -62,7 +70,7 @@ export default function CaseStudyReaderModal({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [study, onClose]);
+  }, [study]);
 
   if (!study) return null;
 
@@ -72,14 +80,14 @@ export default function CaseStudyReaderModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="case-reader-title"
-      className="reader-overlay"
+      className={`reader-overlay ${isClosing ? 'modal-closing' : ''}`}
     >
       {/* Sticky top bar with kicker & close button */}
       <div className="reader-header">
         <div className="reader-kicker">{study.kicker}</div>
         <button
           ref={closeButtonRef}
-          onClick={onClose}
+          onClick={handleTriggerClose}
           className="reader-close-btn glass-fake"
           aria-label="Close reader overlay"
         >
@@ -173,16 +181,29 @@ export default function CaseStudyReaderModal({
           overflow-x: hidden;
           padding: 2rem 1.5rem 6rem;
           box-sizing: border-box;
-          animation: modalFadeIn 0.25s ease-out;
+          animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .reader-overlay.modal-closing {
+          animation: modalFadeOut 0.2s cubic-bezier(0.7, 0, 0.84, 0) forwards;
         }
         @keyframes modalFadeIn {
           from {
             opacity: 0;
-            transform: translateY(8px);
+            transform: translateY(24px);
           }
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        @keyframes modalFadeOut {
+          from {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(24px);
           }
         }
         .reader-header {

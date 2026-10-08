@@ -47,11 +47,24 @@ export default function ProofSection() {
     const ctx = gsap.context(() => {
       const counters = { icl: 0, sfc: 0, brands: 0 };
 
+      // Title mask reveal
       ScrollTrigger.create({
         trigger: sectionRef.current,
         start: 'top 80%',
         once: true,
         onEnter: () => {
+          gsap.from('.proof-title-reveal', {
+            y: '100%',
+            duration: 0.7,
+            ease: 'power3.out',
+          });
+          gsap.from('.proof-col', {
+            y: 24,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.08,
+            ease: 'power2.out',
+          });
           gsap.to(counters, {
             icl: iclTarget,
             sfc: sfcTarget,
@@ -74,7 +87,6 @@ export default function ProofSection() {
               }
             },
             onComplete: () => {
-              // Guarantee exact final text matches results.json
               if (iclRef.current) iclRef.current.innerText = iclData.value;
               if (sfcRef.current) sfcRef.current.innerText = sfcData.value;
               if (brandsRef.current) brandsRef.current.innerText = brandsData.value;
@@ -102,7 +114,9 @@ export default function ProofSection() {
       }}
     >
       <div className="section-container">
-        <h2 className="section-title">Proof</h2>
+        <div className="title-mask-wrapper">
+          <h2 className="section-title proof-title-reveal">Proof</h2>
+        </div>
 
         {/* 3 Metric Columns */}
         <div className="proof-grid">

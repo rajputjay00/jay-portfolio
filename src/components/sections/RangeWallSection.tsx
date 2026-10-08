@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import rangeData from '@/../content/range-wall.json';
+import { perfStore } from '@/store/perfStore';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -16,34 +17,68 @@ function cleanText(text: string): string {
 export default function RangeWallSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
+  const [isDesktop, setIsDesktop] = useState(true);
 
   const voices = rangeData.voices || [];
 
   useEffect(() => {
+    const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (prefersReducedMotion) return;
+    if (!prefersReducedMotion && sectionRef.current) {
+      const ctx = gsap.context(() => {
+        // Title mask reveal & Phone entrance rise
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top 75%',
+          once: true,
+          onEnter: () => {
+            gsap.from('.range-title-reveal', {
+              y: '100%',
+              duration: 0.7,
+              ease: 'power3.out',
+            });
+            gsap.from(cardsRef.current, {
+              y: 24,
+              opacity: 0,
+              duration: 0.8,
+              stagger: 0.1,
+              ease: 'power2.out',
+            });
+          },
+        });
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: sectionRef.current,
-        start: 'top 75%',
-        once: true,
-        onEnter: () => {
-          gsap.from(cardsRef.current, {
-            y: 24,
-            opacity: 0,
-            duration: 0.8,
-            stagger: 0.1,
-            ease: 'power2.out',
-          });
-        },
-      });
-    }, sectionRef);
+        // Ambient glow scroll scrub
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            const yOffset = (self.progress - 0.5) * 60;
+            gsap.set('.range-glow', { y: yOffset });
+          },
+        });
+      }, sectionRef);
 
-    return () => ctx.revert();
+      return () => {
+        unsub();
+        window.removeEventListener('resize', checkDesktop);
+        ctx.revert();
+      };
+    }
+
+    return () => {
+      unsub();
+      window.removeEventListener('resize', checkDesktop);
+    };
   }, []);
 
   return (
@@ -58,10 +93,33 @@ export default function RangeWallSection() {
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
+        overflow: 'hidden',
       }}
     >
+      {/* Soft Ambient Glows in Background */}
+      <div
+        className="ambient-glow drift-2 range-glow"
+        style={{
+          top: '20%',
+          right: '-5%',
+          width: '600px',
+          height: '600px',
+        }}
+      />
+      <div
+        className="ambient-glow drift-1 range-glow"
+        style={{
+          bottom: '15%',
+          left: '-10%',
+          width: '500px',
+          height: '500px',
+        }}
+      />
+
       <div className="section-container">
-        <h2 className="section-title">Range wall</h2>
+        <div className="title-mask-wrapper" style={{ marginBottom: '2rem' }}>
+          <h2 className="section-title range-title-reveal">Range wall</h2>
+        </div>
 
         <div className="range-grid">
           {voices.map((voice, idx) => {
@@ -77,8 +135,8 @@ export default function RangeWallSection() {
                 }}
                 className="voice-column"
               >
-                {/* 1. Phone Monolith Frame First */}
-                <div className="phone-frame glass-fake">
+                {/* 1. Phone Monolith Frame First with Glass Real */}
+                <div className={`phone-frame ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
                   <div className="phone-screen">
                     {/* Top Notch / Island Indicator */}
                     <div className="phone-notch-bar">
@@ -130,6 +188,8 @@ export default function RangeWallSection() {
           max-width: 1248px;
           margin: 0 auto;
           width: 100%;
+          position: relative;
+          z-index: 1;
         }
         .section-title {
           font-family: var(--font-main);
@@ -137,7 +197,6 @@ export default function RangeWallSection() {
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
-          margin-bottom: 2rem;
           line-height: 1.1;
         }
         .range-grid {
@@ -161,6 +220,13 @@ export default function RangeWallSection() {
           display: flex;
           flex-direction: column;
           margin-bottom: 16px;
+          transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+        }
+        @media (pointer: fine) {
+          .phone-frame:hover {
+            transform: translateY(-10px) rotate(3deg);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          }
         }
         .phone-screen {
           background: #121214;
@@ -254,64 +320,10 @@ export default function RangeWallSection() {
           line-height: 1.35;
           min-height: 20px;
         }
-          height: 5px;
-          border-radius: 3px;
-          background: rgba(255, 255, 255, 0.12);
-        }
-        .sample-media-wrap {
-          width: 100%;
-          aspect-ratio: 4 / 5;
-          position: relative;
-          overflow: hidden;
-          background: #1a1a1e;
-          flex-shrink: 0;
-        }
-        .sample-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-        .empty-sample-placeholder {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #1a1a1e;
-        }
-        .placeholder-text {
-          font-family: var(--font-main);
-          font-size: 13px;
-          color: var(--muted);
-        }
-        .sample-caption-wrap {
-          padding: 14px;
-          flex: 1;
-          display: flex;
-          align-items: flex-start;
-          background: #121214;
-        }
-        .sample-caption {
-          font-family: var(--font-main);
-          font-size: 14px;
-          line-height: 1.45;
-          color: var(--text);
-          text-align: left;
-          margin: 0;
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .muted-caption {
-          color: var(--muted);
-          font-style: italic;
-        }
 
         @media (max-width: 1024px) {
           .range-section {
-            padding: 80px 48px;
+            padding: 48px 48px;
           }
           .phone-frame {
             width: 250px;
@@ -333,7 +345,6 @@ export default function RangeWallSection() {
           }
           .section-title {
             font-size: 32px;
-            margin-bottom: 2.5rem;
           }
           .range-grid {
             display: flex;

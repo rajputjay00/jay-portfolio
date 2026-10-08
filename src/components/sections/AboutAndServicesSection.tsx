@@ -28,29 +28,48 @@ export default function AboutAndServicesSection() {
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (prefersReducedMotion || !listRef.current) return;
+    if (!prefersReducedMotion && listRef.current && sectionRef.current) {
+      const items = listRef.current.querySelectorAll('li');
 
-    const items = listRef.current.querySelectorAll('li');
-    if (items.length === 0) return;
+      const ctx = gsap.context(() => {
+        // Title mask reveal & services list entrance
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top 80%',
+          once: true,
+          onEnter: () => {
+            gsap.from('.about-title-reveal', {
+              y: '100%',
+              duration: 0.7,
+              ease: 'power3.out',
+            });
+            if (items.length > 0) {
+              gsap.from(items, {
+                y: 12,
+                opacity: 0,
+                duration: 0.6,
+                stagger: 0.08,
+                ease: 'power2.out',
+              });
+            }
+          },
+        });
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: listRef.current,
-        start: 'top 80%',
-        once: true,
-        onEnter: () => {
-          gsap.from(items, {
-            y: 12,
-            opacity: 0,
-            duration: 0.6,
-            stagger: 0.08,
-            ease: 'power2.out',
-          });
-        },
-      });
-    }, sectionRef);
+        // Ambient glow scroll scrub
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            const yOffset = (self.progress - 0.5) * 60;
+            gsap.set('.about-glow', { y: yOffset });
+          },
+        });
+      }, sectionRef);
 
-    return () => ctx.revert();
+      return () => ctx.revert();
+    }
   }, []);
 
   return (
@@ -65,10 +84,33 @@ export default function AboutAndServicesSection() {
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
+        overflow: 'hidden',
       }}
     >
+      {/* Soft Ambient Glow in Background */}
+      <div
+        className="ambient-glow drift-1 about-glow"
+        style={{
+          top: '20%',
+          left: '-10%',
+          width: '600px',
+          height: '600px',
+        }}
+      />
+      <div
+        className="ambient-glow drift-2 about-glow"
+        style={{
+          bottom: '10%',
+          right: '-10%',
+          width: '550px',
+          height: '550px',
+        }}
+      />
+
       <div className="section-container">
-        <h2 className="section-title">About and services</h2>
+        <div className="title-mask-wrapper">
+          <h2 className="section-title about-title-reveal">About and services</h2>
+        </div>
 
         <div className="about-grid">
           {/* Left Column: Photo, Short Bio, About Story */}
@@ -97,8 +139,11 @@ export default function AboutAndServicesSection() {
             <ul ref={listRef} className="services-list">
               {services.map((service, idx) => (
                 <li key={service.id || idx} className="service-item">
-                  <span className="service-name">{service.name}</span>
-                  <span className="service-arrow">↗</span>
+                  <div className="service-top-border" />
+                  <div className="service-content">
+                    <span className="service-name">{service.name}</span>
+                    <span className="service-arrow">↗</span>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -114,6 +159,8 @@ export default function AboutAndServicesSection() {
           max-width: 1248px;
           margin: 0 auto;
           width: 100%;
+          position: relative;
+          z-index: 1;
         }
         .section-title {
           font-family: var(--font-main);
@@ -121,7 +168,6 @@ export default function AboutAndServicesSection() {
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
-          margin-bottom: 3.5rem;
           line-height: 1.1;
         }
         .about-grid {
@@ -179,24 +225,48 @@ export default function AboutAndServicesSection() {
           list-style: none;
           margin: 0;
           padding: 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.16);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.16);
         }
         .service-item {
           height: 72px;
           display: flex;
+          flex-direction: column;
+          justify-content: center;
+          position: relative;
+          cursor: pointer;
+        }
+        .service-top-border {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.16);
+          transition: background 0.25s ease;
+        }
+        .service-content {
+          display: flex;
           align-items: center;
           justify-content: space-between;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.16);
           font-family: var(--font-main);
           font-weight: 500;
           font-size: 24px;
           color: var(--text);
           letter-spacing: -0.02em;
-          transition: color 0.2s ease, padding-left 0.2s ease;
+          transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.25s ease;
         }
-        .service-item:hover {
-          color: var(--accent);
-          padding-left: 6px;
+        @media (pointer: fine) {
+          .service-item:hover .service-top-border {
+            background: var(--accent);
+          }
+          .service-item:hover .service-content {
+            transform: translateX(8px);
+            color: var(--accent);
+          }
+          .service-item:hover .service-arrow {
+            color: var(--accent);
+            transform: translate(3px, -3px);
+          }
         }
         .service-name {
           line-height: 1.2;
@@ -204,11 +274,7 @@ export default function AboutAndServicesSection() {
         .service-arrow {
           font-size: 20px;
           color: var(--muted);
-          transition: transform 0.2s ease, color 0.2s ease;
-        }
-        .service-item:hover .service-arrow {
-          color: var(--accent);
-          transform: translate(3px, -3px);
+          transition: transform 0.25s ease, color 0.25s ease;
         }
 
         @media (max-width: 1024px) {
@@ -222,8 +288,10 @@ export default function AboutAndServicesSection() {
             font-size: 24px;
           }
           .service-item {
-            font-size: 21px;
             height: 64px;
+          }
+          .service-content {
+            font-size: 21px;
           }
         }
 
@@ -233,7 +301,6 @@ export default function AboutAndServicesSection() {
           }
           .section-title {
             font-size: 32px;
-            margin-bottom: 2.5rem;
           }
           .about-grid {
             grid-template-columns: 1fr;
@@ -244,6 +311,8 @@ export default function AboutAndServicesSection() {
           }
           .service-item {
             height: 58px;
+          }
+          .service-content {
             font-size: 19px;
           }
         }

@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import profileData from '@/../content/profile.json';
+import { perfStore } from '@/store/perfStore';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 interface MessageBubble {
   id: string;
@@ -10,6 +17,7 @@ interface MessageBubble {
 }
 
 export default function MessageMeSection() {
+  const sectionRef = useRef<HTMLElement>(null);
   const [messages, setMessages] = useState<MessageBubble[]>([
     { id: '1', sender: 'bot', text: "Hi, I'm Jay." },
     { id: '2', sender: 'bot', text: 'What brings you here?' },
@@ -18,6 +26,8 @@ export default function MessageMeSection() {
   const [isTyping, setIsTyping] = useState(false);
   const [typedMessage, setTypedMessage] = useState('');
   const [isSent, setIsSent] = useState(false);
+  const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
+  const [isDesktop, setIsDesktop] = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,24 +36,79 @@ export default function MessageMeSection() {
   const email = profileData.contact?.email || '';
   const instagram = profileData.contact?.instagram || '';
 
-  // Generate initials
   const initials = name
     .split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase();
 
+  useEffect(() => {
+    const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!prefersReducedMotion && sectionRef.current) {
+      const ctx = gsap.context(() => {
+        // Title mask reveal & chat card entrance
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top 80%',
+          once: true,
+          onEnter: () => {
+            gsap.from('.message-title-reveal', {
+              y: '100%',
+              duration: 0.7,
+              ease: 'power3.out',
+            });
+            gsap.from('.chat-card', {
+              y: 24,
+              opacity: 0,
+              duration: 0.8,
+              ease: 'power2.out',
+            });
+          },
+        });
+
+        // Ambient glow scroll scrub
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            const yOffset = (self.progress - 0.5) * 60;
+            gsap.set('.message-glow', { y: yOffset });
+          },
+        });
+      }, sectionRef);
+
+      return () => {
+        unsub();
+        window.removeEventListener('resize', checkDesktop);
+        ctx.revert();
+      };
+    }
+
+    return () => {
+      unsub();
+      window.removeEventListener('resize', checkDesktop);
+    };
+  }, []);
+
   const handleReplySelect = (choice: 'hiring' | 'project') => {
     setSelectedReply(choice);
     const userText = choice === 'hiring' ? "I'm hiring" : 'I have a project';
 
-    // Add user message
     setMessages((prev) => [
       ...prev,
       { id: Date.now().toString(), sender: 'user', text: userText },
     ]);
 
-    // Show typing indicator then bot response
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
@@ -91,6 +156,7 @@ export default function MessageMeSection() {
   return (
     <section
       id="message"
+      ref={sectionRef}
       className="message-section"
       style={{
         position: 'relative',
@@ -99,13 +165,36 @@ export default function MessageMeSection() {
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
+        overflow: 'hidden',
       }}
     >
+      {/* Soft Ambient Glows in Background */}
+      <div
+        className="ambient-glow drift-1 message-glow"
+        style={{
+          top: '10%',
+          right: '15%',
+          width: '600px',
+          height: '600px',
+        }}
+      />
+      <div
+        className="ambient-glow drift-2 message-glow"
+        style={{
+          bottom: '5%',
+          left: '10%',
+          width: '500px',
+          height: '500px',
+        }}
+      />
+
       <div className="section-container">
-        <h2 className="section-title">Message me</h2>
+        <div className="title-mask-wrapper">
+          <h2 className="section-title message-title-reveal">Message me</h2>
+        </div>
 
         <div className="chat-card-wrapper">
-          <div className="chat-card glass-fake">
+          <div className={`chat-card ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
             {/* Header Row */}
             <div className="chat-header">
               <div className="avatar-circle">{initials}</div>
@@ -166,7 +255,7 @@ export default function MessageMeSection() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input Row (Active once user selects a path) */}
+            {/* Input Row */}
             <div className="chat-footer">
               {selectedReply ? (
                 email ? (
@@ -227,6 +316,8 @@ export default function MessageMeSection() {
           max-width: 1248px;
           margin: 0 auto;
           width: 100%;
+          position: relative;
+          z-index: 1;
         }
         .section-title {
           font-family: var(--font-main);
@@ -234,7 +325,6 @@ export default function MessageMeSection() {
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
-          margin-bottom: 3.5rem;
           line-height: 1.1;
         }
         .chat-card-wrapper {
@@ -302,7 +392,7 @@ export default function MessageMeSection() {
         .message-bubble-row {
           display: flex;
           width: 100%;
-          animation: bubbleRise 0.3s ease-out forwards;
+          animation: bubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .bot-row {
           justify-content: flex-start;
@@ -334,7 +424,7 @@ export default function MessageMeSection() {
           justify-content: flex-end;
           gap: 12px;
           margin-top: 8px;
-          animation: bubbleRise 0.3s ease-out forwards;
+          animation: bubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .reply-btn {
           min-height: 46px;
@@ -390,14 +480,14 @@ export default function MessageMeSection() {
             transform: scale(1.1);
           }
         }
-        @keyframes bubbleRise {
+        @keyframes bubblePop {
           from {
             opacity: 0;
-            transform: translateY(8px);
+            transform: translateY(8px) scale(0.96);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
           }
         }
         .chat-footer {
@@ -482,7 +572,6 @@ export default function MessageMeSection() {
           }
           .section-title {
             font-size: 32px;
-            margin-bottom: 2.5rem;
           }
           .chat-card {
             width: 100%;

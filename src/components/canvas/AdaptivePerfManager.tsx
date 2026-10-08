@@ -18,6 +18,9 @@ export default function AdaptivePerfManager() {
       <PerformanceMonitor
         flipflops={3}
         iterations={8}
+        onDecline={() => {
+          perfStore.setSetting('glassBlur', false);
+        }}
       />
       <AdaptiveDpr pixelated={false} />
       <AdaptiveEvents />

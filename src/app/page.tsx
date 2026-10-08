@@ -16,6 +16,13 @@ import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
 
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 export default function HomePage() {
   const { name, title, tags } = profileData;
   const [isGlassBlur, setIsGlassBlur] = React.useState(perfStore.getSettings().glassBlur);
@@ -49,11 +56,32 @@ export default function HomePage() {
     checkDesktop();
     window.addEventListener('resize', checkDesktop);
 
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let heroTrigger: ScrollTrigger | null = null;
+    if (!prefersReducedMotion) {
+      heroTrigger = ScrollTrigger.create({
+        trigger: '#hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1,
+        onUpdate: (self) => {
+          if (!document.querySelector('.hero-content')) return;
+          const y = self.progress * -36;
+          const op = Math.max(0, 1 - self.progress * 1.4);
+          gsap.set('.hero-content', { y, opacity: op });
+        },
+      });
+    }
+
     return () => {
       unsubOpening();
       unsubPerf();
       clearTimeout(fallbackTimer);
       window.removeEventListener('resize', checkDesktop);
+      heroTrigger?.kill();
     };
   }, []);
 

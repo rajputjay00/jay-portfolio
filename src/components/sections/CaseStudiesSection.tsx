@@ -1,15 +1,87 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { caseStudiesList, CaseStudyData } from '@/data/caseStudiesData';
 import CaseStudyReaderModal from './CaseStudyReaderModal';
+import { perfStore } from '@/store/perfStore';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function CaseStudiesSection() {
   const [selectedStudy, setSelectedStudy] = useState<CaseStudyData | null>(null);
+  const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
+  const [isDesktop, setIsDesktop] = useState(true);
+  const sectionRef = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!prefersReducedMotion && gridRef.current) {
+      const cards = gridRef.current.querySelectorAll('.case-card');
+      const ctx = gsap.context(() => {
+        // Title mask reveal
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top 80%',
+          once: true,
+          onEnter: () => {
+            gsap.from('.cases-title-reveal', {
+              y: '100%',
+              duration: 0.7,
+              ease: 'power3.out',
+            });
+            gsap.from(cards, {
+              y: 32,
+              opacity: 0,
+              duration: 0.8,
+              stagger: 0.12,
+              ease: 'power2.out',
+            });
+          },
+        });
+
+        // Ambient glow subtle scroll scrub
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            const yOffset = (self.progress - 0.5) * 60;
+            gsap.set('.cases-glow', { y: yOffset });
+          },
+        });
+      }, sectionRef);
+
+      return () => {
+        unsub();
+        window.removeEventListener('resize', checkDesktop);
+        ctx.revert();
+      };
+    }
+
+    return () => {
+      unsub();
+      window.removeEventListener('resize', checkDesktop);
+    };
+  }, []);
 
   return (
     <section
       id="work"
+      ref={sectionRef}
       className="case-studies-section"
       style={{
         position: 'relative',
@@ -18,18 +90,42 @@ export default function CaseStudiesSection() {
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
+        overflow: 'hidden',
       }}
     >
+      {/* Soft Ambient Glows behind Content */}
+      <div
+        className="ambient-glow drift-1 cases-glow"
+        style={{
+          top: '5%',
+          right: '-10%',
+          width: '650px',
+          height: '650px',
+        }}
+      />
+      <div
+        className="ambient-glow drift-2 cases-glow"
+        style={{
+          bottom: '10%',
+          left: '-15%',
+          width: '550px',
+          height: '550px',
+        }}
+      />
+
       <div className="section-container">
-        <h2 className="section-title">Case studies</h2>
+        <div className="title-mask-wrapper">
+          <h2 className="section-title cases-title-reveal">Case studies</h2>
+        </div>
 
         {/* 2x2 Grid (4 cards) */}
-        <div className="cases-grid">
+        <div ref={gridRef} className="cases-grid">
           {caseStudiesList.map((study, index) => (
             <CaseStudyCard
               key={study.id}
               study={study}
               index={index}
+              isGlassBlur={isGlassBlur && isDesktop}
               onSelect={() => setSelectedStudy(study)}
             />
           ))}
@@ -52,6 +148,8 @@ export default function CaseStudiesSection() {
           max-width: 1248px;
           margin: 0 auto;
           width: 100%;
+          position: relative;
+          z-index: 1;
         }
         .section-title {
           font-family: var(--font-main);
@@ -59,7 +157,6 @@ export default function CaseStudiesSection() {
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
-          margin-bottom: 3rem;
           line-height: 1.1;
         }
         .cases-grid {
@@ -81,7 +178,6 @@ export default function CaseStudiesSection() {
           }
           .section-title {
             font-size: 32px;
-            margin-bottom: 2rem;
           }
           .cases-grid {
             grid-template-columns: 1fr;
@@ -96,10 +192,12 @@ export default function CaseStudiesSection() {
 function CaseStudyCard({
   study,
   index,
+  isGlassBlur,
   onSelect,
 }: {
   study: CaseStudyData;
   index: number;
+  isGlassBlur: boolean;
   onSelect: () => void;
 }) {
   const cardRef = useRef<HTMLButtonElement>(null);
@@ -113,7 +211,6 @@ function CaseStudyCard({
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    // Up to 4 degrees tilt toward cursor
     const rotateX = ((centerY - y) / centerY) * 4;
     const rotateY = ((x - centerX) / centerX) * 4;
 
@@ -138,13 +235,15 @@ function CaseStudyCard({
       }}
       aria-label={`Open case study: ${study.title}`}
     >
-      {/* Media area on top (260px desktop, 200px mobile) */}
-      <div className="card-media">
+      {/* Full Card Background Media (Scales 1.0 -> 1.04 on hover) */}
+      <div className="card-media-bg">
         {study.heroImage ? (
           <img
             src={study.heroImage}
             alt={study.title}
-            className="card-image"
+            loading="lazy"
+            decoding="async"
+            className="card-full-image"
           />
         ) : (
           <div
@@ -159,8 +258,11 @@ function CaseStudyCard({
         )}
       </div>
 
-      {/* Card body (padding 24px 28px) */}
-      <div className="card-body">
+      {/* Hover Sheen Sweep Element */}
+      <div className="card-sheen" />
+
+      {/* Overlaid Bottom Text Panel with Glass */}
+      <div className={`card-overlay-panel ${isGlassBlur ? 'glass-real' : 'glass-fake'}`}>
         <div className="card-kicker">{study.kicker}</div>
 
         <h3 className="card-title">
@@ -189,35 +291,37 @@ function CaseStudyCard({
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          justify-content: flex-end;
           text-align: left;
           cursor: pointer;
           border: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(255, 255, 255, 0.02);
+          background: #0B0A09;
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
           transition: transform 0.15s cubic-bezier(0.2, 0, 0.38, 0.9), border-color 0.2s ease, box-shadow 0.2s ease;
-          padding: 0;
+          padding: 12px;
           outline: none;
           color: inherit;
         }
         .case-card:hover {
-          border-color: rgba(255, 255, 255, 0.18);
+          border-color: rgba(255, 255, 255, 0.22);
           box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
         }
-        .card-media {
+        .card-media-bg {
+          position: absolute;
+          inset: 0;
           width: 100%;
-          height: 260px;
+          height: 100%;
           overflow: hidden;
-          position: relative;
-          background: #0d0c0b;
+          z-index: 0;
         }
-        .card-image {
+        .card-full-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          transition: transform 0.4s ease;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .case-card:hover .card-image {
-          transform: scale(1.03);
+        .case-card:hover .card-full-image {
+          transform: scale(1.04);
         }
         .card-media-fallback {
           width: 100%;
@@ -230,30 +334,48 @@ function CaseStudyCard({
           letter-spacing: 0.15em;
           font-size: 14px;
         }
-        .card-body {
-          padding: 24px 28px;
+        .card-sheen {
+          position: absolute;
+          top: 0;
+          left: -120%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.08) 50%, transparent 80%);
+          pointer-events: none;
+          z-index: 1;
+          transition: transform 0.6s ease;
+        }
+        .case-card:hover .card-sheen {
+          transform: translateX(240%);
+        }
+        .card-overlay-panel {
+          position: relative;
+          z-index: 3;
+          width: 100%;
+          border-radius: 14px;
+          background: rgba(11, 10, 9, 0.82);
+          padding: 20px 24px;
+          box-sizing: border-box;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
-          flex: 1;
+          gap: 6px;
         }
         .card-kicker {
           font-family: var(--font-main);
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
           letter-spacing: 0.15em;
           text-transform: uppercase;
           color: var(--muted);
-          margin-bottom: 0.4rem;
         }
         .card-title {
           font-family: var(--font-main);
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 500;
           letter-spacing: -0.02em;
           color: var(--text);
-          line-height: 1.15;
-          margin-bottom: 0.5rem;
+          line-height: 1.2;
+          margin: 0;
         }
         .accent-metric {
           color: var(--accent);
@@ -261,9 +383,9 @@ function CaseStudyCard({
         }
         .card-summary {
           font-family: var(--font-main);
-          font-size: 15px;
+          font-size: 14px;
           color: var(--muted);
-          line-height: 1.45;
+          line-height: 1.4;
           margin: 0;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -273,20 +395,16 @@ function CaseStudyCard({
 
         @media (max-width: 768px) {
           .case-card {
-            height: auto;
-            min-height: 380px;
+            height: 380px;
           }
-          .card-media {
-            height: 200px;
-          }
-          .card-body {
-            padding: 20px 22px;
+          .card-overlay-panel {
+            padding: 16px 18px;
           }
           .card-title {
-            font-size: 22px;
+            font-size: 20px;
           }
           .card-summary {
-            font-size: 14px;
+            font-size: 13px;
           }
         }
       `}</style>
