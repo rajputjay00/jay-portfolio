@@ -36,8 +36,9 @@ export default function ViewCursor() {
 
       const target = e.target as HTMLElement | null;
       const card = target && typeof target.closest === 'function' ? target.closest('.case-card, [data-cursor="view"]') : null;
+      const isModalOpen = !!document.querySelector('.story-viewer-dialog, .reader-overlay');
 
-      if (card) {
+      if (card && !isModalOpen) {
         isHovering = true;
         targetScale = 1;
         targetOpacity = 1;

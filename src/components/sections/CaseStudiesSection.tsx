@@ -12,7 +12,8 @@ if (typeof window !== 'undefined') {
 }
 
 export default function CaseStudiesSection() {
-  const [selectedStudy, setSelectedStudy] = useState<CaseStudyData | null>(null);
+  const [selectedStudyIndex, setSelectedStudyIndex] = useState<number | null>(null);
+  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
@@ -126,17 +127,29 @@ export default function CaseStudiesSection() {
               study={study}
               index={index}
               isGlassBlur={isGlassBlur && isDesktop}
-              onSelect={() => setSelectedStudy(study)}
+              onSelect={() => setSelectedStudyIndex(index)}
+              refSetter={(el) => {
+                cardRefs.current[index] = el;
+              }}
             />
           ))}
         </div>
       </div>
 
-      {/* Full Screen Reader Modal */}
-      {selectedStudy && (
+      {/* Full Screen Story Reader Modal */}
+      {selectedStudyIndex !== null && (
         <CaseStudyReaderModal
-          study={selectedStudy}
-          onClose={() => setSelectedStudy(null)}
+          studies={caseStudiesList}
+          initialIndex={selectedStudyIndex}
+          onClose={() => {
+            const lastIdx = selectedStudyIndex;
+            setSelectedStudyIndex(null);
+            setTimeout(() => {
+              if (lastIdx !== null && cardRefs.current[lastIdx]) {
+                cardRefs.current[lastIdx]?.focus();
+              }
+            }, 50);
+          }}
         />
       )}
 
@@ -194,11 +207,13 @@ function CaseStudyCard({
   index,
   isGlassBlur,
   onSelect,
+  refSetter,
 }: {
   study: CaseStudyData;
   index: number;
   isGlassBlur: boolean;
   onSelect: () => void;
+  refSetter?: (el: HTMLButtonElement | null) => void;
 }) {
   const cardRef = useRef<HTMLButtonElement>(null);
   const [transformStyle, setTransformStyle] = useState('perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
@@ -225,7 +240,10 @@ function CaseStudyCard({
 
   return (
     <button
-      ref={cardRef}
+      ref={(el) => {
+        (cardRef as any).current = el;
+        if (refSetter) refSetter(el);
+      }}
       onClick={onSelect}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

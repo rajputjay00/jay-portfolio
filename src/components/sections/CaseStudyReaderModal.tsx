@@ -1,361 +1,703 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { CaseStudyData } from '@/data/caseStudiesData';
 import { scrollManager } from '@/store/scrollStore';
-import { triggerHeart } from '@/utils/doubleTapHeart';
+import { perfStore } from '@/store/perfStore';
+import profileData from '@/../content/profile.json';
 
 interface CaseStudyReaderModalProps {
-  study: CaseStudyData | null;
+  studies?: CaseStudyData[];
+  study?: CaseStudyData | null;
+  initialIndex?: number;
   onClose: () => void;
+  returnFocusRef?: React.RefObject<HTMLElement> | null;
 }
 
-export default function CaseStudyReaderModal({
-  study,
-  onClose,
-}: CaseStudyReaderModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const [isClosing, setIsClosing] = React.useState(false);
+const PART_HEADINGS = [
+  'Headline result',
+  'Brief & baseline',
+  'Insight & idea',
+  'Execution & distribution',
+  'Results & learning',
+];
 
-  const handleTriggerClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 200);
+export default function CaseStudyReaderModal({
+  studies,
+  study,
+  initialIndex = 0,
+  onClose,
+  returnFocusRef,
+}: CaseStudyReaderModalProps) {
+  const allStudies: CaseStudyData[] = studies && studies.length > 0 ? studies : study ? [study] : [];
+  const [studyIdx, setStudyIdx] = useState(initialIndex);
+  const [partIdx, setPartIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const activeBarRef = useRef<HTMLDivElement>(null);
+
+  const progressRef = useRef(0);
+  const lastTimeRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+  const pointerDownRef = useRef<{ time: number; x: number; isButton: boolean } | null>(null);
+
+  const currentStudy = allStudies[studyIdx] || allStudies[0];
+  const initials = profileData?.name
+    ? profileData.name
+        .split(' ')
+        .map((w: string) => w[0])
+        .join('')
+        .toUpperCase()
+    : 'JR';
+
+  // Extract text for 5 parts
+  const getPartText = (idx: number, s: CaseStudyData) => {
+    if (!s || !s.sections) return '';
+    switch (idx) {
+      case 0:
+        return (
+          s.sections.headlineResult ||
+          (s.headline?.value ? `${s.headline.value} ${s.headline.label || ''}`.trim() : s.summary)
+        );
+      case 1:
+        return s.sections.brief || s.summary;
+      case 2:
+        return s.sections.insight || '';
+      case 3:
+        return s.sections.execution || '';
+      case 4:
+        return s.sections.results || '';
+      default:
+        return '';
+    }
   };
 
-  useEffect(() => {
-    if (!study) return;
+  const currentPartHeading = PART_HEADINGS[partIdx] || PART_HEADINGS[0];
+  const currentPartText = currentStudy ? getPartText(partIdx, currentStudy) : '';
 
-    // Lock page scroll in Lenis and body
+  // Navigation handlers
+  const handleNext = useCallback(() => {
+    progressRef.current = 0;
+    if (activeBarRef.current) {
+      activeBarRef.current.style.transform = 'scaleX(0)';
+    }
+    if (partIdx < 4) {
+      setPartIdx((prev) => prev + 1);
+    } else {
+      // Move to next case study
+      if (studyIdx + 1 < allStudies.length) {
+        setStudyIdx((prev) => prev + 1);
+        setPartIdx(0);
+      } else {
+        // Last case study finished -> close
+        onClose();
+      }
+    }
+  }, [partIdx, studyIdx, allStudies.length, onClose]);
+
+  const handlePrev = useCallback(() => {
+    progressRef.current = 0;
+    if (activeBarRef.current) {
+      activeBarRef.current.style.transform = 'scaleX(0)';
+    }
+    if (partIdx > 0) {
+      setPartIdx((prev) => prev - 1);
+    } else {
+      if (studyIdx > 0) {
+        setStudyIdx((prev) => prev - 1);
+        setPartIdx(4);
+      } else {
+        // First part of first study: reset progress
+        progressRef.current = 0;
+      }
+    }
+  }, [partIdx, studyIdx]);
+
+  // Keep pausedRef in sync with state & tab visibility
+  useEffect(() => {
+    pausedRef.current = isPaused;
+  }, [isPaused]);
+
+  // Handle glass blur and desktop responsive check
+  useEffect(() => {
+    const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => {
+      unsub();
+      window.removeEventListener('resize', checkDesktop);
+    };
+  }, []);
+
+  // Lock scroll, trap focus, return focus on close
+  useEffect(() => {
+    if (!currentStudy) return;
+
     scrollManager.lenisInstance?.stop();
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Focus close button on open
+    // Focus close button on mount
     setTimeout(() => {
-      closeButtonRef.current?.focus();
+      closeBtnRef.current?.focus();
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        handleTriggerClose();
-      }
-      // Focus Trap
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        e.preventDefault();
+        onClose();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        setIsPaused((prev) => !prev);
+      } else if (e.key === 'Tab' && modalRef.current) {
+        const focusables = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
-        const firstEl = focusableElements[0];
-        const lastEl = focusableElements[focusableElements.length - 1];
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
 
-        if (e.shiftKey) {
-          if (document.activeElement === firstEl) {
-            lastEl?.focus();
-            e.preventDefault();
-          }
-        } else {
-          if (document.activeElement === lastEl) {
-            firstEl?.focus();
-            e.preventDefault();
-          }
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
     };
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        pausedRef.current = true;
+      } else {
+        pausedRef.current = isPaused;
+        lastTimeRef.current = null;
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       scrollManager.lenisInstance?.start();
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (returnFocusRef?.current) {
+        returnFocusRef.current.focus();
+      }
     };
-  }, [study]);
+  }, [currentStudy, handleNext, handlePrev, isPaused, onClose, returnFocusRef]);
 
-  if (!study) return null;
+  // 8s Auto-advance rAF loop
+  useEffect(() => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      if (activeBarRef.current) {
+        activeBarRef.current.style.transform = 'scaleX(1)';
+      }
+      return;
+    }
+
+    let animationFrameId: number;
+    const DURATION = 8000; // 8 seconds per part
+    progressRef.current = 0;
+    lastTimeRef.current = null;
+
+    const tick = (time: number) => {
+      if (!lastTimeRef.current) {
+        lastTimeRef.current = time;
+      }
+      const delta = time - lastTimeRef.current;
+      lastTimeRef.current = time;
+
+      if (!pausedRef.current && document.visibilityState !== 'hidden') {
+        progressRef.current += delta;
+        const fraction = Math.min(1, progressRef.current / DURATION);
+
+        if (activeBarRef.current) {
+          activeBarRef.current.style.transform = `scaleX(${fraction})`;
+        }
+
+        if (progressRef.current >= DURATION) {
+          progressRef.current = 0;
+          handleNext();
+          return;
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(tick);
+    };
+
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [studyIdx, partIdx, handleNext]);
+
+  // Pointer & Tap handlers (Tap left = prev, right = next; hold = pause)
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const isInteractive = !!target.closest('button, .story-close-btn, .nav-arrow-btn, .story-panel-text');
+    pointerDownRef.current = {
+      time: performance.now(),
+      x: e.clientX,
+      isButton: isInteractive,
+    };
+    setIsPaused(true);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsPaused(false);
+    if (!pointerDownRef.current) return;
+
+    const { time, isButton } = pointerDownRef.current;
+    pointerDownRef.current = null;
+    const duration = performance.now() - time;
+
+    // If it was a short tap (< 280ms) and not on a dedicated button
+    if (duration < 280 && !isButton) {
+      const column = modalRef.current?.querySelector('.story-column');
+      if (column) {
+        const rect = column.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        if (clickX < rect.width / 2) {
+          handlePrev();
+        } else {
+          handleNext();
+        }
+      }
+    }
+  };
+
+  const handlePointerCancel = () => {
+    setIsPaused(false);
+    pointerDownRef.current = null;
+  };
+
+  if (!currentStudy) return null;
 
   return (
     <div
       ref={modalRef}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="case-reader-title"
-      className={`reader-overlay ${isClosing ? 'modal-closing' : ''}`}
+      aria-label={`Case Study: ${currentStudy.title}`}
+      className="story-viewer-dialog"
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
     >
-      {/* Sticky top bar with kicker & close button */}
-      <div className="reader-header">
-        <div className="reader-kicker">{study.kicker}</div>
-        <button
-          ref={closeButtonRef}
-          onClick={handleTriggerClose}
-          className="reader-close-btn glass-fake"
-          aria-label="Close reader overlay"
-        >
-          <span>✕ Close</span>
-          <span className="esc-hint">[Esc]</span>
-        </button>
-      </div>
+      {/* Desktop Prev Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handlePrev();
+        }}
+        className="nav-arrow-btn nav-arrow-left glass-fake"
+        aria-label="Previous story part"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
 
-      {/* Reader Content Body */}
-      <div className="reader-container">
-        <div className="reader-hero-block">
-          <h1 id="case-reader-title" className="reader-main-title">
-            {study.title}
-          </h1>
-          <div className="reader-meta">
-            <span className="reader-role">{study.role}</span>
-            <span className="reader-dot">·</span>
-            <span className="reader-client">{study.client}</span>
-          </div>
-        </div>
-
-        {/* Hero Image if available */}
-        {study.heroImage && (
-          <div
-            className="reader-media-frame glass-fake"
-            style={{ position: 'relative', overflow: 'hidden' }}
-            onDoubleClick={(e) => triggerHeart(e.currentTarget, e.clientX, e.clientY)}
-            onTouchEnd={(e) => {
-              const target = e.currentTarget;
-              const touch = e.changedTouches[0];
-              if (!touch) return;
-              const now = Date.now();
-              const lastTime = (target as any)._lastTap || 0;
-              if (now - lastTime < 350) {
-                triggerHeart(target, touch.clientX, touch.clientY);
-                (target as any)._lastTap = 0;
-              } else {
-                (target as any)._lastTap = now;
-              }
-            }}
-          >
+      {/* Main 9:16 Story Column */}
+      <div className="story-column">
+        {/* Background Media */}
+        <div className="story-media-layer">
+          {currentStudy.heroImage ? (
             <img
-              src={study.heroImage}
-              alt={study.title}
-              loading="lazy"
-              decoding="async"
-              className="reader-image"
+              src={currentStudy.heroImage}
+              alt={currentStudy.title}
+              className="story-bg-img"
             />
-          </div>
-        )}
+          ) : (
+            <div className="story-bg-placeholder" />
+          )}
+          <div className="story-gradient-overlay" />
+        </div>
 
-        {/* 5 Parts */}
-        <div className="reader-sections-list">
-          {/* Part 1: Headline result */}
-          <div className="reader-section-item">
-            <h3 className="reader-part-heading">Headline result</h3>
-            <p className="reader-part-text">{study.sections.headlineResult}</p>
-          </div>
-
-          {/* Part 2: Brief & baseline */}
-          <div className="reader-section-item">
-            <h3 className="reader-part-heading">Brief & baseline</h3>
-            <div className="reader-part-text-multi">
-              {study.sections.brief.split('\n\n').map((para, i) => (
-                <p key={i} className="reader-part-text">
-                  {para}
-                </p>
-              ))}
-            </div>
-          </div>
-
-          {/* Part 3: Insight & idea */}
-          <div className="reader-section-item">
-            <h3 className="reader-part-heading">Insight & idea</h3>
-            <p className="reader-part-text">{study.sections.insight}</p>
-          </div>
-
-          {/* Part 4: Execution & distribution */}
-          <div className="reader-section-item">
-            <h3 className="reader-part-heading">Execution & distribution</h3>
-            <p className="reader-part-text">{study.sections.execution}</p>
-          </div>
-
-          {/* Part 5: Results & learning */}
-          <div className="reader-section-item">
-            <h3 className="reader-part-heading">Results & learning</h3>
-            <div className="reader-part-text-multi">
-              {study.sections.results.split('\n\n').map((block, i) => (
-                <div key={i} className="reader-part-text">
-                  {block.split('\n').map((line, j) => (
-                    <div key={j} style={{ margin: '0.35rem 0' }}>
-                      {line}
-                    </div>
-                  ))}
+        {/* Top Floating Controls */}
+        <div className="story-top-wrapper">
+          {/* 5 Progress Bars */}
+          <div className="story-progress-row">
+            {[0, 1, 2, 3, 4].map((idx) => {
+              const isCompleted = idx < partIdx;
+              const isCurrent = idx === partIdx;
+              return (
+                <div
+                  key={idx}
+                  className={`story-bar-track ${isCompleted ? 'bar-completed' : ''}`}
+                >
+                  {isCurrent && (
+                    <div
+                      ref={activeBarRef}
+                      className="story-bar-fill"
+                    />
+                  )}
                 </div>
-              ))}
+              );
+            })}
+          </div>
+
+          {/* Under-the-bars Header Row */}
+          <div className="story-header-row">
+            <div className="story-profile-group">
+              <div className="story-avatar-circle">{initials}</div>
+              <div className="story-header-meta">
+                <div className="story-header-title">{currentStudy.title}</div>
+                <div className="story-header-kicker">{currentStudy.kicker}</div>
+              </div>
             </div>
+
+            <button
+              ref={closeBtnRef}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="story-close-btn"
+              aria-label="Close"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Bottom Story Content Panel */}
+        <div
+          className={`story-bottom-panel ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}
+        >
+          <div className="story-panel-step">{partIdx + 1} OF 5</div>
+          <h2
+            className="story-panel-heading"
+            aria-live="polite"
+          >
+            {currentPartHeading}
+          </h2>
+          <div className="story-panel-text">
+            {currentPartText.split('\n\n').map((para, i) => (
+              <p key={i} className="story-para">
+                {para}
+              </p>
+            ))}
+          </div>
+          <div className="story-panel-hint">Tap to continue · hold to pause</div>
+        </div>
       </div>
+
+      {/* Desktop Next Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleNext();
+        }}
+        className="nav-arrow-btn nav-arrow-right glass-fake"
+        aria-label="Next story part"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
 
       <style jsx>{`
-        .reader-overlay {
+        .story-viewer-dialog {
           position: fixed;
           inset: 0;
           z-index: 100000;
-          background-color: var(--bg);
-          color: var(--text);
-          overflow-y: auto;
-          overflow-x: hidden;
-          padding: 2rem 1.5rem 6rem;
-          box-sizing: border-box;
-          animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          background: rgba(11, 10, 9, 0.92);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 28px;
+          user-select: none;
+          -webkit-user-select: none;
+          touch-action: manipulation;
+          animation: storyFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .reader-overlay.modal-closing {
-          animation: modalFadeOut 0.2s cubic-bezier(0.7, 0, 0.84, 0) forwards;
-        }
-        @keyframes modalFadeIn {
+        @keyframes storyFadeIn {
           from {
             opacity: 0;
-            transform: translateY(24px);
+            transform: scale(0.98);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: scale(1);
           }
         }
-        @keyframes modalFadeOut {
-          from {
-            opacity: 1;
-            transform: translateY(0);
-          }
-          to {
-            opacity: 0;
-            transform: translateY(24px);
-          }
-        }
-        .reader-header {
-          position: sticky;
-          top: 0;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          max-width: 960px;
-          margin: 0 auto 2.5rem;
-          padding: 1rem 0;
-          background: var(--bg);
-          z-index: 10;
-        }
-        .reader-kicker {
-          font-family: var(--font-main);
-          font-size: 13px;
-          font-weight: 600;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: var(--muted);
-        }
-        .reader-close-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.16);
-          color: var(--text);
-          padding: 0.5rem 1.1rem;
-          border-radius: 9999px;
-          font-family: var(--font-main);
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .reader-close-btn:hover {
-          background: rgba(255, 255, 255, 0.12);
-          border-color: rgba(255, 255, 255, 0.3);
-          transform: translateY(-1px);
-        }
-        .esc-hint {
-          font-size: 11px;
-          color: var(--muted);
-        }
-        .reader-container {
-          max-width: 860px;
-          margin: 0 auto;
-        }
-        .reader-hero-block {
-          margin-bottom: 2.5rem;
-        }
-        .reader-main-title {
-          font-family: var(--font-main);
-          font-size: clamp(32px, 4.5vw, 48px);
-          font-weight: 600;
-          letter-spacing: -0.03em;
-          line-height: 1.15;
-          color: var(--text);
-          margin-bottom: 1rem;
-        }
-        .reader-meta {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          font-family: var(--font-main);
-          font-size: 16px;
-          color: var(--muted);
-          flex-wrap: wrap;
-        }
-        .reader-dot {
-          color: rgba(255, 255, 255, 0.2);
-        }
-        .reader-media-frame {
-          width: 100%;
-          height: 380px;
-          border-radius: 18px;
+        .story-column {
+          position: relative;
+          height: min(calc(100vh - 48px), 860px);
+          width: calc(min(calc(100vh - 48px), 860px) * (9 / 16));
+          border-radius: 24px;
           overflow: hidden;
-          margin-bottom: 3.5rem;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: #121214;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .reader-image {
+        .story-media-layer {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+        }
+        .story-bg-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          display: block;
         }
-        .reader-sections-list {
+        .story-bg-placeholder {
+          width: 100%;
+          height: 100%;
+          background: #181719;
+        }
+        .story-gradient-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(11, 10, 9, 0.75) 0%,
+            rgba(11, 10, 9, 0.2) 22%,
+            rgba(11, 10, 9, 0.2) 55%,
+            rgba(11, 10, 9, 0.88) 100%
+          );
+          pointer-events: none;
+        }
+        .story-top-wrapper {
+          position: relative;
+          z-index: 2;
+          padding: 16px 16px 0;
           display: flex;
           flex-direction: column;
-          gap: 3rem;
+          gap: 12px;
         }
-        .reader-section-item {
+        .story-progress-row {
           display: flex;
-          flex-direction: column;
-          gap: 0.85rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          padding-top: 2rem;
+          align-items: center;
+          gap: 5px;
+          width: 100%;
+          height: 3px;
         }
-        .reader-part-heading {
+        .story-bar-track {
+          flex: 1;
+          height: 3px;
+          background: rgba(245, 239, 230, 0.3);
+          border-radius: 2px;
+          overflow: hidden;
+          position: relative;
+        }
+        .story-bar-track.bar-completed {
+          background: var(--text);
+        }
+        .story-bar-fill {
+          position: absolute;
+          inset: 0;
+          background: var(--accent);
+          transform-origin: left;
+          transform: scaleX(0);
+          will-change: transform;
+        }
+        .story-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+        .story-profile-group {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+        }
+        .story-avatar-circle {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: var(--accent);
+          color: var(--bg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-family: var(--font-main);
-          font-size: 22px;
-          font-weight: 600;
+          font-size: 15px;
+          font-weight: 700;
+          flex-shrink: 0;
           letter-spacing: -0.02em;
-          color: var(--text);
         }
-        .reader-part-text {
-          font-family: var(--font-main);
-          font-size: 17px;
-          line-height: 1.65;
-          color: #c4beb4;
-          font-weight: 400;
-        }
-        .reader-part-text-multi {
+        .story-header-meta {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          min-width: 0;
+        }
+        .story-header-title {
+          font-family: var(--font-main);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text);
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .story-header-kicker {
+          font-family: var(--font-main);
+          font-size: 12px;
+          color: var(--muted);
+          line-height: 1.2;
+          margin-top: 2px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .story-close-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(30, 28, 26, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: var(--text);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .story-close-btn:hover {
+          background: rgba(30, 28, 26, 0.9);
+          transform: scale(1.05);
+        }
+        .nav-arrow-btn {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: rgba(30, 28, 26, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          color: var(--text);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+          flex-shrink: 0;
+        }
+        .nav-arrow-btn:hover {
+          background: rgba(45, 42, 39, 0.95);
+          transform: scale(1.08);
+        }
+        .story-bottom-panel {
+          position: relative;
+          z-index: 2;
+          margin: 12px;
+          border-radius: 24px;
+          background: rgba(11, 10, 9, 0.72);
+          padding: 22px 20px 16px;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .story-panel-step {
+          font-family: var(--font-main);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--muted);
+          margin-bottom: 4px;
+        }
+        .story-panel-heading {
+          font-family: var(--font-serif);
+          font-style: italic;
+          font-size: 40px;
+          font-weight: 400;
+          color: var(--text);
+          line-height: 1.1;
+          margin: 0 0 10px 0;
+          letter-spacing: -0.01em;
+        }
+        .story-panel-text {
+          font-family: var(--font-main);
+          font-size: 16px;
+          line-height: 1.45;
+          color: #d8d2c8;
+          font-weight: 400;
+          max-height: min(220px, 28vh);
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+        .story-para {
+          margin: 0 0 8px 0;
+        }
+        .story-para:last-child {
+          margin-bottom: 0;
+        }
+        .story-panel-hint {
+          font-family: var(--font-main);
+          font-size: 12px;
+          color: var(--muted);
+          margin-top: 12px;
+          opacity: 0.85;
         }
 
-        @media (max-width: 768px) {
-          .reader-overlay {
-            padding: 1.5rem 1.25rem 5rem;
+        @media (max-width: 767px) {
+          .story-viewer-dialog {
+            background: #000;
+            padding: 0;
+            gap: 0;
           }
-          .reader-media-frame {
-            height: 240px;
-            margin-bottom: 2.5rem;
+          .nav-arrow-btn {
+            display: none;
           }
-          .reader-part-heading {
-            font-size: 19px;
+          .story-column {
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+            border: none;
           }
-          .reader-part-text {
-            font-size: 15.5px;
+          .story-top-wrapper {
+            padding: calc(env(safe-area-inset-top, 16px) + 12px) 14px 0;
+          }
+          .story-bottom-panel {
+            margin: 12px 12px calc(env(safe-area-inset-bottom, 12px) + 12px);
+            padding: 18px 16px 14px;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: rgba(11, 10, 9, 0.88);
+          }
+          .story-panel-heading {
+            font-size: 32px;
+          }
+          .story-panel-text {
+            font-size: 15px;
+            max-height: 180px;
           }
         }
       `}</style>
