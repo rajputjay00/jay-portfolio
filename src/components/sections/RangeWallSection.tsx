@@ -199,7 +199,11 @@ export default function RangeWallSection() {
 
       <style jsx>{`
         .range-section {
-          padding: 48px 96px;
+          padding: 32px 96px;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .section-container {
           max-width: 1248px;
@@ -229,14 +233,14 @@ export default function RangeWallSection() {
           width: 100%;
         }
         .phone-frame {
-          width: 280px;
-          height: 570px;
-          border-radius: 40px;
-          padding: 10px;
+          height: min(570px, 58vh);
+          width: calc(min(570px, 58vh) * (280 / 570));
+          border-radius: calc(min(570px, 58vh) * (40 / 570));
+          padding: calc(min(570px, 58vh) * (10 / 570));
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
           transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
         }
         @media (pointer: fine) {
@@ -247,7 +251,7 @@ export default function RangeWallSection() {
         }
         .phone-screen {
           background: #121214;
-          border-radius: 30px;
+          border-radius: calc(min(570px, 58vh) * (30 / 570));
           width: 100%;
           height: 100%;
           overflow: hidden;

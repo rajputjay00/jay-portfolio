@@ -5,6 +5,7 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollManager } from '@/store/scrollStore';
+import { toastStore } from '@/store/toastStore';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -16,6 +17,9 @@ export default function SmoothScrollProvider({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    let lastScroll = 0;
+    let lastTime = Date.now();
+
     const lenis = new Lenis({
       duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -34,7 +38,52 @@ export default function SmoothScrollProvider({
       if (typeof e.progress === 'number') {
         scrollManager.setProgress(e.progress);
       }
+
+      // Fast-scroll toast on #work
+      const now = Date.now();
+      const dt = (now - lastTime) / 1000;
+      const currentScroll = e.scroll || window.scrollY;
+      const speed = dt > 0 ? Math.abs(currentScroll - lastScroll) / dt : 0;
+      lastScroll = currentScroll;
+      lastTime = now;
+
+      const workEl = document.getElementById('work');
+      if (workEl && speed > 2.5 * window.innerHeight) {
+        const rect = workEl.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          if (!sessionStorage.getItem('attention_lab_fast_scroll_shown')) {
+            sessionStorage.setItem('attention_lab_fast_scroll_shown', 'true');
+            toastStore.show('Scrolling past a guy who stops scrolls for a living? Bold.');
+          }
+        }
+      }
     });
+
+    // Tab Title change when hidden
+    const originalTitle = document.title || 'Jay Rajput · Social Media Manager';
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        document.title = 'You left. The algorithm noticed.';
+      } else {
+        document.title = originalTitle;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Copy event listener
+    const handleCopy = () => {
+      const selection = window.getSelection()?.toString().trim();
+      const activeTag = document.activeElement?.tagName || '';
+      if (
+        selection &&
+        !['INPUT', 'TEXTAREA'].includes(activeTag) &&
+        !sessionStorage.getItem('attention_lab_copy_toast_shown')
+      ) {
+        sessionStorage.setItem('attention_lab_copy_toast_shown', 'true');
+        toastStore.show('Stealing my copy? Flattering. Hiring me is easier.');
+      }
+    };
+    document.addEventListener('copy', handleCopy);
 
     const updateLenis = (time: number) => {
       lenis.raf(time * 1000);
@@ -101,6 +150,8 @@ export default function SmoothScrollProvider({
       gsap.ticker.remove(updateLenis);
       cancelAnimationFrame(pointerRaf);
       window.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('copy', handleCopy);
       buttonCleanups.forEach((c) => c());
       lenis.destroy();
       scrollManager.lenisInstance = null;

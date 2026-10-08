@@ -15,6 +15,9 @@ import MessageMeSection from '@/components/sections/MessageMeSection';
 import ScrollProgressLine from '@/components/ui/ScrollProgressLine';
 import FloatingMenuPill from '@/components/ui/FloatingMenuPill';
 import ViewCursor from '@/components/ui/ViewCursor';
+import Toast from '@/components/ui/Toast';
+import EasterEggHearts from '@/components/ui/EasterEggHearts';
+import ExitStopOverlay from '@/components/ui/ExitStopOverlay';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
@@ -115,6 +118,15 @@ export default function HomePage() {
 
       {/* 3. View Cursor on Pointer Devices */}
       <ViewCursor />
+
+      {/* 4. Global Toast Alerts */}
+      <Toast />
+
+      {/* 5. Easter Egg Hearts on L Key */}
+      <EasterEggHearts />
+
+      {/* 6. Exit Intent Stop Overlay */}
+      <ExitStopOverlay />
 
       {/* Dev-Only Fixed Replay Intro Button at Top Left */}
       {process.env.NODE_ENV === 'development' && isDebug && (

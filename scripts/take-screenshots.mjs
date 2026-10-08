@@ -22,15 +22,27 @@ async function main() {
       '--disable-setuid-sandbox',
       '--enable-webgl',
       '--use-gl=angle',
-      '--window-size=1440,900',
+      '--window-size=1396,705',
     ],
   });
 
+  const pageErrors = [];
+
   try {
     const page = await browser.newPage();
-    page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
-    page.on('pageerror', (err) => console.log('PAGE ERROR:', err.message));
-    await page.setViewport({ width: 1440, height: 900 });
+    page.on('console', (msg) => {
+      const text = msg.text();
+      console.log('PAGE LOG:', text);
+      if (msg.type() === 'error' && !text.includes('404')) {
+        pageErrors.push(`Console Error: ${text}`);
+      }
+    });
+    page.on('pageerror', (err) => {
+      console.log('PAGE ERROR:', err.message);
+      pageErrors.push(`Page Error: ${err.message}`);
+    });
+
+    await page.setViewport({ width: 1396, height: 705 });
 
     await page.evaluateOnNewDocument(() => {
       localStorage.setItem('attention_lab_opening_seen', 'true');
@@ -39,60 +51,97 @@ async function main() {
     await page.goto('http://localhost:3100', { waitUntil: 'networkidle0' });
     await sleep(2000);
 
-    // 1. pill-1440.png (scrolled to Case studies)
-    console.log('Capturing pill-1440.png...');
+    // 1. range-1396.png
+    console.log('Capturing range-1396.png at 1396x705...');
     await page.evaluate(() => {
-      const el = document.getElementById('work');
+      const el = document.getElementById('range');
       if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     });
     await sleep(1500);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'pill-1440.png') });
-    console.log('Saved pill-1440.png');
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'range-1396.png') });
+    console.log('Saved range-1396.png');
 
-    // 2. cases-1440-view-cursor.png
-    console.log('Capturing cases-1440-view-cursor.png...');
-    const card = await page.$('.case-card');
-    if (card) {
-      const box = await card.boundingBox();
-      if (box) {
-        const mx = box.x + box.width * 0.5;
-        const my = box.y + box.height * 0.4;
-        await page.mouse.move(mx, my, { steps: 15 });
-        await page.evaluate((x, y) => {
-          const el = document.elementFromPoint(x, y);
-          const evt = new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true });
-          if (el) el.dispatchEvent(evt);
-          window.dispatchEvent(evt);
-        }, mx, my);
-      }
-    }
+    // 2. proof-1396.png (scribbles and notification visible)
+    console.log('Capturing proof-1396.png at 1396x705...');
+    await page.evaluate(() => {
+      const el = document.getElementById('proof');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    });
+    // Wait for counter animation and scribbles
+    await sleep(2500);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'proof-1396.png') });
+    console.log('Saved proof-1396.png');
+
+    // 3. toast-1396.png
+    console.log('Capturing toast-1396.png at 1396x705...');
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: 'Scrolling past a guy who stops scrolls for a living? Bold.',
+        })
+      );
+    });
     await sleep(800);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'cases-1440-view-cursor.png') });
-    console.log('Saved cases-1440-view-cursor.png');
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'toast-1396.png') });
+    console.log('Saved toast-1396.png');
 
-    // 3. message-1440.png (scrolled to Message me)
-    console.log('Capturing message-1440.png...');
+    // 4. hearts-1396.png (L Easter egg)
+    console.log('Capturing hearts-1396.png at 1396x705...');
+    await page.keyboard.press('KeyL');
+    await sleep(600);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'hearts-1396.png') });
+    console.log('Saved hearts-1396.png');
+
+    // Wait for hearts to clear
+    await sleep(3000);
+
+    // 5. exit-stop-1396.png
+    console.log('Capturing exit-stop-1396.png at 1396x705...');
     await page.evaluate(() => {
-      const el = document.getElementById('message');
+      window.dispatchEvent(new CustomEvent('trigger-exit-stop'));
+    });
+    await sleep(600);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'exit-stop-1396.png') });
+    console.log('Saved exit-stop-1396.png');
+
+    // Close exit modal
+    await page.keyboard.press('Escape');
+    await sleep(400);
+
+    // 6. proof-390.png (mobile)
+    console.log('Capturing proof-390.png at 390x844...');
+    const mobilePage = await browser.newPage();
+    await mobilePage.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await mobilePage.evaluateOnNewDocument(() => {
+      localStorage.setItem('attention_lab_opening_seen', 'true');
+    });
+    await mobilePage.goto('http://localhost:3100#proof', { waitUntil: 'networkidle0' });
+    await sleep(2500);
+    await mobilePage.evaluate(() => {
+      const el = document.getElementById('proof');
       if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     });
-    await sleep(1800);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'message-1440.png') });
-    console.log('Saved message-1440.png');
+    await sleep(1500);
+    await mobilePage.screenshot({ path: path.join(SCREENSHOT_DIR, 'proof-390.png') });
+    console.log('Saved proof-390.png');
+    await mobilePage.close();
 
-    // 4. pill-390.png (mobile)
-    console.log('Capturing pill-390.png...');
-    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
-    await page.evaluate(() => {
-      const el = document.getElementById('work');
-      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
-    });
-    await sleep(1200);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'pill-390.png') });
-    console.log('Saved pill-390.png');
+    // 7. 404-1396.png
+    console.log('Capturing 404-1396.png at 1396x705...');
+    await page.setViewport({ width: 1396, height: 705 });
+    await page.goto('http://localhost:3100/non-existent-page', { waitUntil: 'networkidle0' });
+    await sleep(1500);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '404-1396.png') });
+    console.log('Saved 404-1396.png');
 
     await page.close();
-    console.log('All requested screenshots captured successfully!');
+
+    console.log('--- CAPTURE SUMMARY ---');
+    if (pageErrors.length === 0) {
+      console.log('CONSOLE STATUS: CLEAN (0 errors)');
+    } else {
+      console.log(`CONSOLE STATUS: ${pageErrors.length} ERRORS DETECTED:`, pageErrors);
+    }
   } catch (err) {
     console.error('Screenshot capture error:', err);
   } finally {

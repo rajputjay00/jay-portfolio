@@ -132,6 +132,17 @@ export default function AboutAndServicesSection() {
             <div className="short-bio">{shortBio}</div>
 
             <p className="about-story">{aboutStory}</p>
+
+            {profileData.contact?.cvFile ? (
+              <a
+                href={profileData.contact.cvFile}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cv-download-link glass-fake"
+              >
+                Download the boring version (PDF)
+              </a>
+            ) : null}
           </div>
 
           {/* Right Column: 6 Services List */}
@@ -142,7 +153,6 @@ export default function AboutAndServicesSection() {
                   <div className="service-top-border" />
                   <div className="service-content">
                     <span className="service-name">{service.name}</span>
-                    <span className="service-arrow">↗</span>
                   </div>
                 </li>
               ))}
@@ -227,6 +237,23 @@ export default function AboutAndServicesSection() {
           padding: 0;
           border-bottom: 1px solid rgba(255, 255, 255, 0.16);
         }
+        .cv-download-link {
+          display: inline-flex;
+          align-items: center;
+          margin-top: 2rem;
+          padding: 12px 24px;
+          border-radius: 999px;
+          font-family: var(--font-main);
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text);
+          text-decoration: none;
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .cv-download-link:hover {
+          transform: translateY(-2px);
+          border-color: rgba(255, 255, 255, 0.24);
+        }
         .service-item {
           height: 72px;
           display: flex;
@@ -247,7 +274,6 @@ export default function AboutAndServicesSection() {
         .service-content {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           font-family: var(--font-main);
           font-weight: 500;
           font-size: 24px;
@@ -263,18 +289,9 @@ export default function AboutAndServicesSection() {
             transform: translateX(8px);
             color: var(--accent);
           }
-          .service-item:hover .service-arrow {
-            color: var(--accent);
-            transform: translate(3px, -3px);
-          }
         }
         .service-name {
           line-height: 1.2;
-        }
-        .service-arrow {
-          font-size: 20px;
-          color: var(--muted);
-          transition: transform 0.25s ease, color 0.25s ease;
         }
 
         @media (max-width: 1024px) {

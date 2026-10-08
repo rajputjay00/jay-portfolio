@@ -503,3 +503,23 @@ html.lenis, html.lenis body {
   }
 }
 
+/* L Key Easter Egg Falling Hearts */
+@keyframes heartFall {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+    transform: translateY(12vh) scale(1);
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh) rotate(45deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
+
