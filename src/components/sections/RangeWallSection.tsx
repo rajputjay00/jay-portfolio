@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import rangeData from '@/../content/range-wall.json';
 import { perfStore } from '@/store/perfStore';
+import { triggerHeart } from '@/utils/doubleTapHeart';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -144,7 +145,23 @@ export default function RangeWallSection() {
                     </div>
 
                     {/* 4:5 Sample Image */}
-                    <div className="sample-media-wrap">
+                    <div
+                      className="sample-media-wrap"
+                      onDoubleClick={(e) => triggerHeart(e.currentTarget, e.clientX, e.clientY)}
+                      onTouchEnd={(e) => {
+                        const target = e.currentTarget;
+                        const touch = e.changedTouches[0];
+                        if (!touch) return;
+                        const now = Date.now();
+                        const lastTime = (target as any)._lastTap || 0;
+                        if (now - lastTime < 350) {
+                          triggerHeart(target, touch.clientX, touch.clientY);
+                          (target as any)._lastTap = 0;
+                        } else {
+                          (target as any)._lastTap = now;
+                        }
+                      }}
+                    >
                       {sampleImg ? (
                         <img
                           src={sampleImg}

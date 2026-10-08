@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { CaseStudyData } from '@/data/caseStudiesData';
 import { scrollManager } from '@/store/scrollStore';
+import { triggerHeart } from '@/utils/doubleTapHeart';
 
 interface CaseStudyReaderModalProps {
   study: CaseStudyData | null;
@@ -111,7 +112,24 @@ export default function CaseStudyReaderModal({
 
         {/* Hero Image if available */}
         {study.heroImage && (
-          <div className="reader-media-frame glass-fake">
+          <div
+            className="reader-media-frame glass-fake"
+            style={{ position: 'relative', overflow: 'hidden' }}
+            onDoubleClick={(e) => triggerHeart(e.currentTarget, e.clientX, e.clientY)}
+            onTouchEnd={(e) => {
+              const target = e.currentTarget;
+              const touch = e.changedTouches[0];
+              if (!touch) return;
+              const now = Date.now();
+              const lastTime = (target as any)._lastTap || 0;
+              if (now - lastTime < 350) {
+                triggerHeart(target, touch.clientX, touch.clientY);
+                (target as any)._lastTap = 0;
+              } else {
+                (target as any)._lastTap = now;
+              }
+            }}
+          >
             <img
               src={study.heroImage}
               alt={study.title}

@@ -28,6 +28,8 @@ async function main() {
 
   try {
     const page = await browser.newPage();
+    page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
+    page.on('pageerror', (err) => console.log('PAGE ERROR:', err.message));
     await page.setViewport({ width: 1440, height: 900 });
 
     await page.evaluateOnNewDocument(() => {
@@ -37,50 +39,57 @@ async function main() {
     await page.goto('http://localhost:3100', { waitUntil: 'networkidle0' });
     await sleep(2000);
 
-    // 1. cases-1440.png
-    console.log('Capturing cases-1440.png...');
+    // 1. pill-1440.png (scrolled to Case studies)
+    console.log('Capturing pill-1440.png...');
     await page.evaluate(() => {
       const el = document.getElementById('work');
       if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     });
-    await sleep(1200);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'cases-1440.png') });
-    console.log('Saved cases-1440.png');
+    await sleep(1500);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'pill-1440.png') });
+    console.log('Saved pill-1440.png');
 
-    // 2. cases-1440-hover.png
-    console.log('Capturing cases-1440-hover.png...');
+    // 2. cases-1440-view-cursor.png
+    console.log('Capturing cases-1440-view-cursor.png...');
     const card = await page.$('.case-card');
     if (card) {
       const box = await card.boundingBox();
       if (box) {
-        await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3);
+        const mx = box.x + box.width * 0.5;
+        const my = box.y + box.height * 0.4;
+        await page.mouse.move(mx, my, { steps: 15 });
+        await page.evaluate((x, y) => {
+          const el = document.elementFromPoint(x, y);
+          const evt = new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true });
+          if (el) el.dispatchEvent(evt);
+          window.dispatchEvent(evt);
+        }, mx, my);
       }
     }
-    await sleep(600);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'cases-1440-hover.png') });
-    console.log('Saved cases-1440-hover.png');
+    await sleep(800);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'cases-1440-view-cursor.png') });
+    console.log('Saved cases-1440-view-cursor.png');
 
-    // 3. message-1440.png
+    // 3. message-1440.png (scrolled to Message me)
     console.log('Capturing message-1440.png...');
     await page.evaluate(() => {
       const el = document.getElementById('message');
       if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     });
-    await sleep(1200);
+    await sleep(1800);
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'message-1440.png') });
     console.log('Saved message-1440.png');
 
-    // 4. full-page-1440.png
-    console.log('Capturing full-page-1440.png...');
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'full-page-1440.png'), fullPage: true });
-    console.log('Saved full-page-1440.png');
-
-    // 5. full-page-390.png
-    console.log('Capturing full-page-390.png...');
+    // 4. pill-390.png (mobile)
+    console.log('Capturing pill-390.png...');
     await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
-    await sleep(800);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'full-page-390.png'), fullPage: true });
-    console.log('Saved full-page-390.png');
+    await page.evaluate(() => {
+      const el = document.getElementById('work');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    });
+    await sleep(1200);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'pill-390.png') });
+    console.log('Saved pill-390.png');
 
     await page.close();
     console.log('All requested screenshots captured successfully!');

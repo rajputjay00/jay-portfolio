@@ -449,3 +449,57 @@ html.lenis, html.lenis body {
 .lenis.lenis-smooth iframe {
   pointer-events: none;
 }
+
+/* Double-Tap Heart Animation */
+.double-tap-heart-anim {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: 60;
+  animation: heartPopRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes heartPopRise {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  45% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, calc(-50% - 36px)) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .double-tap-heart-anim {
+    animation: heartFadeOnly 0.8s ease forwards;
+  }
+  @keyframes heartFadeOnly {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
+
+/* Case Study Cards Desktop Cursor */
+@media (pointer: fine) {
+  .case-card {
+    cursor: none !important;
+  }
+}
+

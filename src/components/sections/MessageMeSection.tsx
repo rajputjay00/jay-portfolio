@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import profileData from '@/../content/profile.json';
 import { perfStore } from '@/store/perfStore';
+import { attentionStore } from '@/store/attentionStore';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -18,8 +19,17 @@ interface MessageBubble {
 
 export default function MessageMeSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const retentionCardRef = useRef<HTMLDivElement>(null);
+  const retentionTimeRef = useRef<HTMLDivElement>(null);
+  const curvePathRef = useRef<SVGPathElement>(null);
+  const curveDotRef = useRef<SVGCircleElement>(null);
+
   const [messages, setMessages] = useState<MessageBubble[]>([
-    { id: '1', sender: 'bot', text: "Hi, I'm Jay." },
+    {
+      id: '1',
+      sender: 'bot',
+      text: "You stayed 0:00. Most portfolios get skimmed. That's the job.",
+    },
     { id: '2', sender: 'bot', text: 'What brings you here?' },
   ]);
   const [selectedReply, setSelectedReply] = useState<'hiring' | 'project' | null>(null);
@@ -48,55 +58,127 @@ export default function MessageMeSection() {
     checkDesktop();
     window.addEventListener('resize', checkDesktop);
 
+    let isCardInView = false;
+    let cardObserver: IntersectionObserver | null = null;
+
+    if (retentionCardRef.current) {
+      cardObserver = new IntersectionObserver(
+        ([entry]) => {
+          isCardInView = entry.isIntersecting;
+          if (isCardInView) redrawCurve();
+        },
+        { threshold: 0.1 }
+      );
+      cardObserver.observe(retentionCardRef.current);
+    }
+
+    const redrawCurve = () => {
+      if (!curvePathRef.current || !curveDotRef.current) return;
+      const history = attentionStore.getHistory();
+      if (!history || history.length === 0) return;
+
+      const n = history.length;
+      let d = '';
+      let lastX = 4;
+      let lastY = 54;
+
+      if (n === 1) {
+        const y = 6 + (history[0].unreachedPercent / 100) * 48;
+        d = `M 4 ${y.toFixed(1)} L 156 ${y.toFixed(1)}`;
+        lastX = 156;
+        lastY = y;
+      } else {
+        history.forEach((pt, idx) => {
+          const x = 4 + (idx / (n - 1)) * 152;
+          const y = 6 + (pt.unreachedPercent / 100) * 48;
+          if (idx === 0) {
+            d += `M ${x.toFixed(1)} ${y.toFixed(1)}`;
+          } else {
+            d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+          }
+          if (idx === n - 1) {
+            lastX = x;
+            lastY = y;
+          }
+        });
+      }
+
+      curvePathRef.current.setAttribute('d', d);
+      curveDotRef.current.setAttribute('cx', lastX.toFixed(1));
+      curveDotRef.current.setAttribute('cy', lastY.toFixed(1));
+    };
+
+    // Attention Timer listener for direct DOM updates
+    const unsubTimer = attentionStore.subscribeTick((sec, formatted) => {
+      if (retentionTimeRef.current) {
+        retentionTimeRef.current.textContent = formatted;
+      }
+      if (isCardInView) {
+        redrawCurve();
+      }
+    });
+
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (!prefersReducedMotion && sectionRef.current) {
-      const ctx = gsap.context(() => {
-        // Title mask reveal & chat card entrance
+    // Viewport enter: freeze time for bubble and trigger animations
+    let ctx: gsap.Context | null = null;
+    if (sectionRef.current) {
+      ctx = gsap.context(() => {
         ScrollTrigger.create({
           trigger: sectionRef.current,
           start: 'top 80%',
           once: true,
           onEnter: () => {
-            gsap.from('.message-title-reveal', {
-              y: '100%',
-              duration: 0.7,
-              ease: 'power3.out',
+            const frozen = attentionStore.freezeTimeForMessage();
+            setMessages((prev) => {
+              const next = [...prev];
+              next[0] = {
+                ...next[0],
+                text: `You stayed ${frozen}. Most portfolios get skimmed. That's the job.`,
+              };
+              return next;
             });
-            gsap.from('.chat-card', {
-              y: 24,
-              opacity: 0,
-              duration: 0.8,
-              ease: 'power2.out',
-            });
+
+            if (!prefersReducedMotion) {
+              gsap.from('.message-title-reveal', {
+                y: '100%',
+                duration: 0.7,
+                ease: 'power3.out',
+              });
+              gsap.from(['.chat-card', '.retention-card'], {
+                y: 24,
+                opacity: 0,
+                duration: 0.8,
+                stagger: 0.12,
+                ease: 'power2.out',
+              });
+            }
           },
         });
 
-        // Ambient glow scroll scrub
-        ScrollTrigger.create({
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 1,
-          onUpdate: (self) => {
-            const yOffset = (self.progress - 0.5) * 60;
-            gsap.set('.message-glow', { y: yOffset });
-          },
-        });
+        if (!prefersReducedMotion) {
+          ScrollTrigger.create({
+            trigger: sectionRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1,
+            onUpdate: (self) => {
+              const yOffset = (self.progress - 0.5) * 60;
+              gsap.set('.message-glow', { y: yOffset });
+            },
+          });
+        }
       }, sectionRef);
-
-      return () => {
-        unsub();
-        window.removeEventListener('resize', checkDesktop);
-        ctx.revert();
-      };
     }
 
     return () => {
       unsub();
+      unsubTimer();
+      cardObserver?.disconnect();
       window.removeEventListener('resize', checkDesktop);
+      ctx?.revert();
     };
   }, []);
 
@@ -305,6 +387,48 @@ export default function MessageMeSection() {
               )}
             </div>
           </div>
+
+          {/* 4. YOUR RETENTION CARD */}
+          <div
+            ref={retentionCardRef}
+            className={`retention-card ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}
+          >
+            <div className="retention-left">
+              <div className="retention-card-label">YOUR RETENTION ON THIS PAGE</div>
+              <div ref={retentionTimeRef} className="retention-live-time">
+                0:00
+              </div>
+              <div className="retention-subline">Better than most Reels.</div>
+            </div>
+            <div className="retention-right">
+              <svg className="retention-mini-svg" viewBox="0 0 160 60" aria-hidden="true">
+                <line
+                  x1="0"
+                  y1="54"
+                  x2="160"
+                  y2="54"
+                  stroke="rgba(255, 255, 255, 0.12)"
+                  strokeWidth="1"
+                />
+                <path
+                  ref={curvePathRef}
+                  d=""
+                  fill="none"
+                  stroke="var(--accent)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle
+                  ref={curveDotRef}
+                  cx="0"
+                  cy="54"
+                  r="4"
+                  fill="var(--accent)"
+                />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -329,7 +453,9 @@ export default function MessageMeSection() {
         }
         .chat-card-wrapper {
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
           width: 100%;
         }
         .chat-card {
@@ -340,6 +466,54 @@ export default function MessageMeSection() {
           flex-direction: column;
           box-sizing: border-box;
           overflow: hidden;
+        }
+        .retention-card {
+          width: 560px;
+          border-radius: 24px;
+          padding: 22px 26px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          box-sizing: border-box;
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+        }
+        .retention-left {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .retention-card-label {
+          font-family: var(--font-main);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+        .retention-live-time {
+          font-family: var(--font-main);
+          font-size: 44px;
+          font-weight: 500;
+          letter-spacing: -0.02em;
+          color: var(--text);
+          font-variant-numeric: tabular-nums;
+          line-height: 1.1;
+          margin: 4px 0;
+        }
+        .retention-subline {
+          font-family: var(--font-main);
+          font-size: 14px;
+          color: var(--muted);
+        }
+        .retention-right {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .retention-mini-svg {
+          width: 160px;
+          height: 60px;
+          overflow: visible;
         }
         .chat-header {
           display: flex;
@@ -586,6 +760,17 @@ export default function MessageMeSection() {
           }
           .reply-btn {
             width: 100%;
+          }
+          .retention-card {
+            width: 100%;
+            padding: 18px 20px;
+          }
+          .retention-live-time {
+            font-size: 36px;
+          }
+          .retention-mini-svg {
+            width: 120px;
+            height: 50px;
           }
         }
       `}</style>

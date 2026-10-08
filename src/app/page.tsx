@@ -12,6 +12,9 @@ import RetentionTheatreSection from '@/components/sections/RetentionTheatreSecti
 import RangeWallSection from '@/components/sections/RangeWallSection';
 import AboutAndServicesSection from '@/components/sections/AboutAndServicesSection';
 import MessageMeSection from '@/components/sections/MessageMeSection';
+import ScrollProgressLine from '@/components/ui/ScrollProgressLine';
+import FloatingMenuPill from '@/components/ui/FloatingMenuPill';
+import ViewCursor from '@/components/ui/ViewCursor';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
@@ -104,6 +107,15 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', background: 'transparent' }}>
+      {/* 1. Scroll Progress Line Fixed at Top */}
+      <ScrollProgressLine />
+
+      {/* 2. Floating Menu Pill */}
+      <FloatingMenuPill />
+
+      {/* 3. View Cursor on Pointer Devices */}
+      <ViewCursor />
+
       {/* Dev-Only Fixed Replay Intro Button at Top Left */}
       {process.env.NODE_ENV === 'development' && isDebug && (
         <button
