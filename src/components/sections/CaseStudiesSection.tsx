@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { caseStudiesList, CaseStudyData } from '@/data/caseStudiesData';
 import CaseStudyReaderModal from './CaseStudyReaderModal';
 import { perfStore } from '@/store/perfStore';
+import { scrollManager } from '@/store/scrollStore';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -17,22 +18,80 @@ export default function CaseStudiesSection() {
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLSpanElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
     checkDesktop();
-    window.addEventListener('resize', checkDesktop);
 
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (!prefersReducedMotion && gridRef.current) {
-      const cards = gridRef.current.querySelectorAll('.case-card');
-      const ctx = gsap.context(() => {
+    let triggerInstance: ScrollTrigger | null = null;
+
+    const ctx = gsap.context(() => {
+      if (!prefersReducedMotion && window.innerWidth >= 1024 && sectionRef.current && trackRef.current) {
         // Title mask reveal
+        gsap.from('.cases-title-reveal', {
+          y: '100%',
+          duration: 0.7,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 80%',
+            once: true,
+          },
+        });
+
+        const getScrollDistance = () => {
+          if (!trackRef.current) return window.innerWidth * 2;
+          return trackRef.current.scrollWidth - window.innerWidth + 160;
+        };
+
+        const totalDist = getScrollDistance();
+
+        const tween = gsap.to(trackRef.current, {
+          x: () => -getScrollDistance(),
+          ease: 'none',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top top',
+            end: () => `+=${getScrollDistance()}`,
+            pin: true,
+            pinSpacing: true,
+            scrub: 0.8,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              // Calculate active card index based on progress (0 to 3)
+              const count = caseStudiesList.length;
+              const activeIndex = Math.min(count - 1, Math.floor(self.progress * count));
+              if (counterRef.current) {
+                counterRef.current.innerText = `${activeIndex + 1} / ${count}`;
+              }
+            },
+          },
+        });
+
+        triggerInstance = tween.scrollTrigger || null;
+
+        // Ambient glow subtle scroll scrub
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            const yOffset = (self.progress - 0.5) * 60;
+            gsap.set('.cases-glow', { y: yOffset });
+          },
+        });
+      } else if (!prefersReducedMotion && gridRef.current) {
+        // Tablet / Mobile vertical grid entrance
+        const cards = gridRef.current.querySelectorAll('.case-card');
         ScrollTrigger.create({
           trigger: sectionRef.current,
           start: 'top 80%',
@@ -52,32 +111,36 @@ export default function CaseStudiesSection() {
             });
           },
         });
+      }
+    }, sectionRef);
 
-        // Ambient glow subtle scroll scrub
-        ScrollTrigger.create({
-          trigger: sectionRef.current,
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: 1,
-          onUpdate: (self) => {
-            const yOffset = (self.progress - 0.5) * 60;
-            gsap.set('.cases-glow', { y: yOffset });
-          },
-        });
-      }, sectionRef);
-
-      return () => {
-        unsub();
-        window.removeEventListener('resize', checkDesktop);
-        ctx.revert();
-      };
-    }
+    const handleResize = () => {
+      checkDesktop();
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener('resize', handleResize);
 
     return () => {
       unsub();
-      window.removeEventListener('resize', checkDesktop);
+      window.removeEventListener('resize', handleResize);
+      ctx.revert();
     };
   }, []);
+
+  const handleCardFocus = (index: number) => {
+    if (window.innerWidth >= 1024 && sectionRef.current) {
+      const totalDist = trackRef.current ? trackRef.current.scrollWidth - window.innerWidth + 160 : 1500;
+      const progress = index / (caseStudiesList.length - 1);
+      const startPos = sectionRef.current.offsetTop;
+      const targetScroll = startPos + progress * totalDist;
+
+      if (scrollManager.lenisInstance) {
+        scrollManager.lenisInstance.scrollTo(targetScroll);
+      } else {
+        window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <section
@@ -114,25 +177,60 @@ export default function CaseStudiesSection() {
         }}
       />
 
-      <div className="section-container">
-        <div className="title-mask-wrapper">
-          <h2 className="section-title cases-title-reveal">Case studies</h2>
+      {/* Desktop Horizontal Sideways Pinned Layout (>= 1024px) */}
+      <div className="desktop-sideways-container">
+        <div className="sideways-header">
+          <div className="title-mask-wrapper">
+            <h2 className="section-title cases-title-reveal">Case studies</h2>
+          </div>
+          <span ref={counterRef} className="sideways-counter">
+            1 / {caseStudiesList.length}
+          </span>
         </div>
 
-        {/* 2x2 Grid (4 cards) */}
-        <div ref={gridRef} className="cases-grid">
-          {caseStudiesList.map((study, index) => (
-            <CaseStudyCard
-              key={study.id}
-              study={study}
-              index={index}
-              isGlassBlur={isGlassBlur && isDesktop}
-              onSelect={() => setSelectedStudyIndex(index)}
-              refSetter={(el) => {
-                cardRefs.current[index] = el;
-              }}
-            />
-          ))}
+        <div className="sideways-track-wrapper">
+          <div ref={trackRef} className="sideways-track">
+            {caseStudiesList.map((study, index) => (
+              <div key={study.id} className="sideways-card-item">
+                <CaseStudyCard
+                  study={study}
+                  index={index}
+                  isGlassBlur={isGlassBlur && isDesktop}
+                  onSelect={() => setSelectedStudyIndex(index)}
+                  onFocus={() => handleCardFocus(index)}
+                  refSetter={(el) => {
+                    cardRefs.current[index] = el;
+                  }}
+                  isSideways={true}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile / Tablet Vertical Grid Layout (< 1024px) */}
+      <div className="mobile-grid-container">
+        <div className="section-container">
+          <div className="title-mask-wrapper" style={{ marginBottom: '2.5rem' }}>
+            <h2 className="section-title cases-title-reveal">Case studies</h2>
+          </div>
+
+          <div ref={gridRef} className="cases-grid">
+            {caseStudiesList.map((study, index) => (
+              <CaseStudyCard
+                key={study.id}
+                study={study}
+                index={index}
+                isGlassBlur={isGlassBlur && isDesktop}
+                onSelect={() => setSelectedStudyIndex(index)}
+                refSetter={(el) => {
+                  cardRefs.current[index] = el;
+                }}
+                isSideways={false}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -155,14 +253,27 @@ export default function CaseStudiesSection() {
 
       <style jsx>{`
         .case-studies-section {
-          padding: 110px 96px;
-        }
-        .section-container {
-          max-width: 1248px;
-          margin: 0 auto;
           width: 100%;
+          min-height: 100vh;
+        }
+        .desktop-sideways-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          width: 100%;
+          height: 100vh;
+          padding: 40px 0;
+          box-sizing: border-box;
           position: relative;
-          z-index: 1;
+        }
+        .sideways-header {
+          position: absolute;
+          top: 48px;
+          left: 96px;
+          display: flex;
+          align-items: baseline;
+          gap: 24px;
+          z-index: 10;
         }
         .section-title {
           font-family: var(--font-main);
@@ -171,12 +282,59 @@ export default function CaseStudiesSection() {
           letter-spacing: -0.03em;
           color: var(--text);
           line-height: 1.1;
+          margin: 0;
+        }
+        .sideways-counter {
+          font-family: var(--font-main);
+          font-size: 16px;
+          font-weight: 500;
+          color: var(--muted);
+          letter-spacing: 0.05em;
+        }
+        .sideways-track-wrapper {
+          width: 100%;
+          overflow: visible;
+          padding-left: 96px;
+          box-sizing: border-box;
+          margin-top: 60px;
+        }
+        .sideways-track {
+          display: flex;
+          gap: 32px;
+          width: max-content;
+          will-change: transform;
+        }
+        .sideways-card-item {
+          width: 46vw;
+          min-width: 440px;
+          max-width: 680px;
+          flex-shrink: 0;
+        }
+        .mobile-grid-container {
+          display: none;
+          padding: 80px 24px;
+        }
+        .section-container {
+          max-width: 1248px;
+          margin: 0 auto;
+          width: 100%;
+          position: relative;
+          z-index: 1;
         }
         .cases-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 24px;
           width: 100%;
+        }
+
+        @media (max-width: 1023px) {
+          .desktop-sideways-container {
+            display: none;
+          }
+          .mobile-grid-container {
+            display: block;
+          }
         }
 
         @media (max-width: 900px) {
@@ -186,7 +344,7 @@ export default function CaseStudiesSection() {
         }
 
         @media (max-width: 768px) {
-          .case-studies-section {
+          .mobile-grid-container {
             padding: 64px 24px;
           }
           .section-title {
@@ -207,13 +365,17 @@ function CaseStudyCard({
   index,
   isGlassBlur,
   onSelect,
+  onFocus,
   refSetter,
+  isSideways,
 }: {
   study: CaseStudyData;
   index: number;
   isGlassBlur: boolean;
   onSelect: () => void;
+  onFocus?: () => void;
   refSetter?: (el: HTMLButtonElement | null) => void;
+  isSideways?: boolean;
 }) {
   const cardRef = useRef<HTMLButtonElement>(null);
   const [transformStyle, setTransformStyle] = useState('perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
@@ -245,11 +407,13 @@ function CaseStudyCard({
         if (refSetter) refSetter(el);
       }}
       onClick={onSelect}
+      onFocus={onFocus}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className="case-card glass-fake"
       style={{
         transform: transformStyle,
+        height: isSideways ? 'min(68vh, 560px)' : undefined,
       }}
       aria-label={`Open case study: ${study.title}`}
     >
@@ -304,6 +468,7 @@ function CaseStudyCard({
       <style jsx>{`
         .case-card {
           position: relative;
+          width: 100%;
           height: 440px;
           border-radius: 22px;
           overflow: hidden;

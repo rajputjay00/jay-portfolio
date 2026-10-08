@@ -20,6 +20,8 @@ export default function RangeWallSection() {
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
+  const [isInView, setIsInView] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const voices = rangeData.voices || [];
 
@@ -35,7 +37,17 @@ export default function RangeWallSection() {
 
     if (!prefersReducedMotion && sectionRef.current) {
       const ctx = gsap.context(() => {
-        // Title mask reveal & Phone entrance rise
+        // Section in-view trigger to pause/play internal auto-scroll
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          onToggle: (self) => {
+            setIsInView(self.isActive);
+          },
+        });
+
+        // Title mask reveal
         ScrollTrigger.create({
           trigger: sectionRef.current,
           start: 'top 75%',
@@ -55,6 +67,25 @@ export default function RangeWallSection() {
             });
           },
         });
+
+        // Phone drift parallax scrub: middle phone moves ~40px more than outer two
+        if (window.innerWidth >= 768) {
+          ScrollTrigger.create({
+            trigger: sectionRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 1,
+            onUpdate: (self) => {
+              const p = self.progress - 0.5; // -0.5 to +0.5
+              const outerDrift = p * -30;
+              const middleDrift = p * -70; // 40px more drift
+
+              if (cardsRef.current[0]) gsap.set(cardsRef.current[0], { y: outerDrift });
+              if (cardsRef.current[1]) gsap.set(cardsRef.current[1], { y: middleDrift });
+              if (cardsRef.current[2]) gsap.set(cardsRef.current[2], { y: outerDrift });
+            },
+          });
+        }
 
         // Ambient glow scroll scrub
         ScrollTrigger.create({
@@ -118,15 +149,25 @@ export default function RangeWallSection() {
       />
 
       <div className="section-container">
-        <div className="title-mask-wrapper" style={{ marginBottom: '2rem' }}>
+        <div className="title-mask-wrapper" style={{ marginBottom: '2.5rem' }}>
           <h2 className="section-title range-title-reveal">Range wall</h2>
         </div>
 
         <div className="range-grid">
           {voices.map((voice, idx) => {
-            const sampleImg = voice.samples?.[0] || '';
-            const caption = cleanText(voice.captionSamples?.[0] || '');
+            const samples = voice.samples || ['/media/images/dummy-01.jpg'];
+            const captions = (voice.captionSamples || []).map((c) => cleanText(c));
             const proofText = voice.proof?.join(' · ') || '';
+
+            // Feed items stacked: pair each sample with a caption
+            const feedItems = samples.map((img, i) => ({
+              img,
+              caption: captions[i % captions.length] || '',
+            }));
+
+            // Duplicate feed for seamless continuous 14s loop
+            const duplicatedFeed = [...feedItems, ...feedItems];
+            const isPaused = !isInView || hoveredIndex === idx;
 
             return (
               <div
@@ -135,8 +176,10 @@ export default function RangeWallSection() {
                   cardsRef.current[idx] = el;
                 }}
                 className="voice-column"
+                onPointerEnter={() => setHoveredIndex(idx)}
+                onPointerLeave={() => setHoveredIndex(null)}
               >
-                {/* 1. Phone Monolith Frame First with Glass Real */}
+                {/* 1. Phone Monolith Frame */}
                 <div className={`phone-frame ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
                   <div className="phone-screen">
                     {/* Top Notch / Island Indicator */}
@@ -144,44 +187,56 @@ export default function RangeWallSection() {
                       <div className="phone-notch" />
                     </div>
 
-                    {/* 4:5 Sample Image */}
-                    <div
-                      className="sample-media-wrap"
-                      onDoubleClick={(e) => triggerHeart(e.currentTarget, e.clientX, e.clientY)}
-                      onTouchEnd={(e) => {
-                        const target = e.currentTarget;
-                        const touch = e.changedTouches[0];
-                        if (!touch) return;
-                        const now = Date.now();
-                        const lastTime = (target as any)._lastTap || 0;
-                        if (now - lastTime < 350) {
-                          triggerHeart(target, touch.clientX, touch.clientY);
-                          (target as any)._lastTap = 0;
-                        } else {
-                          (target as any)._lastTap = now;
-                        }
-                      }}
-                    >
-                      {sampleImg ? (
-                        <img
-                          src={sampleImg}
-                          alt={`${voice.name} sample`}
-                          loading="lazy"
-                          decoding="async"
-                          className="sample-img"
-                        />
-                      ) : (
-                        <div className="empty-sample-placeholder">
-                          <span className="placeholder-text">Sample Post</span>
-                        </div>
-                      )}
-                    </div>
+                    {/* Auto-scrolling seamless Feed Track */}
+                    <div className="phone-feed-viewport">
+                      <div
+                        className="phone-feed-track"
+                        style={{
+                          animationPlayState: isPaused ? 'paused' : 'running',
+                        }}
+                      >
+                        {duplicatedFeed.map((item, itemIdx) => (
+                          <div key={itemIdx} className="phone-feed-card">
+                            <div
+                              className="sample-media-wrap"
+                              onDoubleClick={(e) => triggerHeart(e.currentTarget, e.clientX, e.clientY)}
+                              onTouchEnd={(e) => {
+                                const target = e.currentTarget;
+                                const touch = e.changedTouches[0];
+                                if (!touch) return;
+                                const now = Date.now();
+                                const lastTime = (target as any)._lastTap || 0;
+                                if (now - lastTime < 350) {
+                                  triggerHeart(target, touch.clientX, touch.clientY);
+                                  (target as any)._lastTap = 0;
+                                } else {
+                                  (target as any)._lastTap = now;
+                                }
+                              }}
+                            >
+                              {item.img ? (
+                                <img
+                                  src={item.img}
+                                  alt={`${voice.name} sample ${itemIdx + 1}`}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="sample-img"
+                                />
+                              ) : (
+                                <div className="empty-sample-placeholder">
+                                  <span className="placeholder-text">Sample Post</span>
+                                </div>
+                              )}
+                            </div>
 
-                    {/* Caption Beneath (Max 3 lines, 14px) */}
-                    <div className="sample-caption-wrap">
-                      <p className="sample-caption">
-                        {caption || <span className="muted-caption">No caption available</span>}
-                      </p>
+                            <div className="sample-caption-wrap">
+                              <p className="sample-caption">
+                                {item.caption || <span className="muted-caption">No caption available</span>}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -199,7 +254,7 @@ export default function RangeWallSection() {
 
       <style jsx>{`
         .range-section {
-          padding: 32px 96px;
+          padding: 60px 96px;
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -231,6 +286,7 @@ export default function RangeWallSection() {
           flex-direction: column;
           align-items: center;
           width: 100%;
+          will-change: transform;
         }
         .phone-frame {
           height: min(570px, 58vh);
@@ -245,7 +301,7 @@ export default function RangeWallSection() {
         }
         @media (pointer: fine) {
           .phone-frame:hover {
-            transform: translateY(-10px) rotate(3deg);
+            transform: translateY(-8px) scale(1.02);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
           }
         }
@@ -265,12 +321,42 @@ export default function RangeWallSection() {
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          z-index: 5;
+          background: #121214;
         }
         .phone-notch {
           width: 54px;
           height: 4px;
           border-radius: 2px;
           background: rgba(255, 255, 255, 0.12);
+        }
+        .phone-feed-viewport {
+          flex: 1;
+          width: 100%;
+          overflow: hidden;
+          position: relative;
+        }
+        .phone-feed-track {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          animation: feedScrollLoop 14s linear infinite;
+        }
+        @keyframes feedScrollLoop {
+          0% {
+            transform: translateY(0%);
+          }
+          100% {
+            transform: translateY(-50%);
+          }
+        }
+        .phone-feed-card {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          margin-bottom: 10px;
         }
         .sample-media-wrap {
           width: 100%;
@@ -279,6 +365,7 @@ export default function RangeWallSection() {
           overflow: hidden;
           background: #1a1a1e;
           flex-shrink: 0;
+          cursor: pointer;
         }
         .sample-img {
           width: 100%;
@@ -300,16 +387,13 @@ export default function RangeWallSection() {
           color: var(--muted);
         }
         .sample-caption-wrap {
-          padding: 14px;
-          flex: 1;
-          display: flex;
-          align-items: flex-start;
+          padding: 12px 14px 16px;
           background: #121214;
         }
         .sample-caption {
           font-family: var(--font-main);
-          font-size: 14px;
-          line-height: 1.45;
+          font-size: 13px;
+          line-height: 1.4;
           color: var(--text);
           text-align: left;
           margin: 0;
@@ -379,15 +463,15 @@ export default function RangeWallSection() {
             -webkit-overflow-scrolling: touch;
           }
           .voice-column {
-            flex: 0 0 230px;
+            flex: 0 0 240px;
             scroll-snap-align: start;
           }
           .voice-label {
             font-size: 30px;
           }
           .phone-frame {
-            width: 230px;
-            height: 480px;
+            width: 240px;
+            height: 500px;
             border-radius: 32px;
             padding: 8px;
           }

@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { perfStore, PerfSettings } from '@/store/perfStore';
 import { openingStore, OpeningStep } from '@/store/openingStore';
-import { windowPointerState } from '@/store/pointerStore';
+import { windowPointerState, heroScrollProgress } from '@/store/pointerStore';
 
 // 1. Black & White Social Post Card Shader
 const FeedShader = {
@@ -14,6 +14,7 @@ const FeedShader = {
     uMouse: { value: new THREE.Vector3(999, 999, 0) },
     uHoverStrength: { value: 1.0 },
     uOpacity: { value: 0.0 }, // Starts at 0.0 for clean 0.6s fade-in
+    uExitProgress: { value: 0.0 },
     uIsMobile: { value: 0.0 },
     uAccentColor: { value: new THREE.Color('#FF5A2B') },
     uBgColor: { value: new THREE.Color('#0B0A09') },
@@ -53,6 +54,7 @@ const FeedShader = {
   fragmentShader: `
     uniform float uTime;
     uniform float uOpacity;
+    uniform float uExitProgress;
     uniform float uIsMobile;
     uniform vec3 uAccentColor;
     uniform vec3 uBgColor;
@@ -114,8 +116,9 @@ const FeedShader = {
         }
       }
 
-      // 3. Default screen brightness 0.6, ease to 1.0 on hover (mobile 0.35)
-      float brightness = uIsMobile > 0.5 ? 0.35 : mix(0.60, 1.0, vHover);
+      // 3. Default screen brightness 0.6, ease to 1.0 on hover or exit (mobile 0.35 -> 1.0 on exit)
+      float hoverOrExit = max(vHover, smoothstep(0.05, 0.65, uExitProgress));
+      float brightness = uIsMobile > 0.5 ? mix(0.35, 1.0, uExitProgress) : mix(0.60, 1.0, hoverOrExit);
       col *= brightness;
 
       // 4. Hover accent edge glow (#FF5A2B)
@@ -125,9 +128,10 @@ const FeedShader = {
       // Blend card into background outside bezel
       col = mix(uBgColor, col, cardMask);
 
-      // 5. Vertical fade into background (#0B0A09) at top and bottom
+      // 5. Vertical fade into background (#0B0A09) at top and bottom + clean exit fade
+      float exitFade = 1.0 - smoothstep(0.72, 0.97, uExitProgress);
       float topBottomFade = smoothstep(-4.5, -2.0, vWorldY) * (1.0 - smoothstep(2.0, 4.5, vWorldY));
-      topBottomFade = clamp(topBottomFade, 0.0, 1.0);
+      topBottomFade = clamp(topBottomFade, 0.0, 1.0) * exitFade;
       col = mix(uBgColor, col, topBottomFade);
 
       gl_FragColor = vec4(col, uOpacity * topBottomFade);
@@ -186,6 +190,7 @@ const FakeFloorShader = {
 };
 
 export default function HeroFeedWall() {
+  const outerGroupRef = useRef<THREE.Group>(null);
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const shaderMatRef = useRef<THREE.ShaderMaterial>(null);
@@ -243,6 +248,7 @@ export default function HeroFeedWall() {
         uMouse: { value: new THREE.Vector3(999, 999, 0) },
         uHoverStrength: { value: 1.0 },
         uOpacity: { value: 0.0 }, // Starts at 0.0, smoothly fades in over 0.6s
+        uExitProgress: { value: 0.0 },
         uIsMobile: { value: isMobile ? 1.0 : 0.0 },
         uAccentColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
@@ -410,33 +416,45 @@ export default function HeroFeedWall() {
     }
     meshRef.current.instanceMatrix.needsUpdate = true;
 
-    // 4. Subtle mouse parallax on the whole wall
+    // 4. Hero Exit 3D Choreography (Scroll-driven)
+    const exitProgress = prefersReducedMotion ? 0 : heroScrollProgress.value;
+    shaderMatRef.current.uniforms.uExitProgress.value = exitProgress;
+
+    const startX = isMobile ? 0.0 : 1.75;
+    const startZ = isMobile ? -1.2 : 0.0;
+    const currentX = THREE.MathUtils.lerp(startX, 0.0, exitProgress);
+    const currentY = isMobile ? 0.0 : 0.05;
+    const currentZ = THREE.MathUtils.lerp(startZ, 2.85, exitProgress);
+    const currentScale = THREE.MathUtils.lerp(1.0, 1.35, exitProgress);
+
+    if (outerGroupRef.current) {
+      outerGroupRef.current.position.set(currentX, currentY, currentZ);
+      outerGroupRef.current.scale.setScalar(currentScale);
+    }
+
     if (groupRef.current) {
       const rotPointerX = windowPointerState.hasPointer ? windowPointerState.x : 0;
       const rotPointerY = windowPointerState.hasPointer ? windowPointerState.y : 0;
-      const targetRotY = (isMobile ? 0 : 0.32) + rotPointerX * 0.04;
-      const targetRotX = -rotPointerY * 0.025;
+      const baseRotY = THREE.MathUtils.lerp(isMobile ? 0.0 : 0.32, 0.0, exitProgress);
+      const targetRotY = baseRotY + rotPointerX * 0.04 * (1.0 - exitProgress);
+      const targetRotX = -rotPointerY * 0.025 * (1.0 - exitProgress);
       groupRef.current.rotation.y = THREE.MathUtils.damp(
         groupRef.current.rotation.y,
         targetRotY,
-        3.0,
+        3.5,
         delta
       );
       groupRef.current.rotation.x = THREE.MathUtils.damp(
         groupRef.current.rotation.x,
         targetRotX,
-        3.0,
+        3.5,
         delta
       );
     }
   });
 
-  const groupPosition: [number, number, number] = isMobile
-    ? [0, 0, -1.2]
-    : [1.75, 0.05, 0.0];
-
   return (
-    <group position={groupPosition}>
+    <group ref={outerGroupRef}>
       <group ref={groupRef}>
         {/* Soft Radial Glow of Accent Colour behind the Feed Wall */}
         <mesh position={[0, 0, -0.3]}>

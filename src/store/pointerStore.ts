@@ -16,6 +16,10 @@ export const windowPointerState: PointerState = {
   isHeroInView: true,
 };
 
+export const heroScrollProgress = {
+  value: 0,
+};
+
 let isInitialized = false;
 
 export function initWindowPointerListener() {

@@ -9,6 +9,8 @@ import { toastStore } from '@/store/toastStore';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
+  (window as any).ScrollTrigger = ScrollTrigger;
+  (window as any).gsap = gsap;
 }
 
 export default function SmoothScrollProvider({
@@ -42,6 +44,9 @@ export default function SmoothScrollProvider({
     });
 
     scrollManager.lenisInstance = lenis;
+    if (typeof window !== 'undefined') {
+      (window as any).__lenis = lenis;
+    }
     lenis.scrollTo(0, { immediate: true });
 
     // Counteract any delayed browser anchor jumps on load

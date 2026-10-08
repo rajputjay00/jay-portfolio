@@ -8,6 +8,7 @@ import DevPerfPanel from '@/components/dev/DevPerfPanel';
 import DevDummyBadge from '@/components/dev/DevDummyBadge';
 import ProofSection from '@/components/sections/ProofSection';
 import CaseStudiesSection from '@/components/sections/CaseStudiesSection';
+import StatementInterlude from '@/components/sections/StatementInterlude';
 import RetentionTheatreSection from '@/components/sections/RetentionTheatreSection';
 import RangeWallSection from '@/components/sections/RangeWallSection';
 import HookMachineSection from '@/components/sections/HookMachineSection';
@@ -24,6 +25,7 @@ import ExitStopOverlay from '@/components/ui/ExitStopOverlay';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
+import { heroScrollProgress } from '@/store/pointerStore';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -38,6 +40,11 @@ export default function HomePage() {
   const [isDebug, setIsDebug] = React.useState(perfStore.getSettings().debug);
   const [isDesktop, setIsDesktop] = React.useState(true);
   const [heroVisible, setHeroVisible] = React.useState(true);
+
+  // Extract statement interlude texts from profile.json
+  const interlude1Text = profileData.about?.philosophy || "Attention is earned in the first second and kept by every second after.";
+  const shortBioSentences = (profileData.shortBio || '').split(/(?<=\.)\s+/);
+  const interlude2Text = shortBioSentences[1] || "I turn ideas into content people stop scrolling for.";
 
   React.useEffect(() => {
     if (!openingStore.isSeen()) {
@@ -75,11 +82,12 @@ export default function HomePage() {
         trigger: '#hero',
         start: 'top top',
         end: 'bottom top',
-        scrub: 1,
+        scrub: 0.5,
         onUpdate: (self) => {
+          heroScrollProgress.value = self.progress;
           if (!document.querySelector('.hero-content')) return;
-          const y = self.progress * -36;
-          const op = Math.max(0, 1 - self.progress * 1.4);
+          const y = self.progress * -80;
+          const op = Math.max(0, 1 - self.progress * 3.0);
           gsap.set('.hero-content', { y, opacity: op });
         },
       });
@@ -243,11 +251,17 @@ export default function HomePage() {
       {/* 04: CASE STUDIES SECTION */}
       <CaseStudiesSection />
 
+      {/* SCENE 3: STATEMENT INTERLUDE 1 */}
+      <StatementInterlude id="interlude-1" text={interlude1Text} />
+
       {/* 05: RETENTION THEATRE */}
       <RetentionTheatreSection />
 
       {/* 06: RANGE WALL */}
       <RangeWallSection />
+
+      {/* SCENE 3: STATEMENT INTERLUDE 2 */}
+      <StatementInterlude id="interlude-2" text={interlude2Text} />
 
       {/* 07: HOOK MACHINE */}
       <HookMachineSection />

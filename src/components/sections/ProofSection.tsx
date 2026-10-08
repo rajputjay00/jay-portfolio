@@ -11,6 +11,11 @@ if (typeof window !== 'undefined') {
 
 export default function ProofSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const col1Ref = useRef<HTMLDivElement>(null);
+  const col2Ref = useRef<HTMLDivElement>(null);
+  const col3Ref = useRef<HTMLDivElement>(null);
   const iclRef = useRef<HTMLSpanElement>(null);
   const sfcRef = useRef<HTMLSpanElement>(null);
   const brandsRef = useRef<HTMLSpanElement>(null);
@@ -39,6 +44,8 @@ export default function ProofSection() {
       if (iclRef.current) iclRef.current.innerText = iclData.value;
       if (sfcRef.current) sfcRef.current.innerText = sfcData.value;
       if (brandsRef.current) brandsRef.current.innerText = brandsData.value;
+      if (ellipseRef.current) ellipseRef.current.style.strokeDashoffset = '0';
+      if (arrowRef.current) arrowRef.current.style.strokeDashoffset = '0';
       return;
     }
 
@@ -46,86 +53,245 @@ export default function ProofSection() {
     const sfcTarget = parseFloat(sfcData.value.replace(/[^0-9.]/g, '')) || 39.5;
     const brandsTarget = parseFloat(brandsData.value.replace(/[^0-9.]/g, '')) || 5;
 
+    const isDesktop = window.innerWidth >= 768;
+
     const ctx = gsap.context(() => {
-      const counters = { icl: 0, sfc: 0, brands: 0 };
+      if (isDesktop && sectionRef.current && gridRef.current && col1Ref.current && col2Ref.current && col3Ref.current) {
+        // Setup scribble paths
+        const ellipseLen = ellipseRef.current?.getTotalLength() || 600;
+        const arrowLen = arrowRef.current?.getTotalLength() || 300;
+        if (ellipseRef.current) {
+          gsap.set(ellipseRef.current, { strokeDasharray: ellipseLen, strokeDashoffset: ellipseLen });
+        }
+        if (arrowRef.current) {
+          gsap.set(arrowRef.current, { strokeDasharray: arrowLen, strokeDashoffset: arrowLen });
+        }
 
-      // Title mask reveal & Proof items
-      ScrollTrigger.create({
-        trigger: sectionRef.current,
-        start: 'top 80%',
-        once: true,
-        onEnter: () => {
-          gsap.from('.proof-title-reveal', {
-            y: '100%',
-            duration: 0.7,
-            ease: 'power3.out',
-          });
-          gsap.from('.proof-col', {
-            y: 24,
-            opacity: 0,
-            duration: 0.8,
-            stagger: 0.08,
+        const computePositions = () => {
+          if (!gridRef.current || !col1Ref.current || !col2Ref.current || !col3Ref.current) return { deltaX1: 0, deltaX3: 0, scaleVal: 1.9 };
+          const gridRect = gridRef.current.getBoundingClientRect();
+          const col1Rect = col1Ref.current.getBoundingClientRect();
+          const col3Rect = col3Ref.current.getBoundingClientRect();
+
+          const gridCenterX = gridRect.left + gridRect.width / 2;
+          const col1CenterX = col1Rect.left + col1Rect.width / 2;
+          const col3CenterX = col3Rect.left + col3Rect.width / 2;
+
+          // Target ~26vw font equivalent
+          const targetVW = window.innerWidth * 0.22;
+          const normalValWidth = col1Ref.current.querySelector('.proof-value')?.clientWidth || 280;
+          const scaleVal = Math.min(2.4, Math.max(1.6, targetVW / normalValWidth));
+
+          return {
+            deltaX1: gridCenterX - col1CenterX,
+            deltaX3: gridCenterX - col3CenterX,
+            scaleVal,
+          };
+        };
+
+        const { deltaX1, deltaX3, scaleVal } = computePositions();
+
+        const counters = { icl: 0, sfc: 0, brands: 0 };
+
+        // Initial state for desktop pinned sequence
+        gsap.set('.proof-divider', { opacity: 0 });
+        gsap.set('.proof-brands-line', { opacity: 0, y: 20 });
+        gsap.set('.proof-notification-wrapper', { opacity: 0, x: 60 });
+        gsap.set(col1Ref.current, { x: deltaX1, scale: scaleVal, opacity: 1, transformOrigin: 'center center' });
+        gsap.set(col2Ref.current, { x: 0, scale: scaleVal, opacity: 0, transformOrigin: 'center center' });
+        gsap.set(col3Ref.current, { x: deltaX3, scale: scaleVal, opacity: 0, transformOrigin: 'center center' });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top top',
+            end: '+=200%',
+            pin: true,
+            pinSpacing: true,
+            scrub: 0.5,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        // Step 1: ICL counts up at center (0.0s - 1.4s)
+        tl.to(counters, {
+          icl: iclTarget,
+          duration: 1.4,
+          ease: 'power1.out',
+          onUpdate: () => {
+            if (iclRef.current) iclRef.current.innerText = `${Math.round(counters.icl)}K`;
+          },
+        }, 0);
+
+        // Step 2: ICL shrinks and moves to left (1.4s - 2.4s)
+        tl.to(col1Ref.current, {
+          x: 0,
+          scale: 1,
+          duration: 1.0,
+          ease: 'power2.inOut',
+        }, 1.4);
+
+        // Step 3: SFC fades in at center large, counts up (2.4s - 4.0s)
+        tl.to(col2Ref.current, {
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power1.out',
+        }, 2.4);
+
+        tl.to(counters, {
+          sfc: sfcTarget,
+          duration: 1.4,
+          ease: 'power1.out',
+          onUpdate: () => {
+            if (sfcRef.current) {
+              const formatted = counters.sfc >= sfcTarget - 0.1 ? sfcTarget.toString() : counters.sfc.toFixed(1);
+              sfcRef.current.innerText = `${formatted}K`;
+            }
+          },
+        }, 2.4);
+
+        // Step 4: SFC shrinks to place (4.0s - 5.0s)
+        tl.to(col2Ref.current, {
+          scale: 1,
+          duration: 1.0,
+          ease: 'power2.inOut',
+        }, 4.0);
+
+        // Step 5: Brands fades in at center large, counts up (5.0s - 6.4s)
+        tl.to(col3Ref.current, {
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power1.out',
+        }, 5.0);
+
+        tl.to(counters, {
+          brands: brandsTarget,
+          duration: 1.2,
+          ease: 'power1.out',
+          onUpdate: () => {
+            if (brandsRef.current) brandsRef.current.innerText = `${Math.round(counters.brands)}`;
+          },
+        }, 5.0);
+
+        // Step 6: Brands shrinks and moves to right (6.4s - 7.4s)
+        tl.to(col3Ref.current, {
+          x: 0,
+          scale: 1,
+          duration: 1.0,
+          ease: 'power2.inOut',
+        }, 6.4);
+
+        // Step 7: Dividers & brands line fade in (7.4s - 8.2s)
+        tl.to('.proof-divider', {
+          opacity: 1,
+          duration: 0.8,
+          stagger: 0.1,
+          ease: 'power2.out',
+        }, 7.4);
+
+        tl.to('.proof-brands-line', {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: 'power2.out',
+        }, 7.5);
+
+        // Step 8: Scribbles draw and notification card slides in (8.0s - 9.0s)
+        if (ellipseRef.current) {
+          tl.to(ellipseRef.current, {
+            strokeDashoffset: 0,
+            duration: 0.9,
             ease: 'power2.out',
-          });
+          }, 8.0);
+        }
 
-          // Notification card slide-in
+        if (arrowRef.current) {
+          tl.to(arrowRef.current, {
+            strokeDashoffset: 0,
+            duration: 0.9,
+            ease: 'power2.out',
+          }, 8.1);
+        }
+
+        tl.to('.proof-notification-wrapper', {
+          x: 0,
+          opacity: 1,
+          duration: 0.9,
+          ease: 'power3.out',
+        }, 8.0);
+
+        // Small buffer at the end before unpinning (9.0s - 10.0s)
+        tl.to({}, { duration: 1.0 });
+      } else {
+        // Mobile (< 768px): No pin; each value scales from 1.3 to 1 and fades in as it enters viewport
+        const cols = [
+          { ref: col1Ref, valRef: iclRef, target: iclTarget, format: (v: number) => `${Math.round(v)}K` },
+          { ref: col2Ref, valRef: sfcRef, target: sfcTarget, format: (v: number) => `${v >= sfcTarget - 0.1 ? sfcTarget : v.toFixed(1)}K` },
+          { ref: col3Ref, valRef: brandsRef, target: brandsTarget, format: (v: number) => `${Math.round(v)}` },
+        ];
+
+        cols.forEach(({ ref, valRef, target, format }) => {
+          if (!ref.current) return;
+          const counterObj = { val: 0 };
           gsap.fromTo(
-            '.proof-notification-wrapper',
-            { x: 60, opacity: 0 },
-            { x: 0, opacity: 1, duration: 0.8, delay: 0.3, ease: 'power3.out' }
+            ref.current,
+            { scale: 1.3, opacity: 0 },
+            {
+              scale: 1,
+              opacity: 1,
+              duration: 0.8,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: ref.current,
+                start: 'top 85%',
+                once: true,
+                onEnter: () => {
+                  gsap.to(counterObj, {
+                    val: target,
+                    duration: 1.2,
+                    ease: 'power2.out',
+                    onUpdate: () => {
+                      if (valRef.current) valRef.current.innerText = format(counterObj.val);
+                    },
+                    onComplete: () => {
+                      if (valRef.current) valRef.current.innerText = format(target);
+                    },
+                  });
+                },
+              },
+            }
           );
+        });
 
-          // Counter animation
-          gsap.to(counters, {
-            icl: iclTarget,
-            sfc: sfcTarget,
-            brands: brandsTarget,
-            duration: 1.2,
-            ease: 'power2.out',
-            onUpdate: () => {
-              if (iclRef.current) {
-                iclRef.current.innerText = `${Math.round(counters.icl)}K`;
-              }
-              if (sfcRef.current) {
-                const sfcFormatted =
-                  counters.sfc >= sfcTarget - 0.1
-                    ? sfcTarget.toString()
-                    : counters.sfc.toFixed(1);
-                sfcRef.current.innerText = `${sfcFormatted}K`;
-              }
-              if (brandsRef.current) {
-                brandsRef.current.innerText = `${Math.round(counters.brands)}`;
-              }
-            },
-            onComplete: () => {
-              if (iclRef.current) iclRef.current.innerText = iclData.value;
-              if (sfcRef.current) sfcRef.current.innerText = sfcData.value;
-              if (brandsRef.current) brandsRef.current.innerText = brandsData.value;
-
-              // Draw hand-drawn scribbles after counter finishes
-              if (ellipseRef.current) {
-                const len = ellipseRef.current.getTotalLength() || 600;
-                gsap.fromTo(
-                  ellipseRef.current,
-                  { strokeDasharray: len, strokeDashoffset: len },
-                  { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out' }
-                );
-              }
-              if (arrowRef.current) {
-                const len = arrowRef.current.getTotalLength() || 300;
-                gsap.fromTo(
-                  arrowRef.current,
-                  { strokeDasharray: len, strokeDashoffset: len },
-                  { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out', delay: 0.1 }
-                );
-              }
-            },
-          });
-        },
-      });
+        // Scribbles on mobile
+        if (ellipseRef.current) {
+          const len = ellipseRef.current.getTotalLength() || 600;
+          gsap.fromTo(
+            ellipseRef.current,
+            { strokeDasharray: len, strokeDashoffset: len },
+            {
+              strokeDashoffset: 0,
+              duration: 0.8,
+              scrollTrigger: {
+                trigger: col2Ref.current,
+                start: 'top 75%',
+                once: true,
+              },
+            }
+          );
+        }
+      }
     }, sectionRef);
 
-    return () => ctx.revert();
+    const handleResize = () => {
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      ctx.revert();
+    };
   }, [iclData.value, sfcData.value, brandsData.value]);
 
   return (
@@ -136,14 +302,18 @@ export default function ProofSection() {
       style={{
         position: 'relative',
         width: '100%',
+        minHeight: '100vh',
         boxSizing: 'border-box',
         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
       }}
     >
-      <div className="section-container">
+      <div ref={containerRef} className="section-container">
         <div className="proof-header-row">
           <div className="title-mask-wrapper">
             <h2 className="section-title proof-title-reveal">Proof</h2>
@@ -170,9 +340,9 @@ export default function ProofSection() {
         </div>
 
         {/* 3 Metric Columns */}
-        <div className="proof-grid">
+        <div ref={gridRef} className="proof-grid">
           {/* 1. ICL */}
-          <div className="proof-col">
+          <div ref={col1Ref} className="proof-col">
             <div className="proof-value">
               <span ref={iclRef}>401K</span>
             </div>
@@ -184,7 +354,7 @@ export default function ProofSection() {
           <div className="proof-divider" />
 
           {/* 2. SFC with Hand-drawn Ellipse */}
-          <div className="proof-col">
+          <div ref={col2Ref} className="proof-col">
             <div className="proof-value">
               <span className="scribble-target-wrap">
                 <span ref={sfcRef}>39.5K</span>
@@ -213,7 +383,7 @@ export default function ProofSection() {
           <div className="proof-divider" />
 
           {/* 3. Brands with Hand-drawn Arrow */}
-          <div className="proof-col">
+          <div ref={col3Ref} className="proof-col">
             <div className="proof-value">
               <span className="scribble-target-wrap">
                 <svg
@@ -247,7 +417,7 @@ export default function ProofSection() {
 
       <style jsx>{`
         .proof-section {
-          padding: 110px 96px;
+          padding: 80px 96px;
         }
         .section-container {
           max-width: 1248px;
@@ -342,12 +512,15 @@ export default function ProofSection() {
           align-items: flex-start;
           justify-content: space-between;
           width: 100%;
+          position: relative;
         }
         .proof-col {
           flex: 1;
           display: flex;
           flex-direction: column;
+          align-items: flex-start;
           gap: 0.75rem;
+          will-change: transform, opacity;
         }
         .proof-divider {
           width: 1px;
@@ -423,6 +596,7 @@ export default function ProofSection() {
         @media (max-width: 768px) {
           .proof-section {
             padding: 64px 24px;
+            min-height: auto;
           }
           .section-title {
             font-size: 32px;
