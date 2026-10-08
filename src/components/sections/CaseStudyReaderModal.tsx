@@ -115,6 +115,8 @@ export default function CaseStudyReaderModal({
             <img
               src={study.heroImage}
               alt={study.title}
+              loading="lazy"
+              decoding="async"
               className="reader-image"
             />
           </div>
