@@ -41,6 +41,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${interTight.variable} ${instrumentSerif.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if ('scrollRestoration' in history) {
+                  history.scrollRestoration = 'manual';
+                }
+                if (window.location.hash) {
+                  history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+                window.scrollTo(0, 0);
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className={interTight.className}>
         <SmoothScrollProvider>
           {/* Persistent full-screen 3D canvas (frameloop active only in hero) */}

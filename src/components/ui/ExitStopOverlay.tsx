@@ -51,7 +51,7 @@ export default function ExitStopOverlay() {
 
     // Focus first button
     setTimeout(() => {
-      msgBtnRef.current?.focus();
+      msgBtnRef.current?.focus({ preventScroll: true });
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -66,10 +66,10 @@ export default function ExitStopOverlay() {
 
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
-          last.focus();
+          last.focus({ preventScroll: true });
         } else if (!e.shiftKey && document.activeElement === last) {
           e.preventDefault();
-          first.focus();
+          first.focus({ preventScroll: true });
         }
       }
     };

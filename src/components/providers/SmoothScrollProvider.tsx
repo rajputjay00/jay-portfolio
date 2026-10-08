@@ -17,6 +17,16 @@ export default function SmoothScrollProvider({
   children: React.ReactNode;
 }) {
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      window.scrollTo(0, 0);
+    }
+
     let lastScroll = 0;
     let lastTime = Date.now();
 
@@ -32,6 +42,26 @@ export default function SmoothScrollProvider({
     });
 
     scrollManager.lenisInstance = lenis;
+    lenis.scrollTo(0, { immediate: true });
+
+    // Counteract any delayed browser anchor jumps on load
+    const resetToTop = () => {
+      window.scrollTo(0, 0);
+      lenis.scrollTo(0, { immediate: true });
+    };
+    requestAnimationFrame(resetToTop);
+    const hashResetTimer1 = setTimeout(resetToTop, 50);
+    const hashResetTimer2 = setTimeout(resetToTop, 250);
+
+    const handleHashChange = () => {
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      resetToTop();
+      requestAnimationFrame(resetToTop);
+      setTimeout(resetToTop, 50);
+    };
+    window.addEventListener('hashchange', handleHashChange);
 
     lenis.on('scroll', (e: any) => {
       ScrollTrigger.update();
@@ -150,8 +180,11 @@ export default function SmoothScrollProvider({
       gsap.ticker.remove(updateLenis);
       cancelAnimationFrame(pointerRaf);
       window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('hashchange', handleHashChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('copy', handleCopy);
+      clearTimeout(hashResetTimer1);
+      clearTimeout(hashResetTimer2);
       buttonCleanups.forEach((c) => c());
       lenis.destroy();
       scrollManager.lenisInstance = null;

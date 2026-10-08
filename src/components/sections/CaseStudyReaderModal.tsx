@@ -144,7 +144,7 @@ export default function CaseStudyReaderModal({
 
     // Focus close button on mount
     setTimeout(() => {
-      closeBtnRef.current?.focus();
+      closeBtnRef.current?.focus({ preventScroll: true });
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -170,10 +170,10 @@ export default function CaseStudyReaderModal({
 
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
-          last.focus();
+          last.focus({ preventScroll: true });
         } else if (!e.shiftKey && document.activeElement === last) {
           e.preventDefault();
-          first.focus();
+          first.focus({ preventScroll: true });
         }
       }
     };
@@ -196,7 +196,7 @@ export default function CaseStudyReaderModal({
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('visibilitychange', handleVisibility);
       if (returnFocusRef?.current) {
-        returnFocusRef.current.focus();
+        returnFocusRef.current.focus({ preventScroll: true });
       }
     };
   }, [currentStudy, handleNext, handlePrev, isPaused, onClose, returnFocusRef]);

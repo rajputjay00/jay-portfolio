@@ -146,7 +146,7 @@ export default function CaseStudiesSection() {
             setSelectedStudyIndex(null);
             setTimeout(() => {
               if (lastIdx !== null && cardRefs.current[lastIdx]) {
-                cardRefs.current[lastIdx]?.focus();
+                cardRefs.current[lastIdx]?.focus({ preventScroll: true });
               }
             }, 50);
           }}

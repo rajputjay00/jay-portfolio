@@ -39,8 +39,10 @@ export default function MessageMeSection() {
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
 
+  const chatBodyRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isInitialMountRef = useRef(true);
 
   const name = profileData.name || 'Jay Rajput';
   const email = profileData.contact?.email || '';
@@ -206,7 +208,7 @@ export default function MessageMeSection() {
 
       setTimeout(() => {
         if (inputRef.current) {
-          inputRef.current.focus();
+          inputRef.current.focus({ preventScroll: true });
         }
       }, 100);
     }, 800);
@@ -232,7 +234,13 @@ export default function MessageMeSection() {
   };
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
   }, [messages, isTyping]);
 
   return (
@@ -288,6 +296,7 @@ export default function MessageMeSection() {
 
             {/* Chat Messages Body */}
             <div
+              ref={chatBodyRef}
               className="chat-body"
               aria-live="polite"
               aria-relevant="additions"
@@ -599,6 +608,8 @@ export default function MessageMeSection() {
           gap: 12px;
           margin-top: 8px;
           animation: bubblePop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          position: relative;
+          z-index: 5;
         }
         .reply-btn {
           min-height: 46px;
@@ -608,6 +619,9 @@ export default function MessageMeSection() {
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
+          pointer-events: auto;
+          position: relative;
+          z-index: 5;
           transition: transform 0.2s ease, opacity 0.2s ease;
         }
         .reply-btn:hover {
