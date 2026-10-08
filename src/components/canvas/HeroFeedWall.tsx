@@ -152,7 +152,7 @@ const SoftGlowShader = {
     void main() {
       float d = distance(vUv, vec2(0.5, 0.5));
       float glow = smoothstep(0.5, 0.0, d);
-      gl_FragColor = vec4(uColor, glow * 0.20);
+      gl_FragColor = vec4(uColor, glow * 0.10);
     }
   `,
 };

@@ -77,13 +77,7 @@ export default function RangeWallSection() {
                 }}
                 className="voice-column"
               >
-                {/* Voice Header */}
-                <div className="voice-header">
-                  <div className="voice-label">{voice.name}</div>
-                  <div className="voice-proof">{proofText}</div>
-                </div>
-
-                {/* Phone Monolith Frame */}
+                {/* 1. Phone Monolith Frame First */}
                 <div className="phone-frame glass-fake">
                   <div className="phone-screen">
                     {/* Top Notch / Island Indicator */}
@@ -97,6 +91,8 @@ export default function RangeWallSection() {
                         <img
                           src={sampleImg}
                           alt={`${voice.name} sample`}
+                          loading="lazy"
+                          decoding="async"
                           className="sample-img"
                         />
                       ) : (
@@ -114,6 +110,12 @@ export default function RangeWallSection() {
                     </div>
                   </div>
                 </div>
+
+                {/* 2. Voice Label & Proof Beneath Phone */}
+                <div className="voice-footer">
+                  <div className="voice-label">{voice.name}</div>
+                  <div className="voice-proof">{proofText}</div>
+                </div>
               </div>
             );
           })}
@@ -122,7 +124,7 @@ export default function RangeWallSection() {
 
       <style jsx>{`
         .range-section {
-          padding: 110px 96px;
+          padding: 48px 96px;
         }
         .section-container {
           max-width: 1248px;
@@ -135,7 +137,7 @@ export default function RangeWallSection() {
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
-          margin-bottom: 3.5rem;
+          margin-bottom: 2rem;
           line-height: 1.1;
         }
         .range-grid {
@@ -150,26 +152,6 @@ export default function RangeWallSection() {
           align-items: center;
           width: 100%;
         }
-        .voice-header {
-          text-align: center;
-          margin-bottom: 28px;
-          width: 100%;
-        }
-        .voice-label {
-          font-family: var(--font-serif);
-          font-style: italic;
-          font-size: 36px;
-          color: var(--text);
-          line-height: 1.2;
-          margin-bottom: 6px;
-        }
-        .voice-proof {
-          font-family: var(--font-main);
-          font-size: 14px;
-          color: var(--muted);
-          line-height: 1.4;
-          min-height: 20px;
-        }
         .phone-frame {
           width: 280px;
           height: 570px;
@@ -178,6 +160,7 @@ export default function RangeWallSection() {
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
+          margin-bottom: 16px;
         }
         .phone-screen {
           background: #121214;
@@ -190,14 +173,87 @@ export default function RangeWallSection() {
           position: relative;
         }
         .phone-notch-bar {
-          height: 20px;
+          height: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
         }
         .phone-notch {
-          width: 60px;
+          width: 54px;
+          height: 4px;
+          border-radius: 2px;
+          background: rgba(255, 255, 255, 0.12);
+        }
+        .sample-media-wrap {
+          width: 100%;
+          aspect-ratio: 4 / 5;
+          position: relative;
+          overflow: hidden;
+          background: #1a1a1e;
+          flex-shrink: 0;
+        }
+        .sample-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .empty-sample-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #1a1a1e;
+        }
+        .placeholder-text {
+          font-family: var(--font-main);
+          font-size: 13px;
+          color: var(--muted);
+        }
+        .sample-caption-wrap {
+          padding: 14px;
+          flex: 1;
+          display: flex;
+          align-items: flex-start;
+          background: #121214;
+        }
+        .sample-caption {
+          font-family: var(--font-main);
+          font-size: 14px;
+          line-height: 1.45;
+          color: var(--text);
+          text-align: left;
+          margin: 0;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .muted-caption {
+          color: var(--muted);
+          font-style: italic;
+        }
+        .voice-footer {
+          text-align: center;
+          width: 100%;
+        }
+        .voice-label {
+          font-family: var(--font-serif);
+          font-style: italic;
+          font-size: 36px;
+          color: var(--text);
+          line-height: 1.1;
+          margin-bottom: 6px;
+        }
+        .voice-proof {
+          font-family: var(--font-main);
+          font-size: 14px;
+          color: var(--muted);
+          line-height: 1.35;
+          min-height: 20px;
+        }
           height: 5px;
           border-radius: 3px;
           background: rgba(255, 255, 255, 0.12);

@@ -198,14 +198,10 @@ export default function RetentionTheatreSection() {
               </div>
             ) : (
               <div className="empty-video-frame">
-                <div className="empty-frame-content">
-                  <div className="slot-badge glass-fake">
-                    Slot {retentionData.reelSlot || 3}
-                  </div>
-                  <div className="slot-label">9:16 Video Demo</div>
-                  <div className="slot-time-counter">
-                    {currentTime.toFixed(1)}s / {duration}s
-                  </div>
+                <div className="empty-play-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--muted)" style={{ opacity: 0.6 }}>
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
                 </div>
               </div>
             )}

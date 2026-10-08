@@ -53,7 +53,8 @@ export default function SceneCanvas() {
       style={{
         width: '100%',
         height: '100%',
-        pointerEvents: 'auto',
+        pointerEvents: isHeroActive ? 'auto' : 'none',
+        visibility: isHeroActive ? 'visible' : 'hidden',
       }}
     >
       <Suspense fallback={null}>
