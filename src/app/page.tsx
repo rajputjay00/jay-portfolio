@@ -10,6 +10,8 @@ import ProofSection from '@/components/sections/ProofSection';
 import CaseStudiesSection from '@/components/sections/CaseStudiesSection';
 import RetentionTheatreSection from '@/components/sections/RetentionTheatreSection';
 import RangeWallSection from '@/components/sections/RangeWallSection';
+import AboutAndServicesSection from '@/components/sections/AboutAndServicesSection';
+import MessageMeSection from '@/components/sections/MessageMeSection';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
@@ -167,10 +169,10 @@ export default function HomePage() {
             </a>
 
             <a
-              href="#dm"
+              href="#message"
               onClick={(e) => {
                 e.preventDefault();
-                handleSmoothScroll('dm');
+                handleSmoothScroll('message');
               }}
               className="btn-glass glass-fake"
             >
@@ -193,18 +195,10 @@ export default function HomePage() {
       <RangeWallSection />
 
       {/* 07: ABOUT AND SERVICES */}
-      <section id="about" className="skeleton-section">
-        <div className="skeleton-header">
-          <h2 className="skeleton-title">About and services</h2>
-        </div>
-      </section>
+      <AboutAndServicesSection />
 
-      {/* 08: DM ENDING */}
-      <section id="dm" className="skeleton-section">
-        <div className="skeleton-header">
-          <h2 className="skeleton-title">Message me</h2>
-        </div>
-      </section>
+      {/* 08: MESSAGE ME */}
+      <MessageMeSection />
     </div>
   );
 }
