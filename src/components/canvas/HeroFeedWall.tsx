@@ -15,6 +15,7 @@ const FeedShader = {
     uHoverStrength: { value: 1.0 },
     uOpacity: { value: 0.0 }, // Starts at 0.0 for clean 0.6s fade-in
     uExitProgress: { value: 0.0 },
+    uStretch: { value: 1.0 },
     uIsMobile: { value: 0.0 },
     uAccentColor: { value: new THREE.Color('#FF5A2B') },
     uBgColor: { value: new THREE.Color('#0B0A09') },
@@ -23,6 +24,7 @@ const FeedShader = {
     attribute float aIsLight;
     uniform vec3 uMouse;
     uniform float uHoverStrength;
+    uniform float uStretch;
     
     varying vec2 vUv;
     varying float vHover;
@@ -41,8 +43,9 @@ const FeedShader = {
       float hoverFactor = smoothstep(1.6, 0.1, dist) * uHoverStrength;
       vHover = hoverFactor;
 
-      // Lift screen forward toward viewer when hovered
+      // Lift screen forward toward viewer when hovered, stretch vertically with scroll speed
       vec3 pos = position;
+      pos.y *= uStretch;
       pos.z += hoverFactor * 0.35;
 
       vec4 localInstancePos = instanceMatrix * vec4(pos, 1.0);
@@ -116,20 +119,22 @@ const FeedShader = {
         }
       }
 
-      // 3. Default screen brightness 0.6, ease to 1.0 on hover or exit (mobile 0.35 -> 1.0 on exit)
-      float hoverOrExit = max(vHover, smoothstep(0.05, 0.65, uExitProgress));
-      float brightness = uIsMobile > 0.5 ? mix(0.35, 1.0, uExitProgress) : mix(0.60, 1.0, hoverOrExit);
+      // 3. Screen brightness: falls from 0.6 to 0.25 over exit, rises to 1.0 when hovered at top
+      float baseBrightness = uIsMobile > 0.5 ? 0.35 : 0.60;
+      float exitBrightness = mix(baseBrightness, 0.25, smoothstep(0.0, 0.75, uExitProgress));
+      float hoverAtTop = vHover * (1.0 - smoothstep(0.0, 0.10, uExitProgress));
+      float brightness = mix(exitBrightness, 1.0, hoverAtTop);
       col *= brightness;
 
-      // 4. Hover accent edge glow (#FF5A2B)
-      float edgeGlow = smoothstep(0.04, 0.008, edgeDist) * vHover;
+      // 4. Hover accent edge glow (#FF5A2B) at top
+      float edgeGlow = smoothstep(0.04, 0.008, edgeDist) * hoverAtTop;
       col = mix(col, uAccentColor, edgeGlow * 0.90);
 
       // Blend card into background outside bezel
       col = mix(uBgColor, col, cardMask);
 
-      // 5. Vertical fade into background (#0B0A09) at top and bottom + clean exit fade
-      float exitFade = 1.0 - smoothstep(0.72, 0.97, uExitProgress);
+      // 5. Vertical fade into background (#0B0A09) at top and bottom + exit fade (0.55 to 0.95)
+      float exitFade = 1.0 - smoothstep(0.55, 0.95, uExitProgress);
       float topBottomFade = smoothstep(-4.5, -2.0, vWorldY) * (1.0 - smoothstep(2.0, 4.5, vWorldY));
       topBottomFade = clamp(topBottomFade, 0.0, 1.0) * exitFade;
       col = mix(uBgColor, col, topBottomFade);
@@ -143,6 +148,7 @@ const FeedShader = {
 const SoftGlowShader = {
   uniforms: {
     uColor: { value: new THREE.Color('#FF5A2B') },
+    uExitFade: { value: 1.0 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -153,11 +159,12 @@ const SoftGlowShader = {
   `,
   fragmentShader: `
     uniform vec3 uColor;
+    uniform float uExitFade;
     varying vec2 vUv;
     void main() {
       float d = distance(vUv, vec2(0.5, 0.5));
       float glow = smoothstep(0.5, 0.0, d);
-      gl_FragColor = vec4(uColor, glow * 0.10);
+      gl_FragColor = vec4(uColor, glow * 0.10 * uExitFade);
     }
   `,
 };
@@ -167,6 +174,7 @@ const FakeFloorShader = {
   uniforms: {
     uColor: { value: new THREE.Color('#FF5A2B') },
     uBgColor: { value: new THREE.Color('#0B0A09') },
+    uExitFade: { value: 1.0 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -178,13 +186,14 @@ const FakeFloorShader = {
   fragmentShader: `
     uniform vec3 uColor;
     uniform vec3 uBgColor;
+    uniform float uExitFade;
     varying vec2 vUv;
 
     void main() {
       float d = distance(vUv, vec2(0.5, 0.5));
       float fade = smoothstep(0.5, 0.0, d);
       vec3 col = mix(uBgColor, vec3(0.08, 0.04, 0.03), fade * 0.35);
-      gl_FragColor = vec4(col, fade * 0.35);
+      gl_FragColor = vec4(col, fade * 0.35 * uExitFade);
     }
   `,
 };
@@ -224,6 +233,7 @@ export default function HeroFeedWall() {
   // Scroll state & Mouse smoothing
   const scrollOffsetRef = useRef(0);
   const currentSpeedRef = useRef(0.32);
+  const prevProgressRef = useRef(0);
   const mouseLocalRef = useRef(new THREE.Vector3(999, 999, 0));
   const hoverFactorRef = useRef(0);
   const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
@@ -249,6 +259,7 @@ export default function HeroFeedWall() {
         uHoverStrength: { value: 1.0 },
         uOpacity: { value: 0.0 }, // Starts at 0.0, smoothly fades in over 0.6s
         uExitProgress: { value: 0.0 },
+        uStretch: { value: 1.0 },
         uIsMobile: { value: isMobile ? 1.0 : 0.0 },
         uAccentColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
@@ -265,6 +276,7 @@ export default function HeroFeedWall() {
     return new THREE.ShaderMaterial({
       uniforms: {
         uColor: { value: new THREE.Color('#FF5A2B') },
+        uExitFade: { value: 1.0 },
       },
       vertexShader: SoftGlowShader.vertexShader,
       fragmentShader: SoftGlowShader.fragmentShader,
@@ -279,6 +291,7 @@ export default function HeroFeedWall() {
       uniforms: {
         uColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
+        uExitFade: { value: 1.0 },
       },
       vertexShader: FakeFloorShader.vertexShader,
       fragmentShader: FakeFloorShader.fragmentShader,
@@ -338,25 +351,63 @@ export default function HeroFeedWall() {
     const pointerX = windowPointerState.hasPointer ? windowPointerState.x : -999;
     const pointerY = windowPointerState.hasPointer ? windowPointerState.y : -999;
 
-    // Check if mouse is on the right feed side on desktop (pointer.x > -0.15)
-    // On touch devices: touches on right side slow down feed, touch release resumes
+    const exitProgress = prefersReducedMotion ? 0 : heroScrollProgress.value;
+
+    // Track scroll velocity from progress delta
+    const deltaProgress = Math.max(0, exitProgress - prevProgressRef.current);
+    prevProgressRef.current = exitProgress;
+    const scrollVelocity = delta > 0 ? deltaProgress / delta : 0;
+    const clampedVelocity = Math.min(scrollVelocity * 0.4, 1.6); // Flick boost
+
+    // Check if mouse is near feed area (ignored once progress > 0.1)
     const isMouseNearFeed =
       !prefersReducedMotion &&
+      exitProgress <= 0.1 &&
       windowPointerState.hasPointer &&
       pointerX > -0.15 &&
       perfSettings.feedHover;
-    const targetSpeed = isMouseNearFeed || prefersReducedMotion ? 0.0 : 0.32;
 
-    // Spring / Eased deceleration when hovering feed
+    // Upward scroll speed accelerates up to 6x at progress 0.6 (mobile ~3x) + velocity
+    const maxMultiplier = isMobile ? 3.0 : 6.0;
+    const progressSpeedFactor = Math.sin(Math.min(1.0, exitProgress / 0.6) * (Math.PI / 2));
+    const targetExitSpeed = 0.32 * (1.0 + (maxMultiplier - 1.0) * progressSpeedFactor) + clampedVelocity;
+
+    const targetSpeed = prefersReducedMotion
+      ? 0.32
+      : isMouseNearFeed
+      ? 0.0
+      : targetExitSpeed;
+
+    // Smooth speed damping: never runs backwards
     currentSpeedRef.current = THREE.MathUtils.damp(
       currentSpeedRef.current,
       targetSpeed,
-      isMouseNearFeed ? 5.0 : 2.0,
+      isMouseNearFeed ? 5.0 : 3.0,
       delta
     );
+    if (currentSpeedRef.current < 0) currentSpeedRef.current = 0;
 
     // Increment vertical feed scroll
     scrollOffsetRef.current += currentSpeedRef.current * delta;
+
+    // Motion stretch: 1.0 up to 1.25x based on current speed
+    const normalSpeed = 0.32;
+    const speedRatio = THREE.MathUtils.clamp(currentSpeedRef.current / normalSpeed, 1.0, 6.0);
+    const stretch = prefersReducedMotion
+      ? 1.0
+      : THREE.MathUtils.lerp(1.0, 1.25, (speedRatio - 1.0) / 5.0);
+
+    shaderMatRef.current.uniforms.uStretch.value = stretch;
+    shaderMatRef.current.uniforms.uExitProgress.value = exitProgress;
+
+    // Ambient glow & floor exit fade
+    const exitFade = 1.0 - THREE.MathUtils.smoothstep(exitProgress, 0.55, 0.95);
+    if (glowMatRef.current) {
+      glowMatRef.current.uniforms.uExitFade.value = exitFade;
+    }
+    if (floorMatRef.current) {
+      floorMatRef.current.uniforms.uExitFade.value = exitFade;
+    }
 
     // Compute mouse in feed local coordinates
     if (isMouseNearFeed) {
@@ -416,28 +467,28 @@ export default function HeroFeedWall() {
     }
     meshRef.current.instanceMatrix.needsUpdate = true;
 
-    // 4. Hero Exit 3D Choreography (Scroll-driven)
-    const exitProgress = prefersReducedMotion ? 0 : heroScrollProgress.value;
-    shaderMatRef.current.uniforms.uExitProgress.value = exitProgress;
+    // 4. Hero Exit Transformation (Recede, Tilt back ~8°, Drift upward ~15%)
+    const baseStartX = isMobile ? 0.0 : 1.75;
+    const baseStartY = isMobile ? 0.0 : 0.05;
+    const baseStartZ = isMobile ? -1.2 : 0.0;
 
-    const startX = isMobile ? 0.0 : 1.75;
-    const startZ = isMobile ? -1.2 : 0.0;
-    const currentX = THREE.MathUtils.lerp(startX, 0.0, exitProgress);
-    const currentY = isMobile ? 0.0 : 0.05;
-    const currentZ = THREE.MathUtils.lerp(startZ, 2.85, exitProgress);
-    const currentScale = THREE.MathUtils.lerp(1.0, 1.35, exitProgress);
+    const currentX = baseStartX;
+    const currentY = baseStartY + (prefersReducedMotion ? 0 : exitProgress * 0.65);
+    const currentZ = baseStartZ + (prefersReducedMotion ? 0 : exitProgress * -0.75);
 
     if (outerGroupRef.current) {
       outerGroupRef.current.position.set(currentX, currentY, currentZ);
-      outerGroupRef.current.scale.setScalar(currentScale);
+      outerGroupRef.current.scale.setScalar(1.0);
     }
 
     if (groupRef.current) {
       const rotPointerX = windowPointerState.hasPointer ? windowPointerState.x : 0;
       const rotPointerY = windowPointerState.hasPointer ? windowPointerState.y : 0;
-      const baseRotY = THREE.MathUtils.lerp(isMobile ? 0.0 : 0.32, 0.0, exitProgress);
+      const baseRotY = isMobile ? 0.0 : 0.32;
       const targetRotY = baseRotY + rotPointerX * 0.04 * (1.0 - exitProgress);
-      const targetRotX = -rotPointerY * 0.025 * (1.0 - exitProgress);
+      const exitTiltX = prefersReducedMotion ? 0 : -exitProgress * 0.14; // ~8° tilt back
+      const targetRotX = -rotPointerY * 0.025 * (1.0 - exitProgress) + exitTiltX;
+
       groupRef.current.rotation.y = THREE.MathUtils.damp(
         groupRef.current.rotation.y,
         targetRotY,
