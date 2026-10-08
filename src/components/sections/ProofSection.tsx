@@ -34,11 +34,15 @@ export default function ProofSection() {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {
-      if (iclRef.current) iclRef.current.innerText = '401K';
-      if (sfcRef.current) sfcRef.current.innerText = '39.5K';
-      if (brandsRef.current) brandsRef.current.innerText = '5';
+      if (iclRef.current) iclRef.current.innerText = iclData.value;
+      if (sfcRef.current) sfcRef.current.innerText = sfcData.value;
+      if (brandsRef.current) brandsRef.current.innerText = brandsData.value;
       return;
     }
+
+    const iclTarget = parseFloat(iclData.value.replace(/[^0-9.]/g, '')) || 401;
+    const sfcTarget = parseFloat(sfcData.value.replace(/[^0-9.]/g, '')) || 39.5;
+    const brandsTarget = parseFloat(brandsData.value.replace(/[^0-9.]/g, '')) || 5;
 
     const ctx = gsap.context(() => {
       const counters = { icl: 0, sfc: 0, brands: 0 };
@@ -49,9 +53,9 @@ export default function ProofSection() {
         once: true,
         onEnter: () => {
           gsap.to(counters, {
-            icl: 401,
-            sfc: 39.5,
-            brands: 5,
+            icl: iclTarget,
+            sfc: sfcTarget,
+            brands: brandsTarget,
             duration: 1.2,
             ease: 'power2.out',
             onUpdate: () => {
@@ -60,7 +64,9 @@ export default function ProofSection() {
               }
               if (sfcRef.current) {
                 const sfcFormatted =
-                  counters.sfc >= 39.4 ? '39.5' : counters.sfc.toFixed(1);
+                  counters.sfc >= sfcTarget - 0.1
+                    ? sfcTarget.toString()
+                    : counters.sfc.toFixed(1);
                 sfcRef.current.innerText = `${sfcFormatted}K`;
               }
               if (brandsRef.current) {
@@ -69,9 +75,9 @@ export default function ProofSection() {
             },
             onComplete: () => {
               // Guarantee exact final text matches results.json
-              if (iclRef.current) iclRef.current.innerText = '401K';
-              if (sfcRef.current) sfcRef.current.innerText = '39.5K';
-              if (brandsRef.current) brandsRef.current.innerText = '5';
+              if (iclRef.current) iclRef.current.innerText = iclData.value;
+              if (sfcRef.current) sfcRef.current.innerText = sfcData.value;
+              if (brandsRef.current) brandsRef.current.innerText = brandsData.value;
             },
           });
         },
@@ -79,7 +85,7 @@ export default function ProofSection() {
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [iclData.value, sfcData.value, brandsData.value]);
 
   return (
     <section
