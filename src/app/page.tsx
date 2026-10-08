@@ -6,8 +6,11 @@ import resultsData from '@/../content/results.json';
 import OpeningOverlay from '@/components/ui/OpeningOverlay';
 import DevPerfPanel from '@/components/dev/DevPerfPanel';
 import DevDummyBadge from '@/components/dev/DevDummyBadge';
+import ProofSection from '@/components/sections/ProofSection';
+import CaseStudiesSection from '@/components/sections/CaseStudiesSection';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
+import { scrollManager } from '@/store/scrollStore';
 
 export default function HomePage() {
   const { name, title, tags } = profileData;
@@ -57,9 +60,13 @@ export default function HomePage() {
   });
 
   const handleSmoothScroll = (targetId: string) => {
-    const el = document.getElementById(targetId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+    if (scrollManager.lenisInstance) {
+      scrollManager.lenisInstance.scrollTo(`#${targetId}`);
+    } else {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -147,10 +154,10 @@ export default function HomePage() {
           {/* e. Buttons */}
           <div className="hero-actions">
             <a
-              href="#case-studies"
+              href="#work"
               onClick={(e) => {
                 e.preventDefault();
-                handleSmoothScroll('case-studies');
+                handleSmoothScroll('work');
               }}
               className="btn-accent"
             >
@@ -171,19 +178,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 03: PROOF */}
-      <section id="proof" className="skeleton-section">
-        <div className="skeleton-header">
-          <h2 className="skeleton-title">Proof</h2>
-        </div>
-      </section>
+      {/* 03: PROOF SECTION */}
+      <ProofSection />
 
-      {/* 04: CASE STUDIES */}
-      <section id="case-studies" className="skeleton-section">
-        <div className="skeleton-header">
-          <h2 className="skeleton-title">Case studies</h2>
-        </div>
-      </section>
+      {/* 04: CASE STUDIES SECTION */}
+      <CaseStudiesSection />
 
       {/* 05: RETENTION THEATRE */}
       <section id="retention" className="skeleton-section">
