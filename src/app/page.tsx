@@ -8,6 +8,8 @@ import DevPerfPanel from '@/components/dev/DevPerfPanel';
 import DevDummyBadge from '@/components/dev/DevDummyBadge';
 import ProofSection from '@/components/sections/ProofSection';
 import CaseStudiesSection from '@/components/sections/CaseStudiesSection';
+import RetentionTheatreSection from '@/components/sections/RetentionTheatreSection';
+import RangeWallSection from '@/components/sections/RangeWallSection';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
@@ -185,18 +187,10 @@ export default function HomePage() {
       <CaseStudiesSection />
 
       {/* 05: RETENTION THEATRE */}
-      <section id="retention" className="skeleton-section">
-        <div className="skeleton-header">
-          <h2 className="skeleton-title">Retention theatre</h2>
-        </div>
-      </section>
+      <RetentionTheatreSection />
 
       {/* 06: RANGE WALL */}
-      <section id="range" className="skeleton-section">
-        <div className="skeleton-header">
-          <h2 className="skeleton-title">Range wall</h2>
-        </div>
-      </section>
+      <RangeWallSection />
 
       {/* 07: ABOUT AND SERVICES */}
       <section id="about" className="skeleton-section">
