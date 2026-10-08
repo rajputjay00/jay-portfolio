@@ -1,0 +1,25 @@
+{
+  "dummy": true,
+  "posts": [
+    {
+      "id": "swipe-1",
+      "image": "/media/images/dummy-01.jpg"
+    },
+    {
+      "id": "swipe-2",
+      "image": "/media/images/dummy-02.jpg"
+    },
+    {
+      "id": "swipe-3",
+      "image": "/media/images/dummy-03.jpg"
+    },
+    {
+      "id": "swipe-4",
+      "image": "/media/images/dummy-04.jpg"
+    },
+    {
+      "id": "swipe-5",
+      "image": "/media/images/dummy-05.jpg"
+    }
+  ]
+}

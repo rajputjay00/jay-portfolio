@@ -10,6 +10,9 @@ import ProofSection from '@/components/sections/ProofSection';
 import CaseStudiesSection from '@/components/sections/CaseStudiesSection';
 import RetentionTheatreSection from '@/components/sections/RetentionTheatreSection';
 import RangeWallSection from '@/components/sections/RangeWallSection';
+import HookMachineSection from '@/components/sections/HookMachineSection';
+import WouldYouStopSection from '@/components/sections/WouldYouStopSection';
+import BeforeAfterSection from '@/components/sections/BeforeAfterSection';
 import AboutAndServicesSection from '@/components/sections/AboutAndServicesSection';
 import MessageMeSection from '@/components/sections/MessageMeSection';
 import ScrollProgressLine from '@/components/ui/ScrollProgressLine';
@@ -246,10 +249,19 @@ export default function HomePage() {
       {/* 06: RANGE WALL */}
       <RangeWallSection />
 
-      {/* 07: ABOUT AND SERVICES */}
+      {/* 07: HOOK MACHINE */}
+      <HookMachineSection />
+
+      {/* 08: WOULD YOU STOP? */}
+      <WouldYouStopSection />
+
+      {/* 09: BEFORE / AFTER */}
+      <BeforeAfterSection />
+
+      {/* 10: ABOUT AND SERVICES */}
       <AboutAndServicesSection />
 
-      {/* 08: MESSAGE ME */}
+      {/* 11: MESSAGE ME */}
       <MessageMeSection />
     </div>
   );

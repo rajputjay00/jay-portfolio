@@ -52,53 +52,65 @@ async function main() {
     await page.goto('http://localhost:3100', { waitUntil: 'networkidle0' });
     await sleep(2000);
 
-    // Scroll to Case studies
+    // 1. hooks-1396.png
+    console.log('Capturing hooks-1396.png at 1396x705...');
     await page.evaluate(() => {
-      const el = document.getElementById('work');
+      const el = document.getElementById('hooks');
       if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     });
-    await sleep(1000);
-
-    // Open first Case Study Card
-    console.log('Opening first case study card...');
-    await page.evaluate(() => {
-      const card = document.querySelector('.case-card');
-      if (card && card.click) card.click();
-    });
-    await page.waitForSelector('.story-viewer-dialog', { visible: true, timeout: 5000 });
+    await sleep(1500);
+    // Test entering a custom brand and clicking make hooks
+    await page.type('#brand-input', 'Spotify');
+    await page.click('.hooks-submit-btn');
     await sleep(800);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'hooks-1396.png') });
+    console.log('Saved hooks-1396.png');
 
-    // 1. story-1396-part1.png
-    console.log('Capturing story-1396-part1.png at 1396x705...');
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'story-1396-part1.png') });
-    console.log('Saved story-1396-part1.png');
+    // 2. swipe-1396.png
+    console.log('Capturing swipe-1396.png at 1396x705...');
+    await page.evaluate(() => {
+      const el = document.getElementById('swipe');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    });
+    await sleep(1500);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'swipe-1396.png') });
+    console.log('Saved swipe-1396.png');
 
-    // Advance to Part 2 then Part 3
-    console.log('Navigating to Part 3...');
-    await page.keyboard.press('ArrowRight');
+    // 3. swipe-1396-result.png (swipe through 5 cards)
+    console.log('Swiping through cards for swipe-1396-result.png...');
+    for (let i = 0; i < 5; i++) {
+      if (i % 2 === 0) {
+        await page.evaluate(() => {
+          const btn = document.querySelector('.btn-stop');
+          if (btn && btn.click) btn.click();
+        });
+      } else {
+        await page.evaluate(() => {
+          const btn = document.querySelector('.btn-scroll');
+          if (btn && btn.click) btn.click();
+        });
+      }
+      await sleep(400);
+    }
+    await page.waitForSelector('.swipe-result-box', { visible: true, timeout: 5000 });
     await sleep(600);
-    await page.keyboard.press('ArrowRight');
-    await sleep(600);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'swipe-1396-result.png') });
+    console.log('Saved swipe-1396-result.png');
 
-    // 2. story-1396-part3.png
-    console.log('Capturing story-1396-part3.png at 1396x705...');
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'story-1396-part3.png') });
-    console.log('Saved story-1396-part3.png');
+    // 4. before-after-1396.png
+    console.log('Capturing before-after-1396.png at 1396x705...');
+    await page.evaluate(() => {
+      const el = document.getElementById('before-after');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    });
+    await sleep(1800);
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'before-after-1396.png') });
+    console.log('Saved before-after-1396.png');
 
-    // Test moving through parts 4 and 5
-    console.log('Testing parts 4 and 5...');
-    await page.keyboard.press('ArrowRight');
-    await sleep(400);
-    await page.keyboard.press('ArrowRight');
-    await sleep(400);
-
-    // Close reader via Escape
-    await page.keyboard.press('Escape');
-    await sleep(600);
     await page.close();
 
-    // 3. story-390-part3.png (mobile)
-    console.log('Capturing story-390-part3.png at 390x844...');
+    // Mobile Captures at 390x844
+    console.log('Capturing mobile screenshots at 390x844...');
     const mobilePage = await browser.newPage();
     mobilePage.on('console', (msg) => {
       const text = msg.text();
@@ -117,32 +129,28 @@ async function main() {
     await mobilePage.evaluateOnNewDocument(() => {
       localStorage.setItem('attention_lab_opening_seen', 'true');
     });
-    await mobilePage.goto('http://localhost:3100#work', { waitUntil: 'networkidle0' });
+    await mobilePage.goto('http://localhost:3100', { waitUntil: 'networkidle0' });
     await sleep(2000);
 
+    // 5. hooks-390.png
+    console.log('Capturing hooks-390.png at 390x844...');
     await mobilePage.evaluate(() => {
-      const card = document.querySelector('.case-card');
-      if (card && card.click) card.click();
+      const el = document.getElementById('hooks');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
     });
-    await mobilePage.waitForSelector('.story-viewer-dialog', { visible: true, timeout: 5000 });
-    await sleep(800);
+    await sleep(1500);
+    await mobilePage.screenshot({ path: path.join(SCREENSHOT_DIR, 'hooks-390.png') });
+    console.log('Saved hooks-390.png');
 
-    // Tap right side or press right arrow to reach Part 3
-    await mobilePage.keyboard.press('ArrowRight');
-    await sleep(500);
-    await mobilePage.keyboard.press('ArrowRight');
-    await sleep(500);
-
-    await mobilePage.screenshot({ path: path.join(SCREENSHOT_DIR, 'story-390-part3.png') });
-    console.log('Saved story-390-part3.png');
-
-    // Move through remaining parts on mobile too
-    await mobilePage.keyboard.press('ArrowRight');
-    await sleep(300);
-    await mobilePage.keyboard.press('ArrowRight');
-    await sleep(300);
-    await mobilePage.keyboard.press('Escape');
-    await sleep(400);
+    // 6. swipe-390.png
+    console.log('Capturing swipe-390.png at 390x844...');
+    await mobilePage.evaluate(() => {
+      const el = document.getElementById('swipe');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    });
+    await sleep(1500);
+    await mobilePage.screenshot({ path: path.join(SCREENSHOT_DIR, 'swipe-390.png') });
+    console.log('Saved swipe-390.png');
 
     await mobilePage.close();
 

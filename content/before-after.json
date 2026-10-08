@@ -1,0 +1,23 @@
+{
+  "dummy": true,
+  "pairs": [
+    {
+      "id": "pair-1",
+      "label": "Post 1",
+      "before": "/media/images/dummy-02.jpg",
+      "after": "/media/images/dummy-01.jpg"
+    },
+    {
+      "id": "pair-2",
+      "label": "Post 2",
+      "before": "/media/images/dummy-04.jpg",
+      "after": "/media/images/dummy-03.jpg"
+    },
+    {
+      "id": "pair-3",
+      "label": "Post 3",
+      "before": "/media/images/dummy-06.jpg",
+      "after": "/media/images/dummy-05.jpg"
+    }
+  ]
+}
