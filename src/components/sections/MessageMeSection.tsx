@@ -290,7 +290,14 @@ export default function MessageMeSection() {
               <div className="avatar-circle">{initials}</div>
               <div className="header-info">
                 <div className="header-name">{name}</div>
-                <div className="header-handle">{instagram}</div>
+                <a
+                  href={`https://www.instagram.com/${instagram.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="header-handle"
+                >
+                  {instagram}
+                </a>
               </div>
             </div>
 
@@ -380,7 +387,7 @@ export default function MessageMeSection() {
                   <div className="instagram-fallback-link">
                     Reach me directly via{' '}
                     <a
-                      href={`https://instagram.com/${instagram.replace('@', '')}`}
+                      href={`https://www.instagram.com/${instagram.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="accent-link"

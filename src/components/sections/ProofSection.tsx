@@ -36,7 +36,7 @@ export default function ProofSection() {
   };
   const brandsData = resultsMap['brands'] || {
     value: '5',
-    account: 'Flipkart, Realme, Lava, Jio Hotstar, Wellbeing Nutrition',
+    account: 'Flipkart, Realme, Lava, JioHotstar, Wellbeing Nutrition',
   };
 
   useEffect(() => {
