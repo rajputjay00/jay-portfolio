@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import retentionData from '@/../content/retention.json';
+import reelsData from '@/../content/reels.json';
 import { perfStore } from '@/store/perfStore';
 
 if (typeof window !== 'undefined') {
@@ -25,6 +26,9 @@ export default function RetentionTheatreSection() {
   const curvePoints = retentionData.curve || [];
   const moments = retentionData.moments || [];
   const hasVideo = Boolean(retentionData.file && retentionData.file.trim().length > 0);
+
+  const sfcReel = reelsData.reels?.find((r) => r.id === 'sfc-1');
+  const reelUrl = sfcReel?.url || 'https://www.instagram.com/reel/DHVgzLQzNQR/?utm_source=ig_web_copy_link&psln=MzRlODBiNWFlZA==';
 
   // SVG dimensions
   const svgWidth = 640;
@@ -49,13 +53,16 @@ export default function RetentionTheatreSection() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsInView(entry.isIntersecting);
-        if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
+        const visible = entry.isIntersecting;
+        setIsInView(visible);
+        if (!visible && videoRef.current && !videoRef.current.paused) {
           videoRef.current.pause();
           setIsPlaying(false);
+        } else if (visible && videoRef.current && !prefersReducedMotion) {
+          videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.5 }
     );
 
     if (sectionRef.current) {
@@ -147,9 +154,12 @@ export default function RetentionTheatreSection() {
     return () => cancelAnimationFrame(animFrame);
   }, [hasVideo, isInView, duration]);
 
-  // Video playback time update handler
+  // Video playback time update handler (loop at 8 seconds)
   const handleTimeUpdate = () => {
     if (videoRef.current) {
+      if (videoRef.current.currentTime >= 8) {
+        videoRef.current.currentTime = 0;
+      }
       setCurrentTime(videoRef.current.currentTime);
     }
   };
@@ -157,8 +167,7 @@ export default function RetentionTheatreSection() {
   const toggleVideoPlay = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -275,10 +284,20 @@ export default function RetentionTheatreSection() {
                   src={retentionData.file}
                   muted
                   playsInline
-                  preload="metadata"
+                  loop
+                  preload="none"
                   onTimeUpdate={handleTimeUpdate}
                   className="reel-video"
                 />
+                <a
+                  href={reelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="retention-ig-badge"
+                  aria-label="Watch on Instagram"
+                >
+                  <span>Watch on Instagram ↗</span>
+                </a>
                 <button
                   onClick={toggleVideoPlay}
                   className="video-play-btn"
@@ -497,6 +516,33 @@ export default function RetentionTheatreSection() {
           width: 100%;
           height: 100%;
           object-fit: cover;
+        }
+        .retention-ig-badge {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          display: inline-flex;
+          align-items: center;
+          text-decoration: none;
+          z-index: 4;
+          outline: none;
+        }
+        .retention-ig-badge span {
+          font-family: var(--font-main);
+          font-size: 11px;
+          font-weight: 600;
+          color: #fff;
+          background: rgba(18, 18, 20, 0.82);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          padding: 5px 10px;
+          border-radius: 999px;
+          backdrop-filter: blur(8px);
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .retention-ig-badge:hover span,
+        .retention-ig-badge:focus-visible span {
+          background: rgba(255, 90, 43, 0.9);
+          transform: translateY(-1px);
         }
         .video-play-btn {
           position: absolute;

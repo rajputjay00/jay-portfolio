@@ -1,20 +1,147 @@
 {
   "_rule": "Drop video files in media/reels/. Compress to 1080x1920, H.264/MP4 under ~8 MB each. Only fill numbers you can see in Insights.",
   "reels": [
-    { "slot": 1, "role": "Highest reach / views", "file": "", "account": "Indian Corporate Life", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "The exact moment you realize it's only Tuesday.", "status": "needed", "dummy": true },
-    { "slot": 2, "role": "Highest shares", "file": "", "account": "Relatable Office Memes", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "POV: Joining the call 2 minutes late with coffee.", "status": "needed", "dummy": true },
-    { "slot": 3, "role": "Strongest retention (use in Retention Theatre)", "file": "", "account": "Strictly For Corporate", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Stop doing this in your 1-on-1 meetings.", "status": "needed", "dummy": true },
-    { "slot": 4, "role": "Best creative / most original", "file": "", "account": "Corporate Dadi", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Dadi reacts to your quarterly performance review.", "status": "needed", "dummy": true },
-    { "slot": 5, "role": "Strongest client / brand Reel", "file": "", "account": "Brand Social", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Unboxing the drop before the sale goes live.", "status": "needed", "dummy": true },
-    { "slot": 6, "role": "Best trend adaptation", "file": "", "account": "Indian Corporate Life", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Audio trend adapted to corporate appraisals.", "status": "needed", "dummy": true },
-    { "slot": 7, "role": "Best storytelling / narrative", "file": "", "account": "Corporate Nani", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "A 30-second story about leaving on time.", "status": "needed", "dummy": true },
-    { "slot": 8, "role": "Best conversion / CTA", "file": "", "account": "Strictly For Corporate", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Comment TEMPLATE for the exact sheet I use.", "status": "needed", "dummy": true },
-    { "slot": 9, "role": "Optional: TEDxIPSA / GDGOC community Reel", "file": "", "account": "TEDxIPSA Indore", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Speaker announcement teaser.", "status": "optional", "dummy": true },
-    { "slot": 10, "role": "Optional: different niche or visual style", "file": "", "account": "Brand Social", "views": "XXK", "shares": "XXK", "saves": "XXK", "hook": "Behind the scenes product shoot breakdown.", "status": "optional", "dummy": true }
+    {
+      "id": "sfc-1",
+      "slot": 1,
+      "page": "Strictly For Corporate",
+      "account": "Strictly For Corporate",
+      "file": "/media/reels/sfc-1.mp4",
+      "poster": "",
+      "views": "21.2M",
+      "url": "https://www.instagram.com/reel/DHVgzLQzNQR/?utm_source=ig_web_copy_link&psln=MzRlODBiNWFlZA==",
+      "role": "Highest reach / views on one Reel",
+      "hook": "Stop doing this in your 1-on-1 meetings.",
+      "status": "verified"
+    },
+    {
+      "id": "sfc-2",
+      "slot": 2,
+      "page": "Strictly For Corporate",
+      "account": "Strictly For Corporate",
+      "file": "/media/reels/sfc-2.mp4",
+      "poster": "",
+      "views": "16M",
+      "url": "https://www.instagram.com/reel/DFU4ig_THRt/?utm_source=ig_web_copy_link&vrfl=MzRlODBiNWFlZA==",
+      "role": "Top performance",
+      "hook": "Comment TEMPLATE for the exact sheet I use.",
+      "status": "verified"
+    },
+    {
+      "id": "sfc-3",
+      "slot": 3,
+      "page": "Strictly For Corporate",
+      "account": "Strictly For Corporate",
+      "file": "/media/reels/sfc-3.mp4",
+      "poster": "",
+      "views": "13.2M",
+      "url": "https://www.instagram.com/reel/DIePP63y6Z1/?utm_source=ig_web_copy_link&cplk=MzRlODBiNWFlZA==",
+      "role": "Corporate satire viral reel",
+      "hook": "When your calendar is completely booked.",
+      "status": "verified"
+    },
+    {
+      "id": "rom-1",
+      "slot": 4,
+      "page": "Relatable Office Memes",
+      "account": "Relatable Office Memes",
+      "file": "/media/reels/rom-1.mp4",
+      "poster": "",
+      "views": "11.1M",
+      "url": "https://www.instagram.com/reel/DIJvGNMIs2d/?utm_source=ig_web_copy_link&xtok=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+      "role": "Highest shares / views on Relatable Office Memes",
+      "hook": "POV: Joining the call 2 minutes late with coffee.",
+      "status": "verified"
+    },
+    {
+      "id": "rom-2",
+      "slot": 5,
+      "page": "Relatable Office Memes",
+      "account": "Relatable Office Memes",
+      "file": "/media/reels/rom-2.mp4",
+      "poster": "",
+      "views": "3.2M",
+      "url": "https://www.instagram.com/reel/DLeRn1coVpC/?utm_source=ig_web_copy_link&mdxt=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+      "role": "Office humor engagement",
+      "hook": "The exact moment you realize it's only Tuesday.",
+      "status": "verified"
+    },
+    {
+      "id": "rom-3",
+      "slot": 6,
+      "page": "Relatable Office Memes",
+      "account": "Relatable Office Memes",
+      "file": "/media/reels/rom-3.mp4",
+      "poster": "",
+      "views": "3M",
+      "url": "https://www.instagram.com/reel/DR35t7CiH6H/?utm_source=ig_web_copy_link&vrfl=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+      "role": "Relatable meme content",
+      "hook": "When Friday 5 PM finally arrives.",
+      "status": "verified"
+    },
+    {
+      "id": "icl-1",
+      "slot": 7,
+      "page": "Indian Corporate Life",
+      "account": "Indian Corporate Life",
+      "file": "/media/reels/icl-1.mp4",
+      "poster": "",
+      "views": "3.7M",
+      "url": "https://www.instagram.com/reel/DOlFIGjiReY/?utm_source=ig_web_copy_link&obrf=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+      "role": "Top Reel on Indian Corporate Life",
+      "hook": "Audio trend adapted to corporate appraisals.",
+      "status": "verified"
+    },
+    {
+      "id": "icl-2",
+      "slot": 8,
+      "page": "Indian Corporate Life",
+      "account": "Indian Corporate Life",
+      "file": "/media/reels/icl-2.mp4",
+      "poster": "",
+      "views": "2.8M",
+      "url": "https://www.instagram.com/reel/DOVNanzCfbw/?utm_source=ig_web_copy_link&cplk=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+      "role": "High engagement community video",
+      "hook": "The annual performance appraisal dilemma.",
+      "status": "verified"
+    },
+    {
+      "id": "icl-3",
+      "slot": 9,
+      "page": "Indian Corporate Life",
+      "account": "Indian Corporate Life",
+      "file": "/media/reels/icl-3.mp4",
+      "poster": "",
+      "views": "2M",
+      "url": "https://www.instagram.com/reel/DOf7iRNiZcp/?utm_source=ig_web_copy_link&dlrf=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+      "role": "Workplace trend video",
+      "hook": "Surviving another week in corporate.",
+      "status": "verified"
+    }
   ],
   "openingClips": {
-    "_note": "3 short clips (3-5 s each) for the STOP. YOU DID. opening. Pick the most visually striking moments.",
-    "clips": [],
-    "dummy": true
+    "clips": [
+      {
+        "id": "sfc-1",
+        "file": "/media/reels/sfc-1.mp4",
+        "account": "Strictly For Corporate",
+        "views": "21.2M",
+        "url": "https://www.instagram.com/reel/DHVgzLQzNQR/?utm_source=ig_web_copy_link&psln=MzRlODBiNWFlZA=="
+      },
+      {
+        "id": "rom-1",
+        "file": "/media/reels/rom-1.mp4",
+        "account": "Relatable Office Memes",
+        "views": "11.1M",
+        "url": "https://www.instagram.com/reel/DIJvGNMIs2d/?utm_source=ig_web_copy_link&xtok=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA=="
+      },
+      {
+        "id": "icl-1",
+        "file": "/media/reels/icl-1.mp4",
+        "account": "Indian Corporate Life",
+        "views": "3.7M",
+        "url": "https://www.instagram.com/reel/DOlFIGjiReY/?utm_source=ig_web_copy_link&obrf=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA=="
+      }
+    ]
   }
 }

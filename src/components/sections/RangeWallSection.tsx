@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import rangeData from '@/../content/range-wall.json';
+import reelsData from '@/../content/reels.json';
 import { perfStore } from '@/store/perfStore';
 import { triggerHeart } from '@/utils/doubleTapHeart';
 
@@ -15,6 +16,119 @@ function cleanText(text: string): string {
   return text.replace(/\[DUMMY\]\s*/g, '').trim();
 }
 
+interface ReelItem {
+  id: string;
+  slot: number;
+  page: string;
+  account: string;
+  file: string;
+  poster?: string;
+  views: string;
+  url: string;
+  role?: string;
+  hook?: string;
+  status?: string;
+}
+
+function PhoneFeedReelCard({
+  reel,
+  voiceName,
+  isPaused,
+}: {
+  reel: ReelItem;
+  voiceName: string;
+  isPaused: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      v.pause();
+      return;
+    }
+
+    if (isVisible && !isPaused) {
+      v.play().catch(() => {});
+    } else {
+      v.pause();
+    }
+  }, [isVisible, isPaused]);
+
+  return (
+    <div ref={containerRef} className="phone-feed-card">
+      <a
+        href={reel.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="reel-link-wrap"
+        aria-label={`Watch ${reel.account || voiceName} reel (${reel.views} views) on Instagram`}
+      >
+        <div className="reel-card-header">
+          <span className="reel-page-name">{reel.account || voiceName}</span>
+          <span className="reel-views-pill">{reel.views} views</span>
+        </div>
+
+        <div
+          className="reel-media-wrap"
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            triggerHeart(e.currentTarget, e.clientX, e.clientY);
+          }}
+        >
+          <video
+            ref={videoRef}
+            src={reel.file}
+            poster={reel.poster || undefined}
+            muted
+            playsInline
+            loop
+            preload="none"
+            className="reel-video"
+            onTimeUpdate={(e) => {
+              if (e.currentTarget.currentTime >= 8) {
+                e.currentTarget.currentTime = 0;
+              }
+            }}
+          />
+
+          <div className="watch-ig-badge">
+            <span>Watch on Instagram ↗</span>
+          </div>
+        </div>
+
+        {reel.hook && (
+          <div className="reel-caption-wrap">
+            <p className="reel-caption">{reel.hook}</p>
+          </div>
+        )}
+      </a>
+    </div>
+  );
+}
+
 export default function RangeWallSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -24,6 +138,15 @@ export default function RangeWallSection() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const voices = rangeData.voices || [];
+  const reelsList: ReelItem[] = reelsData.reels || [];
+
+  const reelsMap = useMemo(() => {
+    const map: Record<string, ReelItem> = {};
+    reelsList.forEach((r) => {
+      map[r.id] = r;
+    });
+    return map;
+  }, [reelsList]);
 
   useEffect(() => {
     const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
@@ -155,19 +278,15 @@ export default function RangeWallSection() {
 
         <div className="range-grid">
           {voices.map((voice, idx) => {
-            const samples = voice.samples || ['/media/images/dummy-01.jpg'];
-            const captions = (voice.captionSamples || []).map((c) => cleanText(c));
-            const proofText = voice.proof?.join(' · ') || '';
+            const reelIds = voice.reels || [];
+            const voiceReels = reelIds
+              .map((id: string) => reelsMap[id])
+              .filter(Boolean);
 
-            // Feed items stacked: pair each sample with a caption
-            const feedItems = samples.map((img, i) => ({
-              img,
-              caption: captions[i % captions.length] || '',
-            }));
-
-            // Duplicate feed for seamless continuous 14s loop
-            const duplicatedFeed = [...feedItems, ...feedItems];
+            // Duplicate feed for seamless continuous 16s loop
+            const duplicatedReels = [...voiceReels, ...voiceReels];
             const isPaused = !isInView || hoveredIndex === idx;
+            const proofText = voice.proof?.join(' · ') || '';
 
             return (
               <div
@@ -195,46 +314,13 @@ export default function RangeWallSection() {
                           animationPlayState: isPaused ? 'paused' : 'running',
                         }}
                       >
-                        {duplicatedFeed.map((item, itemIdx) => (
-                          <div key={itemIdx} className="phone-feed-card">
-                            <div
-                              className="sample-media-wrap"
-                              onDoubleClick={(e) => triggerHeart(e.currentTarget, e.clientX, e.clientY)}
-                              onTouchEnd={(e) => {
-                                const target = e.currentTarget;
-                                const touch = e.changedTouches[0];
-                                if (!touch) return;
-                                const now = Date.now();
-                                const lastTime = (target as any)._lastTap || 0;
-                                if (now - lastTime < 350) {
-                                  triggerHeart(target, touch.clientX, touch.clientY);
-                                  (target as any)._lastTap = 0;
-                                } else {
-                                  (target as any)._lastTap = now;
-                                }
-                              }}
-                            >
-                              {item.img ? (
-                                <img
-                                  src={item.img}
-                                  alt={`${voice.name} sample ${itemIdx + 1}`}
-                                  loading="lazy"
-                                  decoding="async"
-                                  className="sample-img"
-                                />
-                              ) : (
-                                <div className="empty-sample-placeholder">
-                                  <span className="placeholder-text">Sample Post</span>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="sample-caption-wrap">
-                              <p className="sample-caption">
-                                {item.caption || <span className="muted-caption">No caption available</span>}
-                              </p>
-                            </div>
-                          </div>
+                        {duplicatedReels.map((reelItem, itemIdx) => (
+                          <PhoneFeedReelCard
+                            key={`${reelItem.id}-${itemIdx}`}
+                            reel={reelItem}
+                            voiceName={voice.name}
+                            isPaused={isPaused}
+                          />
                         ))}
                       </div>
                     </div>
@@ -340,7 +426,7 @@ export default function RangeWallSection() {
           display: flex;
           flex-direction: column;
           width: 100%;
-          animation: feedScrollLoop 14s linear infinite;
+          animation: feedScrollLoop 16s linear infinite;
         }
         @keyframes feedScrollLoop {
           0% {
@@ -355,56 +441,108 @@ export default function RangeWallSection() {
           display: flex;
           flex-direction: column;
           flex-shrink: 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          margin-bottom: 10px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          margin-bottom: 12px;
         }
-        .sample-media-wrap {
+        .reel-link-wrap {
+          display: flex;
+          flex-direction: column;
+          text-decoration: none;
+          color: inherit;
+          border-radius: 12px;
+          overflow: hidden;
+          outline: none;
+          transition: outline 0.2s ease, box-shadow 0.2s ease;
+        }
+        .reel-link-wrap:focus-visible {
+          outline: 2px solid var(--accent, #ffd700);
+          outline-offset: 2px;
+        }
+        .reel-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 10px;
+          background: #18181c;
+          gap: 6px;
+        }
+        .reel-page-name {
+          font-family: var(--font-main);
+          font-size: 11px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .reel-views-pill {
+          font-family: var(--font-main);
+          font-size: 10px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.12);
+          color: #fff;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .reel-media-wrap {
           width: 100%;
-          aspect-ratio: 4 / 5;
+          aspect-ratio: 9 / 16;
           position: relative;
           overflow: hidden;
-          background: #1a1a1e;
+          background: #000;
           flex-shrink: 0;
           cursor: pointer;
         }
-        .sample-img {
+        .reel-video {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
         }
-        .empty-sample-placeholder {
-          width: 100%;
-          height: 100%;
+        .watch-ig-badge {
+          position: absolute;
+          inset: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #1a1a1e;
+          background: rgba(0, 0, 0, 0.4);
+          opacity: 0;
+          transition: opacity 0.2s ease;
+          pointer-events: none;
+          z-index: 2;
         }
-        .placeholder-text {
+        .watch-ig-badge span {
           font-family: var(--font-main);
-          font-size: 13px;
-          color: var(--muted);
+          font-size: 12px;
+          font-weight: 600;
+          color: #fff;
+          background: rgba(18, 18, 20, 0.88);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          padding: 6px 12px;
+          border-radius: 999px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         }
-        .sample-caption-wrap {
-          padding: 12px 14px 16px;
-          background: #121214;
+        .reel-link-wrap:hover .watch-ig-badge,
+        .reel-link-wrap:focus-visible .watch-ig-badge {
+          opacity: 1;
         }
-        .sample-caption {
+        .reel-caption-wrap {
+          padding: 8px 10px 10px;
+          background: #141416;
+        }
+        .reel-caption {
           font-family: var(--font-main);
-          font-size: 13px;
-          line-height: 1.4;
-          color: var(--text);
+          font-size: 11px;
+          line-height: 1.35;
+          color: rgba(255, 255, 255, 0.75);
           text-align: left;
           margin: 0;
           display: -webkit-box;
-          -webkit-line-clamp: 3;
+          -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
-        }
-        .muted-caption {
-          color: var(--muted);
-          font-style: italic;
         }
         .voice-footer {
           text-align: center;

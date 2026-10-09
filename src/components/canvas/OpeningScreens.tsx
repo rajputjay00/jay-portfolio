@@ -84,8 +84,53 @@ function FloatingScreen({
   const shaderMatRef = useRef<THREE.ShaderMaterial>(null);
   const frozenTimeRef = useRef<number>(0);
   const currentPos = useRef(new THREE.Vector3(...startPos));
-  const currentRot = useRef(new THREE.Euler(...startRot));
   const opacityRef = useRef(1.0);
+  const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const clip = reelsData.openingClips?.clips?.[index];
+    if (!clip?.file) return;
+
+    const vid = document.createElement('video');
+    vid.src = clip.file;
+    vid.crossOrigin = 'anonymous';
+    vid.loop = true;
+    vid.muted = true;
+    vid.playsInline = true;
+    vid.preload = 'auto';
+    vid.ontimeupdate = () => {
+      if (vid.currentTime >= 8) {
+        vid.currentTime = 0;
+      }
+    };
+
+    videoRef.current = vid;
+    const tex = new THREE.VideoTexture(vid);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.format = THREE.RGBAFormat;
+    setVideoTexture(tex);
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      vid.play().catch(() => {});
+    }
+
+    return () => {
+      vid.pause();
+      vid.removeAttribute('src');
+      vid.load();
+      tex.dispose();
+    };
+  }, [index]);
+
+  useEffect(() => {
+    if (isFrozen && videoRef.current) {
+      videoRef.current.pause();
+    }
+  }, [isFrozen]);
 
   const customMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -102,23 +147,24 @@ function FloatingScreen({
   }, [index]);
 
   useFrame((state, delta) => {
-    if (!groupRef.current || !shaderMatRef.current) return;
+    if (!groupRef.current) return;
 
     if (!isFrozen) {
       frozenTimeRef.current = state.clock.elapsedTime;
-      shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
-      shaderMatRef.current.uniforms.uFreeze.value = 0;
+      if (shaderMatRef.current) {
+        shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+        shaderMatRef.current.uniforms.uFreeze.value = 0;
+      }
     } else {
-      shaderMatRef.current.uniforms.uFreeze.value = 1;
-      shaderMatRef.current.uniforms.uTime.value = frozenTimeRef.current;
+      if (shaderMatRef.current) {
+        shaderMatRef.current.uniforms.uFreeze.value = 1;
+        shaderMatRef.current.uniforms.uTime.value = frozenTimeRef.current;
+      }
     }
 
     if (isGliding) {
-      // Smoothly glide into place as part of the feed
       currentPos.current.lerp(new THREE.Vector3(...endPos), delta * 2.5);
       groupRef.current.position.copy(currentPos.current);
-
-      // Fade out gracefully as feed instanced wall activates
       opacityRef.current = THREE.MathUtils.damp(opacityRef.current, 0.0, 2.5, delta);
     } else {
       currentPos.current.set(...startPos);
@@ -129,7 +175,9 @@ function FloatingScreen({
       opacityRef.current = THREE.MathUtils.damp(opacityRef.current, 1.0, 3.0, delta);
     }
 
-    shaderMatRef.current.uniforms.uOpacity.value = opacityRef.current;
+    if (shaderMatRef.current) {
+      shaderMatRef.current.uniforms.uOpacity.value = opacityRef.current;
+    }
   });
 
   if (!visible || opacityRef.current <= 0.01) return null;
@@ -142,7 +190,11 @@ function FloatingScreen({
 
       <mesh position={[0, 0, 0.022]}>
         <planeGeometry args={[1.35, 1.7]} />
-        <primitive object={customMaterial} ref={shaderMatRef} attach="material" />
+        {videoTexture ? (
+          <meshBasicMaterial map={videoTexture} transparent opacity={opacityRef.current} toneMapped={false} />
+        ) : (
+          <primitive object={customMaterial} ref={shaderMatRef} attach="material" />
+        )}
       </mesh>
     </group>
   );
