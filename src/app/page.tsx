@@ -205,18 +205,18 @@ export default function HomePage() {
           {/* d. Numbers Card */}
           <div className={`hero-numbers-card ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
             <div className="number-col">
-              <span className="number-val">{resultsMap.icl?.value || '401K'}</span>
-              <span className="number-lbl">{resultsMap.icl?.account || 'Indian Corporate Life'}</span>
+              <span className="number-val">{resultsMap.icl?.value || ''}</span>
+              <span className="number-lbl">{resultsMap.icl?.account || ''}</span>
             </div>
             <div className="number-divider" />
             <div className="number-col">
-              <span className="number-val">{resultsMap['sfc-top-reel']?.value || '21.2M'}</span>
-              <span className="number-lbl">{resultsMap['sfc-top-reel']?.label || 'views on one Reel'}</span>
+              <span className="number-val">{resultsMap['sfc-top-reel']?.value || ''}</span>
+              <span className="number-lbl">{resultsMap['sfc-top-reel']?.label || ''}</span>
             </div>
             <div className="number-divider" />
             <div className="number-col">
-              <span className="number-val">{resultsMap.brands?.value || '5'}</span>
-              <span className="number-lbl">brands</span>
+              <span className="number-val">{resultsMap.brands?.value || ''}</span>
+              <span className="number-lbl">{resultsMap.brands?.label || ''}</span>
             </div>
           </div>
 

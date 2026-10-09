@@ -28,15 +28,15 @@ export default function ProofSection() {
     resultsMap[item.id] = item;
   });
 
-  const iclData = resultsMap['icl'] || { value: '401K', account: 'Indian Corporate Life' };
+  const iclData = resultsMap['icl'] || { value: '', account: '' };
   const sfcTopReelData = resultsMap['sfc-top-reel'] || {
-    value: '21.2M',
-    label: 'views on one Reel',
-    account: 'Strictly For Corporate',
+    value: '',
+    label: '',
+    account: '',
   };
   const brandsData = resultsMap['brands'] || {
-    value: '5',
-    account: 'Flipkart, Realme, Lava, JioHotstar, Wellbeing Nutrition',
+    value: '',
+    account: '',
   };
 
   useEffect(() => {
@@ -53,9 +53,23 @@ export default function ProofSection() {
       return;
     }
 
-    const iclTarget = parseFloat(iclData.value.replace(/[^0-9.]/g, '')) || 401;
-    const sfcTarget = parseFloat(sfcTopReelData.value.replace(/[^0-9.]/g, '')) || 21.2;
-    const brandsTarget = parseFloat(brandsData.value.replace(/[^0-9.]/g, '')) || 5;
+    const iclSuffix = iclData.value?.replace(/[0-9.]/g, '') || '';
+    const sfcSuffix = sfcTopReelData.value?.replace(/[0-9.]/g, '') || '';
+    const brandsSuffix = brandsData.value?.replace(/[0-9.]/g, '') || '';
+
+    const iclTarget = parseFloat(iclData.value?.replace(/[^0-9.]/g, '') || '0') || 0;
+    const sfcTarget = parseFloat(sfcTopReelData.value?.replace(/[^0-9.]/g, '') || '0') || 0;
+    const brandsTarget = parseFloat(brandsData.value?.replace(/[^0-9.]/g, '') || '0') || 0;
+
+    const formatIcl = (v: number) => {
+      const hasDecimal = iclTarget % 1 !== 0;
+      return `${hasDecimal ? (v >= iclTarget - 0.05 ? iclTarget.toFixed(1) : v.toFixed(1)) : Math.round(v)}${iclSuffix}`;
+    };
+    const formatSfc = (v: number) => {
+      const hasDecimal = sfcTarget % 1 !== 0;
+      return `${hasDecimal ? (v >= sfcTarget - 0.05 ? sfcTarget.toFixed(1) : v.toFixed(1)) : Math.round(v)}${sfcSuffix}`;
+    };
+    const formatBrands = (v: number) => `${Math.round(v)}${brandsSuffix}`;
 
     const isDesktop = window.innerWidth >= 768;
 
@@ -148,8 +162,7 @@ export default function ProofSection() {
           ease: 'power1.out',
           onUpdate: () => {
             if (sfcRef.current) {
-              const formatted = counters.sfc >= sfcTarget - 0.05 ? sfcTarget.toFixed(1) : counters.sfc.toFixed(1);
-              sfcRef.current.innerText = `${formatted}M`;
+              sfcRef.current.innerText = formatSfc(counters.sfc);
             }
           },
         }, 2.4);
@@ -173,7 +186,7 @@ export default function ProofSection() {
           duration: 1.2,
           ease: 'power1.out',
           onUpdate: () => {
-            if (brandsRef.current) brandsRef.current.innerText = `${Math.round(counters.brands)}`;
+            if (brandsRef.current) brandsRef.current.innerText = formatBrands(counters.brands);
           },
         }, 5.0);
 
@@ -229,9 +242,9 @@ export default function ProofSection() {
       } else {
         // Mobile (< 768px): No pin; each value scales from 1.3 to 1 and fades in as it enters viewport
         const cols = [
-          { ref: col1Ref, valRef: iclRef, target: iclTarget, format: (v: number) => `${Math.round(v)}K` },
-          { ref: col2Ref, valRef: sfcRef, target: sfcTarget, format: (v: number) => `${v >= sfcTarget - 0.05 ? sfcTarget.toFixed(1) : v.toFixed(1)}M` },
-          { ref: col3Ref, valRef: brandsRef, target: brandsTarget, format: (v: number) => `${Math.round(v)}` },
+          { ref: col1Ref, valRef: iclRef, target: iclTarget, format: formatIcl },
+          { ref: col2Ref, valRef: sfcRef, target: sfcTarget, format: formatSfc },
+          { ref: col3Ref, valRef: brandsRef, target: brandsTarget, format: formatBrands },
         ];
 
         cols.forEach(({ ref, valRef, target, format }) => {
@@ -348,7 +361,7 @@ export default function ProofSection() {
           {/* 1. ICL */}
           <div ref={col1Ref} className="proof-col">
             <div className="proof-value">
-              <span ref={iclRef}>401K</span>
+              <span ref={iclRef}>{iclData.value}</span>
             </div>
             <div className="proof-label">
               followers · {iclData.account}
@@ -405,11 +418,11 @@ export default function ProofSection() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span ref={brandsRef}>5</span>
+                <span ref={brandsRef}>{brandsData.value}</span>
                 <span style={{ color: 'var(--accent)' }}>.</span>
               </span>
             </div>
-            <div className="proof-label">brands</div>
+            <div className="proof-label">{brandsData.label || 'brands'}</div>
           </div>
         </div>
 

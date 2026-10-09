@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { caseStudiesList, CaseStudyData } from '@/data/caseStudiesData';
+import resultsData from '@/../content/results.json';
 import CaseStudyReaderModal from './CaseStudyReaderModal';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
@@ -448,18 +449,31 @@ function CaseStudyCard({
         <div className="card-kicker">{study.kicker}</div>
 
         <h3 className="card-title">
-          {study.id === 'creativefuel' && (
-            <>Creativefuel · <span className="accent-metric">401K</span></>
-          )}
-          {study.id === 'brand-social' && (
-            <>Brand Social · <span className="accent-metric">5</span> brands</>
-          )}
-          {study.id === 'strictly-for-corporate' && (
-            <>Strictly For Corporate · <span className="accent-metric">35.3K</span></>
-          )}
-          {study.id === 'campus-community' && (
-            <>Campus & Community</>
-          )}
+          {study.title.split(' — ')[0]}
+          {(() => {
+            const resultsList = resultsData?.results || [];
+            const resultsMap: Record<string, string> = {};
+            resultsList.forEach((r) => {
+              if (r.caseStudy && r.value) resultsMap[r.caseStudy] = r.value;
+              if (r.id && r.value) resultsMap[r.id] = r.value;
+            });
+            const primaryId =
+              study.id === 'strictly-for-corporate'
+                ? 'sfc'
+                : study.id === 'creativefuel'
+                ? 'icl'
+                : study.id === 'brand-social'
+                ? 'brands'
+                : study.id;
+            const metric = resultsMap[primaryId] || resultsMap[study.id] || study.headline?.value;
+
+            if (metric && metric !== 'XXK') {
+              return (
+                <> · <span className="accent-metric">{metric}</span>{study.brands ? ' brands' : ''}</>
+              );
+            }
+            return null;
+          })()}
         </h3>
 
         <p className="card-summary">{study.summary}</p>
