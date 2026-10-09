@@ -1,0 +1,44 @@
+{
+  "items": [
+    {
+      "org": "Creativefuel",
+      "role": "Social Media Manager",
+      "type": "Freelance",
+      "from": "Nov 2024",
+      "to": "Present",
+      "line": "Run Instagram pages end to end and deliver brand work: content, captions, scheduling and performance."
+    },
+    {
+      "org": "Graho",
+      "role": "Social Media Manager",
+      "type": "Internship",
+      "from": "Jan 2026",
+      "to": "Apr 2026",
+      "line": "Ran social for an astrology app through its first 1,000 downloads."
+    },
+    {
+      "org": "AB Media",
+      "role": "Social Media Manager",
+      "type": "",
+      "from": "Mar 2025",
+      "to": "Oct 2025",
+      "line": "Managed 15 meme pages with a three-person team to promote a brand."
+    },
+    {
+      "org": "TEDxIPSA Indore",
+      "role": "Social Media Manager",
+      "type": "Campus",
+      "from": "Oct 2025",
+      "to": "Present",
+      "line": "Social presence, content strategy and event campaigns."
+    },
+    {
+      "org": "Google Developer Group on Campus IPSA",
+      "role": "Social Media Manager",
+      "type": "Campus",
+      "from": "Nov 2025",
+      "to": "Present",
+      "line": "Social presence and campaigns for technical events and workshops."
+    }
+  ]
+}

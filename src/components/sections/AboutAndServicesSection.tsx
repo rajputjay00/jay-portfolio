@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import profileData from '@/../content/profile.json';
 import servicesData from '@/../content/services.json';
+import experienceData from '@/../content/experience.json';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -17,19 +18,25 @@ function cleanText(text: string): string {
 export default function AboutAndServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const expListRef = useRef<HTMLUListElement>(null);
 
   const shortBio = profileData.shortBio || profileData.bio || '';
   const aboutStory = cleanText(profileData.about?.story || '');
   const photo = profileData.about?.photo || '';
   const services = servicesData.services || [];
+  const experienceItems = experienceData.items || [];
 
   useEffect(() => {
+    // Refresh ScrollTrigger after component mounts
+    ScrollTrigger.refresh();
+
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (!prefersReducedMotion && listRef.current && sectionRef.current) {
-      const items = listRef.current.querySelectorAll('li');
+    if (!prefersReducedMotion && sectionRef.current) {
+      const servicesItems = listRef.current?.querySelectorAll('li') || [];
+      const expItems = expListRef.current?.querySelectorAll('li') || [];
 
       const ctx = gsap.context(() => {
         // Title mask reveal & services list entrance
@@ -43,8 +50,8 @@ export default function AboutAndServicesSection() {
               duration: 0.7,
               ease: 'power3.out',
             });
-            if (items.length > 0) {
-              gsap.from(items, {
+            if (servicesItems.length > 0) {
+              gsap.from(servicesItems, {
                 y: 12,
                 opacity: 0,
                 duration: 0.6,
@@ -54,6 +61,24 @@ export default function AboutAndServicesSection() {
             }
           },
         });
+
+        // Experience list entrance
+        if (expListRef.current && expItems.length > 0) {
+          ScrollTrigger.create({
+            trigger: expListRef.current,
+            start: 'top 85%',
+            once: true,
+            onEnter: () => {
+              gsap.from(expItems, {
+                y: 12,
+                opacity: 0,
+                duration: 0.6,
+                stagger: 0.08,
+                ease: 'power2.out',
+              });
+            },
+          });
+        }
 
         // Ambient glow scroll scrub
         ScrollTrigger.create({
@@ -158,6 +183,26 @@ export default function AboutAndServicesSection() {
               ))}
             </ul>
           </div>
+        </div>
+
+        {/* Full-width Experience Block 72px below grid */}
+        <div className="experience-block">
+          <div className="experience-label">Experience</div>
+          <ul ref={expListRef} className="experience-list">
+            {experienceItems.map((item, idx) => (
+              <li key={idx} className="experience-item">
+                <div className="experience-top-border" />
+                <div className="experience-content">
+                  <div className="exp-org">{item.org}</div>
+                  <div className="exp-role-type">
+                    {item.role}{item.type ? ` · ${item.type}` : ''}
+                  </div>
+                  <div className="exp-dates">{item.from} – {item.to}</div>
+                  {item.line ? <div className="exp-line">{item.line}</div> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -294,6 +339,101 @@ export default function AboutAndServicesSection() {
           line-height: 1.2;
         }
 
+        /* Experience Block */
+        .experience-block {
+          margin-top: 72px;
+          width: 100%;
+        }
+        .experience-label {
+          font-family: var(--font-main);
+          font-size: 13px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--muted);
+          margin-bottom: 24px;
+        }
+        .experience-list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        }
+        .experience-item {
+          min-height: 72px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          position: relative;
+          cursor: default;
+        }
+        .experience-top-border {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.16);
+          transition: background 0.25s ease;
+        }
+        .experience-content {
+          display: grid;
+          grid-template-columns: 260px 1fr auto;
+          grid-template-areas:
+            "org role dates"
+            "org line .";
+          column-gap: 32px;
+          row-gap: 4px;
+          align-items: baseline;
+          padding: 18px 0;
+          transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .exp-org {
+          grid-area: org;
+          font-family: var(--font-main);
+          font-size: 22px;
+          font-weight: 500;
+          color: var(--text);
+          line-height: 1.3;
+          letter-spacing: -0.02em;
+        }
+        .exp-role-type {
+          grid-area: role;
+          font-family: var(--font-main);
+          font-size: 15px;
+          font-weight: 400;
+          color: var(--text);
+          line-height: 1.4;
+        }
+        .exp-line {
+          grid-area: line;
+          font-family: var(--font-main);
+          font-size: 14px;
+          font-weight: 400;
+          color: var(--muted);
+          line-height: 1.5;
+        }
+        .exp-dates {
+          grid-area: dates;
+          font-family: var(--font-main);
+          font-size: 14px;
+          font-weight: 400;
+          color: var(--muted);
+          font-variant-numeric: tabular-nums;
+          text-align: right;
+          white-space: nowrap;
+          line-height: 1.4;
+        }
+
+        @media (pointer: fine) {
+          .experience-item:hover .experience-top-border {
+            background: var(--accent);
+          }
+          .experience-item:hover .experience-content {
+            transform: translateX(8px);
+          }
+        }
+
         @media (max-width: 1024px) {
           .about-section {
             padding: 80px 48px;
@@ -309,6 +449,13 @@ export default function AboutAndServicesSection() {
           }
           .service-content {
             font-size: 21px;
+          }
+          .experience-content {
+            grid-template-columns: 220px 1fr auto;
+            column-gap: 24px;
+          }
+          .exp-org {
+            font-size: 20px;
           }
         }
 
@@ -331,6 +478,30 @@ export default function AboutAndServicesSection() {
           }
           .service-content {
             font-size: 19px;
+          }
+          .experience-block {
+            margin-top: 56px;
+          }
+          .experience-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 16px 0;
+          }
+          .exp-org {
+            font-size: 19px;
+            margin-bottom: 2px;
+          }
+          .exp-role-type {
+            font-size: 15px;
+          }
+          .exp-dates {
+            font-size: 13px;
+            text-align: left;
+            margin-bottom: 2px;
+          }
+          .exp-line {
+            font-size: 13.5px;
           }
         }
       `}</style>
