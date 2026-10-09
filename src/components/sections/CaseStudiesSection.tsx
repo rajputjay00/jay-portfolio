@@ -455,7 +455,7 @@ function CaseStudyCard({
             <>Brand Social · <span className="accent-metric">5</span> brands</>
           )}
           {study.id === 'strictly-for-corporate' && (
-            <>Strictly For Corporate · <span className="accent-metric">39.5K</span></>
+            <>Strictly For Corporate · <span className="accent-metric">35.3K</span></>
           )}
           {study.id === 'campus-community' && (
             <>Campus & Community</>

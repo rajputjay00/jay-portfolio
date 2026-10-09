@@ -29,7 +29,11 @@ export default function ProofSection() {
   });
 
   const iclData = resultsMap['icl'] || { value: '401K', account: 'Indian Corporate Life' };
-  const sfcData = resultsMap['sfc'] || { value: '39.5K', account: 'Strictly For Corporate' };
+  const sfcTopReelData = resultsMap['sfc-top-reel'] || {
+    value: '21.2M',
+    label: 'views on one Reel',
+    account: 'Strictly For Corporate',
+  };
   const brandsData = resultsMap['brands'] || {
     value: '5',
     account: 'Flipkart, Realme, Lava, Jio Hotstar, Wellbeing Nutrition',
@@ -42,7 +46,7 @@ export default function ProofSection() {
 
     if (prefersReducedMotion) {
       if (iclRef.current) iclRef.current.innerText = iclData.value;
-      if (sfcRef.current) sfcRef.current.innerText = sfcData.value;
+      if (sfcRef.current) sfcRef.current.innerText = sfcTopReelData.value;
       if (brandsRef.current) brandsRef.current.innerText = brandsData.value;
       if (ellipseRef.current) ellipseRef.current.style.strokeDashoffset = '0';
       if (arrowRef.current) arrowRef.current.style.strokeDashoffset = '0';
@@ -50,7 +54,7 @@ export default function ProofSection() {
     }
 
     const iclTarget = parseFloat(iclData.value.replace(/[^0-9.]/g, '')) || 401;
-    const sfcTarget = parseFloat(sfcData.value.replace(/[^0-9.]/g, '')) || 39.5;
+    const sfcTarget = parseFloat(sfcTopReelData.value.replace(/[^0-9.]/g, '')) || 21.2;
     const brandsTarget = parseFloat(brandsData.value.replace(/[^0-9.]/g, '')) || 5;
 
     const isDesktop = window.innerWidth >= 768;
@@ -131,7 +135,7 @@ export default function ProofSection() {
           ease: 'power2.inOut',
         }, 1.4);
 
-        // Step 3: SFC fades in at center large, counts up (2.4s - 4.0s)
+        // Step 3: SFC Top Reel fades in at center large, counts up (2.4s - 4.0s)
         tl.to(col2Ref.current, {
           opacity: 1,
           duration: 0.4,
@@ -144,8 +148,8 @@ export default function ProofSection() {
           ease: 'power1.out',
           onUpdate: () => {
             if (sfcRef.current) {
-              const formatted = counters.sfc >= sfcTarget - 0.1 ? sfcTarget.toString() : counters.sfc.toFixed(1);
-              sfcRef.current.innerText = `${formatted}K`;
+              const formatted = counters.sfc >= sfcTarget - 0.05 ? sfcTarget.toFixed(1) : counters.sfc.toFixed(1);
+              sfcRef.current.innerText = `${formatted}M`;
             }
           },
         }, 2.4);
@@ -226,7 +230,7 @@ export default function ProofSection() {
         // Mobile (< 768px): No pin; each value scales from 1.3 to 1 and fades in as it enters viewport
         const cols = [
           { ref: col1Ref, valRef: iclRef, target: iclTarget, format: (v: number) => `${Math.round(v)}K` },
-          { ref: col2Ref, valRef: sfcRef, target: sfcTarget, format: (v: number) => `${v >= sfcTarget - 0.1 ? sfcTarget : v.toFixed(1)}K` },
+          { ref: col2Ref, valRef: sfcRef, target: sfcTarget, format: (v: number) => `${v >= sfcTarget - 0.05 ? sfcTarget.toFixed(1) : v.toFixed(1)}M` },
           { ref: col3Ref, valRef: brandsRef, target: brandsTarget, format: (v: number) => `${Math.round(v)}` },
         ];
 
@@ -292,7 +296,7 @@ export default function ProofSection() {
       window.removeEventListener('resize', handleResize);
       ctx.revert();
     };
-  }, [iclData.value, sfcData.value, brandsData.value]);
+  }, [iclData.value, sfcTopReelData.value, brandsData.value]);
 
   return (
     <section
@@ -353,11 +357,11 @@ export default function ProofSection() {
 
           <div className="proof-divider" />
 
-          {/* 2. SFC with Hand-drawn Ellipse */}
+          {/* 2. SFC Top Reel with Hand-drawn Ellipse */}
           <div ref={col2Ref} className="proof-col">
             <div className="proof-value">
               <span className="scribble-target-wrap">
-                <span ref={sfcRef}>39.5K</span>
+                <span ref={sfcRef}>{sfcTopReelData.value}</span>
                 <svg
                   className="scribble-svg scribble-ellipse"
                   viewBox="0 0 260 130"
@@ -376,7 +380,7 @@ export default function ProofSection() {
               </span>
             </div>
             <div className="proof-label">
-              followers · {sfcData.account}
+              views on one Reel · {sfcTopReelData.account}
             </div>
           </div>
 

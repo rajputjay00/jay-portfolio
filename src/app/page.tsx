@@ -210,8 +210,8 @@ export default function HomePage() {
             </div>
             <div className="number-divider" />
             <div className="number-col">
-              <span className="number-val">{resultsMap.sfc?.value || '39.5K'}</span>
-              <span className="number-lbl">{resultsMap.sfc?.account || 'Strictly For Corporate'}</span>
+              <span className="number-val">{resultsMap['sfc-top-reel']?.value || '21.2M'}</span>
+              <span className="number-lbl">{resultsMap['sfc-top-reel']?.label || 'views on one Reel'}</span>
             </div>
             <div className="number-divider" />
             <div className="number-col">
