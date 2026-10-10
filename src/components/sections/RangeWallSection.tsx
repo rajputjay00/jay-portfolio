@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import rangeData from '@/../content/range-wall.json';
 import reelsData from '@/../content/reels.json';
+import resultsData from '@/../content/results.json';
 import { perfStore } from '@/store/perfStore';
 import { triggerHeart } from '@/utils/doubleTapHeart';
 
@@ -12,15 +13,12 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-function cleanText(text: string): string {
-  return text.replace(/\[DUMMY\]\s*/g, '').trim();
-}
-
 interface ReelItem {
   id: string;
   slot: number;
   page: string;
   account: string;
+  handle?: string;
   file: string;
   poster?: string;
   views: string;
@@ -30,101 +28,449 @@ interface ReelItem {
   status?: string;
 }
 
-function PhoneFeedReelCard({
-  reel,
-  voiceName,
-  isPaused,
+interface VoiceItem {
+  id: string;
+  name: string;
+  page: string;
+  handle?: string;
+  positioning?: string;
+  reels: string[];
+  proof?: string[];
+  caseStudy?: string;
+}
+
+function PhoneMonolith({
+  voice,
+  voiceReels,
+  followerText,
+  isSectionInView,
+  isGlassBlur,
+  isDesktop,
 }: {
-  reel: ReelItem;
-  voiceName: string;
-  isPaused: boolean;
+  voice: VoiceItem;
+  voiceReels: ReelItem[];
+  followerText: string;
+  isSectionInView: boolean;
+  isGlassBlur: boolean;
+  isDesktop: boolean;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const animFrameRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const pausedElapsedRef = useRef<number>(0);
 
+  const activeReel = voiceReels[activeIndex] || voiceReels[0] || {
+    id: 'unknown',
+    views: '0',
+    url: 'https://instagram.com',
+    file: '',
+    handle: voice.handle,
+  };
+
+  const handle = voice.handle || activeReel.handle || 'strictlyforcorporate';
+
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const isPlaying = isSectionInView && !isHovered && !prefersReducedMotion;
+
+  // Jump to specific reel
+  const jumpToReel = (newIdx: number) => {
+    if (newIdx === activeIndex) return;
+    const prevVideo = videoRefs.current[activeIndex];
+    if (prevVideo) {
+      prevVideo.pause();
+      prevVideo.currentTime = 0;
+    }
+    pausedElapsedRef.current = 0;
+    startTimeRef.current = performance.now();
+    setProgress(0);
+    setActiveIndex(newIdx);
+  };
+
+  // 8-second story timer & progress animation loop
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReducedMotion) {
-      v.pause();
+    if (!isPlaying) {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      startTimeRef.current = null;
+      videoRefs.current.forEach((v) => {
+        if (v && !v.paused) v.pause();
+      });
       return;
     }
 
-    if (isVisible && !isPaused) {
-      v.play().catch(() => {});
-    } else {
-      v.pause();
-    }
-  }, [isVisible, isPaused]);
+    // Play active video, pause others
+    videoRefs.current.forEach((v, idx) => {
+      if (!v) return;
+      if (idx === activeIndex) {
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+        v.currentTime = 0;
+      }
+    });
+
+    const loopDuration = 8000; // 8 seconds
+    startTimeRef.current = performance.now() - pausedElapsedRef.current;
+
+    const tick = (now: number) => {
+      if (!startTimeRef.current) startTimeRef.current = now;
+      const elapsed = now - startTimeRef.current;
+      pausedElapsedRef.current = elapsed;
+
+      if (elapsed >= loopDuration) {
+        pausedElapsedRef.current = 0;
+        startTimeRef.current = now;
+        setProgress(0);
+        setActiveIndex((prev) => (prev + 1) % voiceReels.length);
+      } else {
+        setProgress(Math.min(1, elapsed / loopDuration));
+        animFrameRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [isPlaying, activeIndex, voiceReels.length]);
 
   return (
-    <div ref={containerRef} className="phone-feed-card">
-      <a
-        href={reel.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="reel-link-wrap"
-        aria-label={`Watch ${reel.account || voiceName} reel (${reel.views} views) on Instagram`}
-      >
-        <div className="reel-card-header">
-          <span className="reel-page-name">{reel.account || voiceName}</span>
-          <span className="reel-views-pill">{reel.views} views</span>
-        </div>
+    <div
+      className="voice-column"
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => setIsHovered(false)}
+    >
+      <div className={`phone-frame ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
+        <div className="phone-screen">
+          {/* Top Stories Progress Segments */}
+          <div className="story-progress-bar" role="tablist" aria-label="Reel story progress">
+            {voiceReels.map((_, rIdx) => (
+              <button
+                key={rIdx}
+                type="button"
+                role="tab"
+                aria-selected={activeIndex === rIdx}
+                aria-label={`Jump to ${voice.name} reel ${rIdx + 1}`}
+                className="story-segment-track"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  jumpToReel(rIdx);
+                }}
+              >
+                <div
+                  className="story-segment-fill"
+                  style={{
+                    transform:
+                      rIdx < activeIndex
+                        ? 'scaleX(1)'
+                        : rIdx === activeIndex
+                        ? `scaleX(${progress})`
+                        : 'scaleX(0)',
+                  }}
+                />
+              </button>
+            ))}
+          </div>
 
-        <div
-          className="reel-media-wrap"
-          onDoubleClick={(e) => {
-            e.preventDefault();
-            triggerHeart(e.currentTarget, e.clientX, e.clientY);
-          }}
-        >
-          <video
-            ref={videoRef}
-            src={reel.file}
-            poster={reel.poster || undefined}
-            muted
-            playsInline
-            loop
-            preload="none"
-            className="reel-video"
-            onTimeUpdate={(e) => {
-              if (e.currentTarget.currentTime >= 8) {
-                e.currentTarget.currentTime = 0;
-              }
+          {/* Top-left handle under progress segments */}
+          <div className="phone-handle-pill">
+            <span>@{handle.replace(/^@/, '')}</span>
+          </div>
+
+          {/* Video stack with 300ms opacity crossfade */}
+          <div className="phone-video-layer">
+            {voiceReels.map((reelItem, rIdx) => {
+              const isCurrent = activeIndex === rIdx;
+              return (
+                <div
+                  key={reelItem.id}
+                  className={`reel-slide ${isCurrent ? 'active' : ''}`}
+                  style={{
+                    opacity: isCurrent ? 1 : 0,
+                    pointerEvents: isCurrent ? 'auto' : 'none',
+                    transition: 'opacity 300ms ease',
+                  }}
+                >
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[rIdx] = el;
+                    }}
+                    src={reelItem.file}
+                    poster={reelItem.poster || undefined}
+                    muted
+                    playsInline
+                    loop
+                    preload={isCurrent ? 'auto' : 'metadata'}
+                    className="reel-video"
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom-left Views Pill */}
+          <div className="phone-views-pill">
+            <span>{activeReel.views} views</span>
+          </div>
+
+          {/* Watch on Instagram Link & Hover / Focus Badge */}
+          <a
+            href={activeReel.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="watch-ig-overlay"
+            aria-label={`Watch ${voice.name} reel (${activeReel.views} views) on Instagram`}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              triggerHeart(e.currentTarget, e.clientX, e.clientY);
             }}
-          />
-
-          <div className="watch-ig-badge">
-            <span>Watch on Instagram ↗</span>
-          </div>
+          >
+            <div className="watch-ig-badge">
+              <span>Watch on Instagram ↗</span>
+            </div>
+          </a>
         </div>
+      </div>
 
-        {reel.hook && (
-          <div className="reel-caption-wrap">
-            <p className="reel-caption">{reel.hook}</p>
-          </div>
-        )}
-      </a>
+      {/* Voice Name and Follower Count */}
+      <div className="voice-footer">
+        <div className="voice-label">{voice.name}</div>
+        <div className="voice-proof">{followerText}</div>
+      </div>
+
+      <style jsx>{`
+        .voice-column {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+          will-change: transform;
+        }
+        .phone-frame {
+          height: min(570px, 58vh);
+          width: calc((min(570px, 58vh) - 16px) * (9 / 16) + 16px);
+          border-radius: calc(min(570px, 58vh) * (36 / 570));
+          padding: 8px;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 16px;
+          transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+          position: relative;
+        }
+        @media (pointer: fine) {
+          .phone-frame:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+          }
+        }
+        .phone-screen {
+          background: #000;
+          border-radius: calc(min(570px, 58vh) * (28 / 570));
+          height: 100%;
+          width: auto;
+          aspect-ratio: 9 / 16;
+          overflow: hidden;
+          position: relative;
+          margin: 0 auto;
+        }
+        .story-progress-bar {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          right: 10px;
+          height: 3px;
+          display: flex;
+          gap: 4px;
+          z-index: 12;
+        }
+        .story-segment-track {
+          flex: 1;
+          height: 100%;
+          background: rgba(255, 255, 255, 0.28);
+          border-radius: 2px;
+          overflow: hidden;
+          border: none;
+          padding: 0;
+          margin: 0;
+          cursor: pointer;
+          outline: none;
+          position: relative;
+        }
+        .story-segment-track:focus-visible {
+          outline: 2px solid var(--accent, #ffd700);
+          outline-offset: 1px;
+        }
+        .story-segment-fill {
+          width: 100%;
+          height: 100%;
+          background: #ffffff;
+          transform-origin: left center;
+          will-change: transform;
+        }
+        .phone-handle-pill {
+          position: absolute;
+          top: 20px;
+          left: 10px;
+          z-index: 12;
+          pointer-events: none;
+        }
+        .phone-handle-pill span {
+          font-family: var(--font-main);
+          font-size: 10.5px;
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          color: rgba(255, 255, 255, 0.95);
+          background: rgba(14, 14, 16, 0.72);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          padding: 3px 8px;
+          border-radius: 999px;
+          backdrop-filter: blur(8px);
+          display: inline-block;
+        }
+        .phone-video-layer {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background: #000;
+        }
+        .reel-slide {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          background: #000;
+        }
+        .reel-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          object-position: center;
+          display: block;
+        }
+        .phone-views-pill {
+          position: absolute;
+          bottom: 12px;
+          left: 10px;
+          z-index: 12;
+          pointer-events: none;
+        }
+        .phone-views-pill span {
+          font-family: var(--font-main);
+          font-size: 11px;
+          font-weight: 600;
+          color: #ffffff;
+          background: rgba(14, 14, 16, 0.72);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          padding: 4px 9px;
+          border-radius: 999px;
+          backdrop-filter: blur(8px);
+          display: inline-block;
+        }
+        .watch-ig-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          outline: none;
+          cursor: pointer;
+        }
+        .watch-ig-overlay:focus-visible {
+          outline: 2px solid var(--accent, #ffd700);
+          outline-offset: -2px;
+        }
+        .watch-ig-badge {
+          opacity: 0;
+          transition: opacity 0.2s ease;
+          pointer-events: none;
+        }
+        .watch-ig-badge span {
+          font-family: var(--font-main);
+          font-size: 12px;
+          font-weight: 600;
+          color: #fff;
+          background: rgba(18, 18, 20, 0.88);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          padding: 6px 12px;
+          border-radius: 999px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(8px);
+        }
+        .watch-ig-overlay:hover .watch-ig-badge,
+        .watch-ig-overlay:focus-visible .watch-ig-badge {
+          opacity: 1;
+        }
+        .voice-footer {
+          text-align: center;
+          width: 100%;
+        }
+        .voice-label {
+          font-family: var(--font-serif);
+          font-style: italic;
+          font-size: 36px;
+          color: var(--text);
+          line-height: 1.1;
+          margin-bottom: 6px;
+        }
+        .voice-proof {
+          font-family: var(--font-main);
+          font-size: 14px;
+          color: var(--muted);
+          line-height: 1.35;
+          min-height: 20px;
+        }
+
+        @media (max-width: 1024px) {
+          .phone-frame {
+            height: 500px;
+            width: calc((500px - 16px) * (9 / 16) + 16px);
+            border-radius: 32px;
+          }
+          .phone-screen {
+            border-radius: 26px;
+          }
+          .voice-label {
+            font-size: 32px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .voice-column {
+            flex: 0 0 calc((460px - 16px) * (9 / 16) + 16px);
+            scroll-snap-align: start;
+          }
+          .phone-frame {
+            height: 460px;
+            width: calc((460px - 16px) * (9 / 16) + 16px);
+            border-radius: 28px;
+          }
+          .phone-screen {
+            border-radius: 22px;
+          }
+          .voice-label {
+            font-size: 30px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -135,9 +481,8 @@ export default function RangeWallSection() {
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
   const [isInView, setIsInView] = useState(false);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const voices = rangeData.voices || [];
+  const voices: VoiceItem[] = rangeData.voices || [];
   const reelsList: ReelItem[] = reelsData.reels || [];
 
   const reelsMap = useMemo(() => {
@@ -147,6 +492,19 @@ export default function RangeWallSection() {
     });
     return map;
   }, [reelsList]);
+
+  const followerMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    resultsData.results?.forEach((r) => {
+      if (r.label === 'followers') {
+        const text = `${r.value} ${r.label}`;
+        if (r.id) map[r.id] = text;
+        if (r.handle) map[r.handle] = text;
+        if (r.account) map[r.account.toLowerCase()] = text;
+      }
+    });
+    return map;
+  }, []);
 
   useEffect(() => {
     const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
@@ -160,7 +518,7 @@ export default function RangeWallSection() {
 
     if (!prefersReducedMotion && sectionRef.current) {
       const ctx = gsap.context(() => {
-        // Section in-view trigger to pause/play internal auto-scroll
+        // Section in-view trigger to pause/play internal videos
         ScrollTrigger.create({
           trigger: sectionRef.current,
           start: 'top bottom',
@@ -283,10 +641,11 @@ export default function RangeWallSection() {
               .map((id: string) => reelsMap[id])
               .filter(Boolean);
 
-            // Duplicate feed for seamless continuous 16s loop
-            const duplicatedReels = [...voiceReels, ...voiceReels];
-            const isPaused = !isInView || hoveredIndex === idx;
-            const proofText = voice.proof?.join(' · ') || '';
+            const followerText =
+              followerMap[voice.id] ||
+              followerMap[voice.handle || ''] ||
+              followerMap[voice.name.toLowerCase()] ||
+              '';
 
             return (
               <div
@@ -294,44 +653,16 @@ export default function RangeWallSection() {
                 ref={(el) => {
                   cardsRef.current[idx] = el;
                 }}
-                className="voice-column"
-                onPointerEnter={() => setHoveredIndex(idx)}
-                onPointerLeave={() => setHoveredIndex(null)}
+                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
               >
-                {/* 1. Phone Monolith Frame */}
-                <div className={`phone-frame ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
-                  <div className="phone-screen">
-                    {/* Top Notch / Island Indicator */}
-                    <div className="phone-notch-bar">
-                      <div className="phone-notch" />
-                    </div>
-
-                    {/* Auto-scrolling seamless Feed Track */}
-                    <div className="phone-feed-viewport">
-                      <div
-                        className="phone-feed-track"
-                        style={{
-                          animationPlayState: isPaused ? 'paused' : 'running',
-                        }}
-                      >
-                        {duplicatedReels.map((reelItem, itemIdx) => (
-                          <PhoneFeedReelCard
-                            key={`${reelItem.id}-${itemIdx}`}
-                            reel={reelItem}
-                            voiceName={voice.name}
-                            isPaused={isPaused}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Voice Label & Proof Beneath Phone */}
-                <div className="voice-footer">
-                  <div className="voice-label">{voice.name}</div>
-                  <div className="voice-proof">{proofText}</div>
-                </div>
+                <PhoneMonolith
+                  voice={voice}
+                  voiceReels={voiceReels}
+                  followerText={followerText}
+                  isSectionInView={isInView}
+                  isGlassBlur={isGlassBlur}
+                  isDesktop={isDesktop}
+                />
               </div>
             );
           })}
@@ -367,218 +698,9 @@ export default function RangeWallSection() {
           gap: 32px;
           align-items: start;
         }
-        .voice-column {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          width: 100%;
-          will-change: transform;
-        }
-        .phone-frame {
-          height: min(570px, 58vh);
-          width: calc(min(570px, 58vh) * (280 / 570));
-          border-radius: calc(min(570px, 58vh) * (40 / 570));
-          padding: calc(min(570px, 58vh) * (10 / 570));
-          box-sizing: border-box;
-          display: flex;
-          flex-direction: column;
-          margin-bottom: 12px;
-          transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
-        }
-        @media (pointer: fine) {
-          .phone-frame:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-          }
-        }
-        .phone-screen {
-          background: #121214;
-          border-radius: calc(min(570px, 58vh) * (30 / 570));
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-        }
-        .phone-notch-bar {
-          height: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          z-index: 5;
-          background: #121214;
-        }
-        .phone-notch {
-          width: 54px;
-          height: 4px;
-          border-radius: 2px;
-          background: rgba(255, 255, 255, 0.12);
-        }
-        .phone-feed-viewport {
-          flex: 1;
-          width: 100%;
-          overflow: hidden;
-          position: relative;
-        }
-        .phone-feed-track {
-          display: flex;
-          flex-direction: column;
-          width: 100%;
-          animation: feedScrollLoop 16s linear infinite;
-        }
-        @keyframes feedScrollLoop {
-          0% {
-            transform: translateY(0%);
-          }
-          100% {
-            transform: translateY(-50%);
-          }
-        }
-        .phone-feed-card {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          flex-shrink: 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          margin-bottom: 12px;
-        }
-        .reel-link-wrap {
-          display: flex;
-          flex-direction: column;
-          text-decoration: none;
-          color: inherit;
-          border-radius: 12px;
-          overflow: hidden;
-          outline: none;
-          transition: outline 0.2s ease, box-shadow 0.2s ease;
-        }
-        .reel-link-wrap:focus-visible {
-          outline: 2px solid var(--accent, #ffd700);
-          outline-offset: 2px;
-        }
-        .reel-card-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 10px;
-          background: #18181c;
-          gap: 6px;
-        }
-        .reel-page-name {
-          font-family: var(--font-main);
-          font-size: 11px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.9);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .reel-views-pill {
-          font-family: var(--font-main);
-          font-size: 10px;
-          font-weight: 600;
-          padding: 2px 7px;
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.12);
-          color: #fff;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        .reel-media-wrap {
-          width: 100%;
-          aspect-ratio: 9 / 16;
-          position: relative;
-          overflow: hidden;
-          background: #000;
-          flex-shrink: 0;
-          cursor: pointer;
-        }
-        .reel-video {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-        .watch-ig-badge {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(0, 0, 0, 0.4);
-          opacity: 0;
-          transition: opacity 0.2s ease;
-          pointer-events: none;
-          z-index: 2;
-        }
-        .watch-ig-badge span {
-          font-family: var(--font-main);
-          font-size: 12px;
-          font-weight: 600;
-          color: #fff;
-          background: rgba(18, 18, 20, 0.88);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          padding: 6px 12px;
-          border-radius: 999px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-        }
-        .reel-link-wrap:hover .watch-ig-badge,
-        .reel-link-wrap:focus-visible .watch-ig-badge {
-          opacity: 1;
-        }
-        .reel-caption-wrap {
-          padding: 8px 10px 10px;
-          background: #141416;
-        }
-        .reel-caption {
-          font-family: var(--font-main);
-          font-size: 11px;
-          line-height: 1.35;
-          color: rgba(255, 255, 255, 0.75);
-          text-align: left;
-          margin: 0;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .voice-footer {
-          text-align: center;
-          width: 100%;
-        }
-        .voice-label {
-          font-family: var(--font-serif);
-          font-style: italic;
-          font-size: 36px;
-          color: var(--text);
-          line-height: 1.1;
-          margin-bottom: 6px;
-        }
-        .voice-proof {
-          font-family: var(--font-main);
-          font-size: 14px;
-          color: var(--muted);
-          line-height: 1.35;
-          min-height: 20px;
-        }
-
         @media (max-width: 1024px) {
           .range-section {
             padding: 48px 48px;
-          }
-          .phone-frame {
-            width: 250px;
-            height: 520px;
-            border-radius: 36px;
-            padding: 8px;
-          }
-          .phone-screen {
-            border-radius: 28px;
-          }
-          .voice-label {
-            font-size: 32px;
           }
         }
 
@@ -599,25 +721,6 @@ export default function RangeWallSection() {
             padding-left: 24px;
             padding-right: 24px;
             -webkit-overflow-scrolling: touch;
-          }
-          .voice-column {
-            flex: 0 0 240px;
-            scroll-snap-align: start;
-          }
-          .voice-label {
-            font-size: 30px;
-          }
-          .phone-frame {
-            width: 240px;
-            height: 500px;
-            border-radius: 32px;
-            padding: 8px;
-          }
-          .phone-screen {
-            border-radius: 24px;
-          }
-          .sample-caption {
-            font-size: 13px;
           }
         }
       `}</style>

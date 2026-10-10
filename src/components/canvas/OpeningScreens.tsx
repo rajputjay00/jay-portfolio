@@ -184,12 +184,12 @@ function FloatingScreen({
 
   return (
     <group ref={groupRef} position={startPos} rotation={startRot}>
-      <RoundedBox args={[1.4, 1.75, 0.04]} radius={0.05} smoothness={4}>
+      <RoundedBox args={[1.05, 1.8, 0.04]} radius={0.05} smoothness={4}>
         <meshBasicMaterial color="#0d0e14" transparent opacity={opacityRef.current} />
       </RoundedBox>
 
       <mesh position={[0, 0, 0.022]}>
-        <planeGeometry args={[1.35, 1.7]} />
+        <planeGeometry args={[0.98, 1.74]} />
         {videoTexture ? (
           <meshBasicMaterial map={videoTexture} transparent opacity={opacityRef.current} toneMapped={false} />
         ) : (

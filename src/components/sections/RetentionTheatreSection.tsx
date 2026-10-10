@@ -497,25 +497,32 @@ export default function RetentionTheatreSection() {
           width: 100%;
         }
         .video-frame-wrap {
-          width: 315px;
           height: 560px;
-          min-width: 315px;
+          aspect-ratio: 9 / 16;
+          width: auto;
           border-radius: 22px;
           overflow: hidden;
-          background: #121214;
+          background: #000;
           border: 1px solid rgba(255, 255, 255, 0.08);
           box-sizing: border-box;
           position: relative;
+          flex-shrink: 0;
         }
         .video-container {
           width: 100%;
           height: 100%;
           position: relative;
+          background: #000;
+          overflow: hidden;
         }
         .reel-video {
+          position: absolute;
+          inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          object-position: center;
+          display: block;
         }
         .retention-ig-badge {
           position: absolute;
