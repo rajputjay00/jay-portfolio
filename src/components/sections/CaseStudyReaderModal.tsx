@@ -7,6 +7,7 @@ import { scrollManager } from '@/store/scrollStore';
 import { perfStore } from '@/store/perfStore';
 import profileData from '@/../content/profile.json';
 import brandWorkData from '@/../content/brand-work.json';
+import caseStudySlidesData from '@/../content/case-study-slides.json';
 
 interface CaseStudyReaderModalProps {
   studies?: CaseStudyData[];
@@ -53,10 +54,25 @@ export default function CaseStudyReaderModal({
   const pointerDownRef = useRef<{ time: number; x: number; isButton: boolean } | null>(null);
 
   const currentStudy = allStudies[studyIdx] || allStudies[0];
-  const brandSlides = currentStudy?.id === 'brand-social' ? (brandWorkData?.items || []) : [];
-  const totalSlides = 5 + brandSlides.length;
-  const isBrandSlide = currentStudy?.id === 'brand-social' && partIdx >= 5;
-  const currentBrandSlide = isBrandSlide ? brandSlides[partIdx - 5] : null;
+
+  const getStudyExtraSlides = useCallback((studyId?: string) => {
+    if (!studyId) return [];
+    if (studyId === 'brand-social') {
+      return (brandWorkData?.items || []).map((item) => ({
+        id: item.id,
+        label: item.brand,
+        image: item.image,
+        alt: item.alt,
+      }));
+    }
+    const extra = (caseStudySlidesData as Record<string, Array<{ id: string; label: string; image: string; alt: string }>>)[studyId];
+    return extra || [];
+  }, []);
+
+  const extraSlides = getStudyExtraSlides(currentStudy?.id);
+  const totalSlides = 5 + extraSlides.length;
+  const isExtraSlide = partIdx >= 5;
+  const currentExtraSlide = isExtraSlide ? extraSlides[partIdx - 5] : null;
 
   const initials = profileData?.name
     ? profileData.name
@@ -97,10 +113,8 @@ export default function CaseStudyReaderModal({
     if (activeBarRef.current) {
       activeBarRef.current.style.transform = 'scaleX(0)';
     }
-    const currentTotal =
-      currentStudy?.id === 'brand-social'
-        ? 5 + (brandWorkData?.items?.length || 0)
-        : 5;
+    const currentExtra = getStudyExtraSlides(currentStudy?.id);
+    const currentTotal = 5 + currentExtra.length;
     if (partIdx < currentTotal - 1) {
       setPartIdx((prev) => prev + 1);
     } else {
@@ -113,7 +127,7 @@ export default function CaseStudyReaderModal({
         onClose();
       }
     }
-  }, [partIdx, currentStudy?.id, studyIdx, allStudies.length, onClose]);
+  }, [partIdx, currentStudy?.id, studyIdx, allStudies.length, onClose, getStudyExtraSlides]);
 
   const handlePrev = useCallback(() => {
     progressRef.current = 0;
@@ -125,10 +139,8 @@ export default function CaseStudyReaderModal({
     } else {
       if (studyIdx > 0) {
         const prevStudy = allStudies[studyIdx - 1];
-        const prevTotal =
-          prevStudy?.id === 'brand-social'
-            ? 5 + (brandWorkData?.items?.length || 0)
-            : 5;
+        const prevExtra = getStudyExtraSlides(prevStudy?.id);
+        const prevTotal = 5 + prevExtra.length;
         setStudyIdx((prev) => prev - 1);
         setPartIdx(prevTotal - 1);
       } else {
@@ -136,7 +148,7 @@ export default function CaseStudyReaderModal({
         progressRef.current = 0;
       }
     }
-  }, [partIdx, studyIdx, allStudies]);
+  }, [partIdx, studyIdx, allStudies, getStudyExtraSlides]);
 
   // Keep pausedRef in sync with state & tab visibility
   useEffect(() => {
@@ -344,10 +356,10 @@ export default function CaseStudyReaderModal({
       <div className="story-column">
         {/* Background Media */}
         <div className="story-media-layer">
-          {isBrandSlide && currentBrandSlide ? (
+          {isExtraSlide && currentExtraSlide ? (
             <img
-              src={currentBrandSlide.image}
-              alt={currentBrandSlide.alt || currentBrandSlide.brand}
+              src={currentExtraSlide.image}
+              alt={currentExtraSlide.alt || currentExtraSlide.label}
               className="story-bg-img"
             />
           ) : currentStudy.heroImage ? (
@@ -359,8 +371,8 @@ export default function CaseStudyReaderModal({
           ) : (
             <div className="story-bg-placeholder" />
           )}
-          {!isBrandSlide && <div className="story-gradient-overlay" />}
-          {isBrandSlide && <div className="story-brand-top-scrim" />}
+          {!isExtraSlide && <div className="story-gradient-overlay" />}
+          {isExtraSlide && <div className="story-brand-top-scrim" />}
         </div>
 
         {/* Top Floating Controls */}
@@ -414,11 +426,11 @@ export default function CaseStudyReaderModal({
           </div>
         </div>
 
-        {/* Brand Slide Label (small label with only the brand name) or Bottom Story Panel */}
-        {isBrandSlide && currentBrandSlide ? (
+        {/* Extra Slide Label (small label with only the page/brand name) or Bottom Story Panel */}
+        {isExtraSlide && currentExtraSlide ? (
           <div className="story-brand-badge-wrapper">
             <div className="story-brand-label-pill">
-              {currentBrandSlide.brand}
+              {currentExtraSlide.label}
             </div>
           </div>
         ) : (

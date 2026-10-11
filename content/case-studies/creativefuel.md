@@ -8,7 +8,7 @@ role: "Content & Social Media Manager (freelance)"
 headline:
   value: "401K"
   label: "followers on Indian Corporate Life, one of four pages managed"
-heroImage: "/media/images/dummy-01.jpg"
+heroImage: "/media/images/icl_art1.jpg"
 accounts:
   - { name: "Indian Corporate Life", followers: "401K", asOf: "2026-10" }
   - { name: "Relatable Office Memes", followers: "34.1K", asOf: "2026-10" }

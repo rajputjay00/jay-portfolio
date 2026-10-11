@@ -8,7 +8,7 @@ role: "Founder and sole operator"
 headline:
   value: "35.3K"
   label: "followers built on an independent corporate-culture page"
-heroImage: "/media/images/dummy-03.jpg"
+heroImage: "/media/images/sfc_art1.jpg"
 reels: [3, 8]
 ---
 

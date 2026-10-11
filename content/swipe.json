@@ -1,36 +1,36 @@
 {
   "posts": [
     {
+      "id": "icl_art1",
+      "image": "/media/images/icl_art1.jpg",
+      "hook": "",
+      "result": "",
+      "reason": ""
+    },
+    {
+      "id": "sfc_art1",
+      "image": "/media/images/sfc_art1.jpg",
+      "hook": "",
+      "result": "",
+      "reason": ""
+    },
+    {
+      "id": "rom_art2",
+      "image": "/media/images/rom_art2.jpg",
+      "hook": "",
+      "result": "",
+      "reason": ""
+    },
+    {
+      "id": "icl_tw1",
+      "image": "/media/images/icl_tw1.jpg",
+      "hook": "",
+      "result": "",
+      "reason": ""
+    },
+    {
       "id": "amazon-now",
       "image": "/media/images/amazon-now.png",
-      "hook": "",
-      "result": "",
-      "reason": ""
-    },
-    {
-      "id": "tecno-pova",
-      "image": "/media/images/tecno-pova.png",
-      "hook": "",
-      "result": "",
-      "reason": ""
-    },
-    {
-      "id": "flipkart-1",
-      "image": "/media/images/flipkart-1.png",
-      "hook": "",
-      "result": "",
-      "reason": ""
-    },
-    {
-      "id": "mirzapur",
-      "image": "/media/images/mirzapur.png",
-      "hook": "",
-      "result": "",
-      "reason": ""
-    },
-    {
-      "id": "kaleen",
-      "image": "/media/images/kaleen.png",
       "hook": "",
       "result": "",
       "reason": ""

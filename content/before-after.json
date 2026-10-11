@@ -1,23 +1,48 @@
 {
-  "dummy": true,
+  "heading": "What I typed. What I meant.",
+  "sub": "One series. Three pages.",
   "pairs": [
     {
       "id": "pair-1",
-      "label": "Post 1",
-      "before": "/media/images/dummy-02.jpg",
-      "after": "/media/images/dummy-01.jpg"
+      "page": "Indian Corporate Life",
+      "image": "/media/images/icl_art1.jpg",
+      "typed": "Just following up, no rush at all!",
+      "meant": "Ye 3 hafte se tumhare paas pending hai"
     },
     {
       "id": "pair-2",
-      "label": "Post 2",
-      "before": "/media/images/dummy-04.jpg",
-      "after": "/media/images/dummy-03.jpg"
+      "page": "Indian Corporate Life",
+      "image": "/media/images/icl_art2.jpg",
+      "typed": "Re-sharing for your easy reference :)",
+      "meant": "Tumne mail padha hi nahi hai na"
     },
     {
       "id": "pair-3",
-      "label": "Post 3",
-      "before": "/media/images/dummy-06.jpg",
-      "after": "/media/images/dummy-05.jpg"
+      "page": "Strictly For Corporate",
+      "image": "/media/images/sfc_art1.jpg",
+      "typed": "Happy to hop on a quick call!",
+      "meant": "Call mat karo, type kar do"
+    },
+    {
+      "id": "pair-4",
+      "page": "Strictly For Corporate",
+      "image": "/media/images/sfc_art2.jpg",
+      "typed": "Taking this up, will keep you posted!",
+      "meant": "Ye kaam mera hai hi nahi"
+    },
+    {
+      "id": "pair-5",
+      "page": "Relatable Office Memes",
+      "image": "/media/images/rom_art2.jpg",
+      "typed": "Lets realign on the timeline once!",
+      "meant": "Deadline tumne banayi thi, maine nahi"
+    },
+    {
+      "id": "pair-6",
+      "page": "Relatable Office Memes",
+      "image": "/media/images/rom_art1.jpg",
+      "typed": "Would it be okay if I take tomorrow off?",
+      "meant": "Kal chhutti le raha hoon, pooch nahi raha"
     }
   ]
 }

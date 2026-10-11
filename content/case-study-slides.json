@@ -1,0 +1,42 @@
+{
+  "creativefuel": [
+    {
+      "id": "icl_art1",
+      "label": "Indian Corporate Life",
+      "image": "/media/images/icl_art1.jpg",
+      "alt": "Indian Corporate Life post: Just following up, no rush at all!"
+    },
+    {
+      "id": "icl_art2",
+      "label": "Indian Corporate Life",
+      "image": "/media/images/icl_art2.jpg",
+      "alt": "Indian Corporate Life post: Re-sharing for your easy reference :)"
+    },
+    {
+      "id": "icl_tw1",
+      "label": "Indian Corporate Life",
+      "image": "/media/images/icl_tw1.jpg",
+      "alt": "Indian Corporate Life tweet: Manager ne bola tha quick sync..."
+    },
+    {
+      "id": "icl_tw2",
+      "label": "Indian Corporate Life",
+      "image": "/media/images/icl_tw2.jpg",
+      "alt": "Indian Corporate Life tweet: Appraisal letter itna ghuma ke likha tha..."
+    }
+  ],
+  "strictly-for-corporate": [
+    {
+      "id": "sfc_art1",
+      "label": "Strictly For Corporate",
+      "image": "/media/images/sfc_art1.jpg",
+      "alt": "Strictly For Corporate post: Happy to hop on a quick call!"
+    },
+    {
+      "id": "sfc_art2",
+      "label": "Strictly For Corporate",
+      "image": "/media/images/sfc_art2.jpg",
+      "alt": "Strictly For Corporate post: Taking this up, will keep you posted!"
+    }
+  ]
+}
