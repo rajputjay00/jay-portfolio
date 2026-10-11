@@ -197,7 +197,7 @@ A vertical Reel plays beside a retention curve that moves with the video as the 
 
 ### Range Wall (launch)
 
-Three phone frames side by side, each showing a different brand voice, Community (Indian Corporate Life, Relatable Office Memes), Character (Corporate Dadi, Corporate Nani) and Brand (Flipkart, Realme, Lava, Jio Hotstar, Wellbeing Nutrition). Tapping one opens its feed, a sample caption and the related case study. This answers the agency's first question: can Jay switch voices without quality dropping? Only include niches Jay has real work in.
+Three phone frames side by side, each showing a different brand voice, Community (Indian Corporate Life, Relatable Office Memes), Character (Corporate Dadi, Corporate Nani) and Brand (Flipkart, Amazon Now, Tecno, Mirzapur, ARTBAT). Tapping one opens its feed, a sample caption and the related case study. This answers the agency's first question: can Jay switch voices without quality dropping? Only include niches Jay has real work in.
 
 ### Report Room (launch)
 

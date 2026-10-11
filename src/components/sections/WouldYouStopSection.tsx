@@ -310,11 +310,21 @@ export default function WouldYouStopSection() {
                   className="swipe-main-card glass-fake"
                 >
                   <img
-                    src={currentPost?.image || '/media/images/dummy-01.jpg'}
-                    alt="Sample post"
+                    src={currentPost?.image || ''}
+                    alt={(currentPost as any)?.alt || currentPost?.id || 'Brand post'}
                     className="swipe-card-img"
                     draggable={false}
                   />
+
+                  {(currentPost as any)?.hook ? (
+                    <div className="swipe-card-hook">{(currentPost as any).hook}</div>
+                  ) : null}
+                  {(currentPost as any)?.result ? (
+                    <div className="swipe-card-result">{(currentPost as any).result}</div>
+                  ) : null}
+                  {(currentPost as any)?.reason ? (
+                    <div className="swipe-card-reason">{(currentPost as any).reason}</div>
+                  ) : null}
 
                   {/* Stamps */}
                   <div ref={stopStampRef} className="stamp stamp-stop">
@@ -502,7 +512,7 @@ export default function WouldYouStopSection() {
           inset: 0;
           border-radius: 22px;
           overflow: hidden;
-          background: #121214;
+          background: #000;
           border: 1px solid rgba(255, 255, 255, 0.12);
           box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
           cursor: grab;
@@ -516,7 +526,8 @@ export default function WouldYouStopSection() {
         .swipe-card-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          background: #000;
           display: block;
           pointer-events: none;
         }

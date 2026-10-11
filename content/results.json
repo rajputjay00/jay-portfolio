@@ -4,7 +4,7 @@
     { "id": "icl", "value": "401K", "label": "followers", "account": "Indian Corporate Life", "handle": "indiancorporatelife", "caseStudy": "creativefuel", "source": "media/insights/icl-profile.png", "asOf": "2026-10", "verified": true },
     { "id": "sfc", "value": "35.3K", "label": "followers", "account": "Strictly For Corporate", "handle": "strictlyforcorporate", "caseStudy": "strictly-for-corporate", "source": "media/insights/sfc-profile.png", "asOf": "2026-10", "verified": true },
     { "id": "rom", "value": "34.1K", "label": "followers", "account": "Relatable Office Memes", "handle": "relatableofficememes", "caseStudy": "creativefuel", "source": "media/insights/rom-profile.png", "asOf": "2026-10", "verified": true },
-    { "id": "brands", "value": "5", "label": "national brands", "account": "Flipkart, Realme, Lava, JioHotstar, Wellbeing Nutrition", "caseStudy": "brand-social", "verified": true },
+    { "id": "brands", "value": "5", "label": "national brands", "account": "Flipkart, Amazon Now, Tecno, Mirzapur, ARTBAT", "caseStudy": "brand-social", "verified": true },
     { "id": "sfc-top-reel", "value": "21.2M", "label": "views on one Reel", "account": "Strictly For Corporate", "caseStudy": "strictly-for-corporate", "asOf": "2026-10", "verified": true },
     { "id": "rom-top-reel", "value": "11.1M", "label": "views on one Reel", "account": "Relatable Office Memes", "caseStudy": "creativefuel", "asOf": "2026-10", "verified": true },
     { "id": "icl-top-reel", "value": "3.7M", "label": "views on one Reel", "account": "Indian Corporate Life", "caseStudy": "creativefuel", "asOf": "2026-10", "verified": true },

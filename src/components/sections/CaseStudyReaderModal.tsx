@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { CaseStudyData } from '@/data/caseStudiesData';
 import { scrollManager } from '@/store/scrollStore';
 import { perfStore } from '@/store/perfStore';
 import profileData from '@/../content/profile.json';
+import brandWorkData from '@/../content/brand-work.json';
 
 interface CaseStudyReaderModalProps {
   studies?: CaseStudyData[];
@@ -35,6 +37,11 @@ export default function CaseStudyReaderModal({
   const [isPaused, setIsPaused] = useState(false);
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -46,6 +53,11 @@ export default function CaseStudyReaderModal({
   const pointerDownRef = useRef<{ time: number; x: number; isButton: boolean } | null>(null);
 
   const currentStudy = allStudies[studyIdx] || allStudies[0];
+  const brandSlides = currentStudy?.id === 'brand-social' ? (brandWorkData?.items || []) : [];
+  const totalSlides = 5 + brandSlides.length;
+  const isBrandSlide = currentStudy?.id === 'brand-social' && partIdx >= 5;
+  const currentBrandSlide = isBrandSlide ? brandSlides[partIdx - 5] : null;
+
   const initials = profileData?.name
     ? profileData.name
         .split(' ')
@@ -85,7 +97,11 @@ export default function CaseStudyReaderModal({
     if (activeBarRef.current) {
       activeBarRef.current.style.transform = 'scaleX(0)';
     }
-    if (partIdx < 4) {
+    const currentTotal =
+      currentStudy?.id === 'brand-social'
+        ? 5 + (brandWorkData?.items?.length || 0)
+        : 5;
+    if (partIdx < currentTotal - 1) {
       setPartIdx((prev) => prev + 1);
     } else {
       // Move to next case study
@@ -97,7 +113,7 @@ export default function CaseStudyReaderModal({
         onClose();
       }
     }
-  }, [partIdx, studyIdx, allStudies.length, onClose]);
+  }, [partIdx, currentStudy?.id, studyIdx, allStudies.length, onClose]);
 
   const handlePrev = useCallback(() => {
     progressRef.current = 0;
@@ -108,14 +124,19 @@ export default function CaseStudyReaderModal({
       setPartIdx((prev) => prev - 1);
     } else {
       if (studyIdx > 0) {
+        const prevStudy = allStudies[studyIdx - 1];
+        const prevTotal =
+          prevStudy?.id === 'brand-social'
+            ? 5 + (brandWorkData?.items?.length || 0)
+            : 5;
         setStudyIdx((prev) => prev - 1);
-        setPartIdx(4);
+        setPartIdx(prevTotal - 1);
       } else {
         // First part of first study: reset progress
         progressRef.current = 0;
       }
     }
-  }, [partIdx, studyIdx]);
+  }, [partIdx, studyIdx, allStudies]);
 
   // Keep pausedRef in sync with state & tab visibility
   useEffect(() => {
@@ -291,9 +312,9 @@ export default function CaseStudyReaderModal({
     pointerDownRef.current = null;
   };
 
-  if (!currentStudy) return null;
+  if (!currentStudy || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       role="dialog"
@@ -323,7 +344,13 @@ export default function CaseStudyReaderModal({
       <div className="story-column">
         {/* Background Media */}
         <div className="story-media-layer">
-          {currentStudy.heroImage ? (
+          {isBrandSlide && currentBrandSlide ? (
+            <img
+              src={currentBrandSlide.image}
+              alt={currentBrandSlide.alt || currentBrandSlide.brand}
+              className="story-bg-img"
+            />
+          ) : currentStudy.heroImage ? (
             <img
               src={currentStudy.heroImage}
               alt={currentStudy.title}
@@ -332,14 +359,15 @@ export default function CaseStudyReaderModal({
           ) : (
             <div className="story-bg-placeholder" />
           )}
-          <div className="story-gradient-overlay" />
+          {!isBrandSlide && <div className="story-gradient-overlay" />}
+          {isBrandSlide && <div className="story-brand-top-scrim" />}
         </div>
 
         {/* Top Floating Controls */}
         <div className="story-top-wrapper">
-          {/* 5 Progress Bars */}
+          {/* Progress Bars */}
           <div className="story-progress-row">
-            {[0, 1, 2, 3, 4].map((idx) => {
+            {Array.from({ length: totalSlides }).map((_, idx) => {
               const isCompleted = idx < partIdx;
               const isCurrent = idx === partIdx;
               return (
@@ -386,26 +414,34 @@ export default function CaseStudyReaderModal({
           </div>
         </div>
 
-        {/* Bottom Story Content Panel */}
-        <div
-          className={`story-bottom-panel ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}
-        >
-          <div className="story-panel-step">{partIdx + 1} OF 5</div>
-          <h2
-            className="story-panel-heading"
-            aria-live="polite"
-          >
-            {currentPartHeading}
-          </h2>
-          <div className="story-panel-text">
-            {currentPartText.split('\n\n').map((para, i) => (
-              <p key={i} className="story-para">
-                {para}
-              </p>
-            ))}
+        {/* Brand Slide Label (small label with only the brand name) or Bottom Story Panel */}
+        {isBrandSlide && currentBrandSlide ? (
+          <div className="story-brand-badge-wrapper">
+            <div className="story-brand-label-pill">
+              {currentBrandSlide.brand}
+            </div>
           </div>
-          <div className="story-panel-hint">Tap to continue · hold to pause</div>
-        </div>
+        ) : (
+          <div
+            className={`story-bottom-panel ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}
+          >
+            <div className="story-panel-step">{partIdx + 1} OF {totalSlides}</div>
+            <h2
+              className="story-panel-heading"
+              aria-live="polite"
+            >
+              {currentPartHeading}
+            </h2>
+            <div className="story-panel-text">
+              {currentPartText.split('\n\n').map((para, i) => (
+                <p key={i} className="story-para">
+                  {para}
+                </p>
+              ))}
+            </div>
+            <div className="story-panel-hint">Tap to continue · hold to pause</div>
+          </div>
+        )}
       </div>
 
       {/* Desktop Next Button */}
@@ -454,7 +490,7 @@ export default function CaseStudyReaderModal({
           width: calc(min(calc(100vh - 48px), 860px) * (9 / 16));
           border-radius: 24px;
           overflow: hidden;
-          background: #121214;
+          background: #000;
           box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
           display: flex;
           flex-direction: column;
@@ -465,12 +501,49 @@ export default function CaseStudyReaderModal({
           position: absolute;
           inset: 0;
           z-index: 0;
+          background: #000;
         }
         .story-bg-img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          background: #000;
           display: block;
+        }
+        .story-brand-top-scrim {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 100px;
+          background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+          pointer-events: none;
+        }
+        .story-brand-badge-wrapper {
+          position: relative;
+          z-index: 2;
+          padding: 24px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          pointer-events: none;
+        }
+        .story-brand-label-pill {
+          display: inline-flex;
+          align-items: center;
+          padding: 7px 16px;
+          background: rgba(18, 18, 20, 0.88);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          border-radius: 999px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          color: var(--text, #f5efe6);
+          font-family: var(--font-main);
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
         }
         .story-bg-placeholder {
           width: 100%;
@@ -701,6 +774,7 @@ export default function CaseStudyReaderModal({
           }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

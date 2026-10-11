@@ -1,25 +1,39 @@
 {
-  "dummy": true,
   "posts": [
     {
-      "id": "swipe-1",
-      "image": "/media/images/dummy-01.jpg"
+      "id": "amazon-now",
+      "image": "/media/images/amazon-now.png",
+      "hook": "",
+      "result": "",
+      "reason": ""
     },
     {
-      "id": "swipe-2",
-      "image": "/media/images/dummy-02.jpg"
+      "id": "tecno-pova",
+      "image": "/media/images/tecno-pova.png",
+      "hook": "",
+      "result": "",
+      "reason": ""
     },
     {
-      "id": "swipe-3",
-      "image": "/media/images/dummy-03.jpg"
+      "id": "flipkart-1",
+      "image": "/media/images/flipkart-1.png",
+      "hook": "",
+      "result": "",
+      "reason": ""
     },
     {
-      "id": "swipe-4",
-      "image": "/media/images/dummy-04.jpg"
+      "id": "mirzapur",
+      "image": "/media/images/mirzapur.png",
+      "hook": "",
+      "result": "",
+      "reason": ""
     },
     {
-      "id": "swipe-5",
-      "image": "/media/images/dummy-05.jpg"
+      "id": "kaleen",
+      "image": "/media/images/kaleen.png",
+      "hook": "",
+      "result": "",
+      "reason": ""
     }
   ]
 }

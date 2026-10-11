@@ -510,11 +510,13 @@ function CaseStudyCard({
           height: 100%;
           overflow: hidden;
           z-index: 0;
+          background: #000;
         }
         .card-full-image {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          background: #000;
           transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .case-card:hover .card-full-image {

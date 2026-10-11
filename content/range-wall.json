@@ -33,7 +33,7 @@
     }
   ],
   "additionalRange": [
-    { "id": "brand", "name": "Brand", "proof": ["Flipkart", "Realme", "Lava", "JioHotstar", "Wellbeing Nutrition"], "caseStudy": "brand-social" },
+    { "id": "brand", "name": "Brand", "proof": ["Flipkart", "Amazon Now", "Tecno", "Mirzapur", "ARTBAT"], "caseStudy": "brand-social" },
     { "id": "culture", "name": "Culture", "proof": ["TEDxIPSA Indore", "GDGOC IPSA"], "caseStudy": "campus-community" }
   ]
 }

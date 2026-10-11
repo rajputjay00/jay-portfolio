@@ -2,14 +2,14 @@
 id: brand-social
 order: 2
 title: Brand Social — National brands, feed-native
-client: Flipkart, Realme, Lava, JioHotstar, Wellbeing Nutrition (via Creativefuel)
+client: Flipkart, Amazon Now, Tecno, Mirzapur, ARTBAT (via Creativefuel)
 niche: Brand
 role: "Social Media Strategist & Campaign Execution"
 headline:
   value: "5"
   label: "national brands made to feel native to the feed"
-heroImage: "/media/images/dummy-02.jpg"
-brands: ["Flipkart", "Realme", "Lava", "JioHotstar", "Wellbeing Nutrition"]
+heroImage: "/media/images/amazon-now.png"
+brands: ["Flipkart", "Amazon Now", "Tecno", "Mirzapur", "ARTBAT"]
 reels: [5]
 ---
 
