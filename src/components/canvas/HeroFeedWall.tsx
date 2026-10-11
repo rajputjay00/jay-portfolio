@@ -18,6 +18,7 @@ const FeedShader = {
     uExitProgress: { value: 0.0 },
     uStretch: { value: 1.0 },
     uIsMobile: { value: 0.0 },
+    uIsTouchOrReduced: { value: 0.0 },
     uAccentColor: { value: new THREE.Color('#FF5A2B') },
     uBgColor: { value: new THREE.Color('#0B0A09') },
     uAtlas: { value: null },
@@ -34,6 +35,7 @@ const FeedShader = {
     varying vec2 vCellCoord;
     varying float vHover;
     varying float vWorldY;
+    varying float vLocalX;
     varying float vIsLight;
 
     void main() {
@@ -56,6 +58,7 @@ const FeedShader = {
 
       vec4 localInstancePos = instanceMatrix * vec4(pos, 1.0);
       vWorldY = localInstancePos.y;
+      vLocalX = localInstancePos.x;
 
       gl_Position = projectionMatrix * modelViewMatrix * localInstancePos;
     }
@@ -65,6 +68,7 @@ const FeedShader = {
     uniform float uOpacity;
     uniform float uExitProgress;
     uniform float uIsMobile;
+    uniform float uIsTouchOrReduced;
     uniform vec3 uAccentColor;
     uniform vec3 uBgColor;
     uniform sampler2D uAtlas;
@@ -74,6 +78,7 @@ const FeedShader = {
     varying vec2 vCellCoord;
     varying float vHover;
     varying float vWorldY;
+    varying float vLocalX;
     varying float vIsLight;
 
     float hash(vec2 p) {
@@ -132,26 +137,34 @@ const FeedShader = {
       vec2 cellUv = vec2(vUv.x, (vUv.y - 0.5) * 0.703125 + 0.5);
       vec2 atlasUv = vec2((vCellCoord.x + cellUv.x) / 3.0, (2.0 - vCellCoord.y + cellUv.y) / 3.0);
       vec4 posterTex = texture2D(uAtlas, atlasUv);
-      vec3 posterCol = posterTex.rgb * 0.80; // Keep hero dark mood
+      vec3 posterCol = posterTex.rgb * 0.95; // Brightness multiplier boosted to 0.95
 
       // Smooth 400ms fade from placeholder to real atlas poster
       vec3 col = mix(placeholderCol, posterCol, uAtlasFade);
 
-      // 4. Screen brightness: falls from 0.6 to 0.25 over exit, rises to 1.0 when hovered at top
-      float baseBrightness = uIsMobile > 0.5 ? 0.35 : 0.60;
-      float exitBrightness = mix(baseBrightness, 0.25, smoothstep(0.0, 0.75, uExitProgress));
-      float hoverAtTop = vHover * (1.0 - smoothstep(0.0, 0.10, uExitProgress));
-      float brightness = mix(exitBrightness, 1.0, hoverAtTop);
+      // 4. Pointer highlight & brightness:
+      // Idle sits at 0.90, screen nearest pointer eases to full 1.0 brightness.
+      // On touch devices and reduced motion: all screens sit at 0.95.
+      float baseIdle = uIsTouchOrReduced > 0.5 ? 0.95 : 0.90;
+      float hoverGain = (1.0 - baseIdle) * vHover * (1.0 - smoothstep(0.0, 0.10, uExitProgress));
+      float activeBrightness = baseIdle + hoverGain;
+      float brightness = mix(activeBrightness, 0.25, smoothstep(0.0, 0.75, uExitProgress));
       col *= brightness;
 
-      // 5. Hover accent edge glow (#FF5A2B) at top
+      // 5. Left 15% gradient on wall to preserve high contrast for hero text if screen overlaps
+      float leftNorm = clamp((vLocalX - (-1.945)) / 0.58, 0.0, 1.0);
+      float leftVignette = mix(0.80, 1.0, smoothstep(0.0, 1.0, leftNorm));
+      col *= leftVignette;
+
+      // 6. Hover accent edge glow (#FF5A2B) at top
+      float hoverAtTop = vHover * (1.0 - smoothstep(0.0, 0.10, uExitProgress));
       float edgeGlow = smoothstep(0.04, 0.008, edgeDist) * hoverAtTop;
       col = mix(col, uAccentColor, edgeGlow * 0.90);
 
       // Blend card into background outside bezel
       col = mix(uBgColor, col, cardMask);
 
-      // 6. Vertical fade into background (#0B0A09) at top and bottom + exit fade (0.55 to 0.95)
+      // 7. Light edge vignette at extreme vertical top/bottom + exit fade
       float exitFade = 1.0 - smoothstep(0.55, 0.95, uExitProgress);
       float topBottomFade = smoothstep(-4.5, -2.0, vWorldY) * (1.0 - smoothstep(2.0, 4.5, vWorldY));
       topBottomFade = clamp(topBottomFade, 0.0, 1.0) * exitFade;
@@ -223,7 +236,7 @@ export default function HeroFeedWall() {
   const shaderMatRef = useRef<THREE.ShaderMaterial>(null);
   const glowMatRef = useRef<THREE.ShaderMaterial>(null);
   const floorMatRef = useRef<THREE.ShaderMaterial>(null);
-  const { size } = useThree();
+  const { size, gl } = useThree();
 
   const isMobile = size.width < 768;
   const prefersReducedMotion =
@@ -298,15 +311,25 @@ export default function HeroFeedWall() {
     const atlasPath = reelsData?.heroAtlas?.path || '/media/reels/hero-atlas.jpg';
     const tex = new THREE.TextureLoader().load(atlasPath, (loadedTex) => {
       loadedTex.colorSpace = THREE.SRGBColorSpace;
-      loadedTex.minFilter = THREE.LinearFilter;
+      loadedTex.generateMipmaps = true;
+      loadedTex.minFilter = THREE.LinearMipmapLinearFilter;
       loadedTex.magFilter = THREE.LinearFilter;
-      loadedTex.generateMipmaps = false;
+      const maxAnisotropy = gl?.capabilities?.getMaxAnisotropy
+        ? Math.min(gl.capabilities.getMaxAnisotropy(), 8)
+        : 8;
+      loadedTex.anisotropy = maxAnisotropy;
       loadedTex.needsUpdate = true;
       atlasLoadedRef.current = true;
     });
     tex.colorSpace = THREE.SRGBColorSpace;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    if (gl?.capabilities?.getMaxAnisotropy) {
+      tex.anisotropy = Math.min(gl.capabilities.getMaxAnisotropy(), 8);
+    }
     return tex;
-  }, []);
+  }, [gl]);
 
   // Feed Shader Material
   const feedMaterial = useMemo(() => {
@@ -319,6 +342,7 @@ export default function HeroFeedWall() {
         uExitProgress: { value: 0.0 },
         uStretch: { value: 1.0 },
         uIsMobile: { value: isMobile ? 1.0 : 0.0 },
+        uIsTouchOrReduced: { value: 0.0 },
         uAccentColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
         uAtlas: { value: atlasTexture },
@@ -412,6 +436,10 @@ export default function HeroFeedWall() {
       atlasFadeRef.current = Math.min(1.0, atlasFadeRef.current + delta / 0.4);
       shaderMatRef.current.uniforms.uAtlasFade.value = atlasFadeRef.current;
     }
+
+    // Touch or reduced motion fallback: all screens sit at 0.95
+    const isTouchOrReduced = isMobile || prefersReducedMotion || !windowPointerState.hasPointer;
+    shaderMatRef.current.uniforms.uIsTouchOrReduced.value = isTouchOrReduced ? 1.0 : 0.0;
 
     // 1. Time uniform update
     shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
