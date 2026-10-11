@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import retentionData from '@/../content/retention.json';
+import resultsData from '@/../content/results.json';
 import reelsData from '@/../content/reels.json';
 import { perfStore } from '@/store/perfStore';
 
@@ -11,36 +12,62 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+function parseStatValue(raw: string) {
+  const hasComma = raw.includes(',');
+  const prefixMatch = raw.match(/^[^0-9.]+/);
+  const prefix = prefixMatch ? prefixMatch[0] : '';
+  const suffixMatch = raw.match(/[^0-9.,]+$/);
+  const suffix = suffixMatch ? suffixMatch[0] : '';
+
+  const numClean = raw.replace(/,/g, '').replace(/[^0-9.]/g, '');
+  const target = parseFloat(numClean) || 0;
+  const hasDecimal = numClean.includes('.');
+  const decimalPlaces = hasDecimal ? (numClean.split('.')[1]?.length || 1) : 0;
+
+  const format = (v: number) => {
+    let formatted: string;
+    if (decimalPlaces > 0) {
+      formatted = v >= target - 0.05 ? target.toFixed(decimalPlaces) : v.toFixed(decimalPlaces);
+    } else {
+      formatted = Math.round(v).toString();
+    }
+    if (hasComma) {
+      const parts = formatted.split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      formatted = parts.join('.');
+    }
+    return `${prefix}${formatted}${suffix}`;
+  };
+
+  return { target, format };
+}
+
 export default function RetentionTheatreSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
+  const heroCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const heroValRefs = useRef<(HTMLSpanElement | null)[]>([]);
+
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isInView, setIsInView] = useState(false);
+  const [, setIsInView] = useState(false);
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
 
-  const duration = retentionData.durationSeconds || 30;
-  const curvePoints = retentionData.curve || [];
-  const moments = retentionData.moments || [];
   const hasVideo = Boolean(retentionData.file && retentionData.file.trim().length > 0);
-
-  const sfcReel = reelsData.reels?.find((r) => r.id === 'sfc-1');
+  const reelId = retentionData.reelId || 'sfc-1';
+  const sfcReel = reelsData.reels?.find((r) => r.id === reelId);
   const reelUrl = sfcReel?.url || 'https://www.instagram.com/reel/DHVgzLQzNQR/?utm_source=ig_web_copy_link&psln=MzRlODBiNWFlZA==';
 
-  // SVG dimensions
-  const svgWidth = 640;
-  const svgHeight = 380;
-  const marginLeft = 48;
-  const marginRight = 32;
-  const marginTop = 36;
-  const marginBottom = 44;
-  const plotWidth = svgWidth - marginLeft - marginRight;
-  const plotHeight = svgHeight - marginTop - marginBottom;
+  const heading = retentionData.heading || '';
+  const sfcFollowers = resultsData.results?.find((r) => r.id === 'sfc')?.value || '';
+  const sub = retentionData.subTemplate && sfcFollowers
+    ? retentionData.subTemplate.replace('{followers}', sfcFollowers)
+    : (retentionData.sub || '');
 
-  // Track settings and section visibility
+  const heroStats = retentionData.heroStats || [];
+  const supportingStats = retentionData.supportingStats || [];
+  const footnote = retentionData.footnote || '';
+
   useEffect(() => {
     const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
@@ -69,12 +96,25 @@ export default function RetentionTheatreSection() {
       observer.observe(sectionRef.current);
     }
 
-    if (!prefersReducedMotion && sectionRef.current) {
-      const ctx = gsap.context(() => {
-        // Title mask reveal & curve draw-in
+    if (prefersReducedMotion) {
+      heroValRefs.current.forEach((el, idx) => {
+        if (el && heroStats[idx]) {
+          el.innerText = heroStats[idx].value;
+        }
+      });
+      return () => {
+        unsub();
+        observer.disconnect();
+        window.removeEventListener('resize', checkDesktop);
+      };
+    }
+
+    let ctx: gsap.Context | null = null;
+    if (sectionRef.current) {
+      ctx = gsap.context(() => {
         ScrollTrigger.create({
           trigger: sectionRef.current,
-          start: 'top 75%',
+          start: 'top 85%',
           once: true,
           onEnter: () => {
             gsap.from('.retention-title-reveal', {
@@ -83,27 +123,75 @@ export default function RetentionTheatreSection() {
               ease: 'power3.out',
             });
 
-            if (pathRef.current) {
-              const length = pathRef.current.getTotalLength() || 1500;
+            gsap.from('.retention-sub-reveal', {
+              opacity: 0,
+              y: 8,
+              duration: 0.6,
+              delay: 0.1,
+              ease: 'power2.out',
+            });
+
+            const cards = heroCardRefs.current.filter(Boolean);
+            if (cards.length > 0) {
               gsap.fromTo(
-                pathRef.current,
-                { strokeDasharray: length, strokeDashoffset: length },
-                { strokeDashoffset: 0, duration: 1.2, ease: 'power2.out' }
+                cards,
+                { opacity: 0, y: 16 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.6,
+                  stagger: 0.12,
+                  ease: 'power2.out',
+                }
               );
             }
 
-            gsap.from('.moment-marker', {
-              opacity: 0,
-              y: -8,
-              duration: 0.5,
-              stagger: 0.1,
-              delay: 0.8,
-              ease: 'power2.out',
+            heroStats.forEach((stat, idx) => {
+              const el = heroValRefs.current[idx];
+              if (!el) return;
+              const { target, format } = parseStatValue(stat.value);
+              const counter = { val: 0 };
+              el.innerText = format(0);
+              gsap.to(counter, {
+                val: target,
+                duration: 1.2,
+                delay: idx * 0.12,
+                ease: 'power2.out',
+                onUpdate: () => {
+                  if (el) el.innerText = format(counter.val);
+                },
+                onComplete: () => {
+                  if (el) el.innerText = stat.value;
+                },
+              });
             });
+
+            gsap.fromTo(
+              '.supporting-stat-card',
+              { opacity: 0, y: 12 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                stagger: 0.04,
+                delay: 0.36,
+                ease: 'power2.out',
+              }
+            );
+
+            gsap.fromTo(
+              '.retention-footnote',
+              { opacity: 0 },
+              {
+                opacity: 1,
+                duration: 0.6,
+                delay: 0.6,
+                ease: 'power2.out',
+              }
+            );
           },
         });
 
-        // Ambient glow scroll scrub
         ScrollTrigger.create({
           trigger: sectionRef.current,
           start: 'top bottom',
@@ -115,52 +203,21 @@ export default function RetentionTheatreSection() {
           },
         });
       }, sectionRef);
-
-      return () => {
-        unsub();
-        observer.disconnect();
-        window.removeEventListener('resize', checkDesktop);
-        ctx.revert();
-      };
     }
 
     return () => {
       unsub();
       observer.disconnect();
       window.removeEventListener('resize', checkDesktop);
+      ctx?.revert();
     };
-  }, []);
+  }, [heroStats]);
 
-  // Autonomous animation loop when no video file exists
-  useEffect(() => {
-    if (hasVideo || !isInView) return;
-
-    let animFrame: number;
-    let lastTime = performance.now();
-
-    const loop = (now: number) => {
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-
-      setCurrentTime((prev) => {
-        const next = prev + dt;
-        return next >= duration ? 0 : next;
-      });
-
-      animFrame = requestAnimationFrame(loop);
-    };
-
-    animFrame = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animFrame);
-  }, [hasVideo, isInView, duration]);
-
-  // Video playback time update handler (loop at 8 seconds)
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       if (videoRef.current.currentTime >= 8) {
         videoRef.current.currentTime = 0;
       }
-      setCurrentTime(videoRef.current.currentTime);
     }
   };
 
@@ -171,75 +228,6 @@ export default function RetentionTheatreSection() {
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
-    }
-  };
-
-  // Convert (t, pct) to SVG (x, y) coordinates
-  const getCoords = useCallback((t: number, pct: number) => {
-    const x = marginLeft + (Math.max(0, Math.min(duration, t)) / duration) * plotWidth;
-    const y = marginTop + ((100 - Math.max(0, Math.min(100, pct))) / 100) * plotHeight;
-    return { x, y };
-  }, [duration, marginLeft, marginTop, plotHeight, plotWidth]);
-
-  // Interpolate percentage at current time
-  const getPctAtTime = useCallback((t: number) => {
-    if (curvePoints.length === 0) return 100;
-    if (t <= curvePoints[0].t) return curvePoints[0].pct;
-    if (t >= curvePoints[curvePoints.length - 1].t) {
-      return curvePoints[curvePoints.length - 1].pct;
-    }
-
-    for (let i = 0; i < curvePoints.length - 1; i++) {
-      const p1 = curvePoints[i];
-      const p2 = curvePoints[i + 1];
-      if (t >= p1.t && t <= p2.t) {
-        const span = p2.t - p1.t;
-        const progress = span === 0 ? 0 : (t - p1.t) / span;
-        return p1.pct + progress * (p2.pct - p1.pct);
-      }
-    }
-    return 100;
-  }, [curvePoints]);
-
-  // Generate SVG curve path
-  const svgPath = React.useMemo(() => {
-    if (curvePoints.length === 0) return '';
-    const points = curvePoints.map((p) => getCoords(p.t, p.pct));
-    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i === 0 ? 0 : i - 1];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2] || p2;
-
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-    }
-    return d;
-  }, [curvePoints, getCoords]);
-
-  // Current dot coordinates
-  const currentPct = getPctAtTime(currentTime);
-  const dotCoords = getCoords(currentTime, currentPct);
-
-  // Click / Drag to seek
-  const handleSeek = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const svgRelX = (clickX / rect.width) * svgWidth;
-    const normalizedTime = ((svgRelX - marginLeft) / plotWidth) * duration;
-    const targetTime = Math.max(0, Math.min(duration, normalizedTime));
-
-    setCurrentTime(targetTime);
-    if (videoRef.current) {
-      videoRef.current.currentTime = targetTime;
     }
   };
 
@@ -258,7 +246,6 @@ export default function RetentionTheatreSection() {
         overflow: 'hidden',
       }}
     >
-      {/* Soft Ambient Glow in Background */}
       <div
         className="ambient-glow drift-1 retention-glow"
         style={{
@@ -270,12 +257,14 @@ export default function RetentionTheatreSection() {
       />
 
       <div className="section-container">
-        <div className="title-mask-wrapper">
-          <h2 className="section-title retention-title-reveal">Retention theatre</h2>
+        <div className="section-header">
+          <div className="title-mask-wrapper">
+            <h2 className="section-title retention-title-reveal">{heading}</h2>
+          </div>
+          <p className="section-sub retention-sub-reveal">{sub}</p>
         </div>
 
         <div className="theatre-layout">
-          {/* Left: 9:16 Video Frame */}
           <div className="video-frame-wrap">
             {hasVideo ? (
               <div className="video-container">
@@ -317,163 +306,49 @@ export default function RetentionTheatreSection() {
             )}
           </div>
 
-          {/* Right: Glass Panel with Chart (.glass-real on desktop) */}
-          <div className={`chart-panel ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}>
-            <div className="chart-header">
-              <h3 className="chart-title">Who stayed, second by second</h3>
-              <div className="chart-live-metric">
-                <span className="live-metric-val">{Math.round(currentPct)}%</span>
-                <span className="live-metric-lbl">watching at {currentTime.toFixed(1)}s</span>
-              </div>
-            </div>
-
-            <div className="svg-wrapper">
-              <svg
-                ref={svgRef}
-                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="retention-svg"
-                onClick={handleSeek}
-              >
-                {/* Horizontal grid lines & Y-axis labels */}
-                {[100, 75, 50, 25, 0].map((val) => {
-                  const { y } = getCoords(0, val);
-                  return (
-                    <g key={`grid-${val}`}>
-                      <line
-                        x1={marginLeft}
-                        y1={y}
-                        x2={marginLeft + plotWidth}
-                        y2={y}
-                        stroke={val === 0 ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.06)'}
-                        strokeWidth="1"
-                      />
-                      <text
-                        x={marginLeft - 10}
-                        y={y + 4}
-                        fill="var(--muted)"
-                        fontSize="11"
-                        fontFamily="var(--font-main)"
-                        textAnchor="end"
-                      >
-                        {val}%
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* X-axis time marks */}
-                {[0, 5, 10, 15, 20, 25, 30].map((t) => {
-                  if (t > duration) return null;
-                  const { x } = getCoords(t, 0);
-                  return (
-                    <text
-                      key={`time-${t}`}
-                      x={x}
-                      y={marginTop + plotHeight + 24}
-                      fill="var(--muted)"
-                      fontSize="11"
-                      fontFamily="var(--font-main)"
-                      textAnchor="middle"
+          <div className="insights-panel">
+            <div className="hero-stats-row">
+              {heroStats.map((stat, idx) => (
+                <div
+                  key={stat.id || idx}
+                  ref={(el) => {
+                    heroCardRefs.current[idx] = el;
+                  }}
+                  className={`hero-stat-card ${isGlassBlur && isDesktop ? 'glass-real' : 'glass-fake'}`}
+                >
+                  <div className="hero-stat-val">
+                    <span
+                      ref={(el) => {
+                        heroValRefs.current[idx] = el;
+                      }}
                     >
-                      {t}s
-                    </text>
-                  );
-                })}
-
-                {/* Moment Markers (Hook, Reveal, CTA) */}
-                {moments.map((m, idx) => {
-                  const { x } = getCoords(m.t, 0);
-                  const label =
-                    m.type === 'hook'
-                      ? 'Hook'
-                      : m.type === 'reveal'
-                      ? 'Reveal'
-                      : m.type === 'cta'
-                      ? 'CTA'
-                      : m.type;
-
-                  return (
-                    <g key={`moment-${idx}`} className="moment-marker">
-                      <line
-                        x1={x}
-                        y1={marginTop}
-                        x2={x}
-                        y2={marginTop + plotHeight}
-                        stroke="rgba(255, 255, 255, 0.25)"
-                        strokeDasharray="4 4"
-                        strokeWidth="1"
-                      />
-                      <rect
-                        x={x - 24}
-                        y={marginTop - 22}
-                        width={48}
-                        height={18}
-                        rx={4}
-                        fill="rgba(20, 20, 22, 0.9)"
-                        stroke="rgba(255, 255, 255, 0.12)"
-                        strokeWidth="1"
-                      />
-                      <text
-                        x={x}
-                        y={marginTop - 10}
-                        fill="var(--text)"
-                        fontSize="11"
-                        fontWeight="500"
-                        fontFamily="var(--font-main)"
-                        textAnchor="middle"
-                      >
-                        {label}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Main Retention Curve */}
-                <path
-                  ref={pathRef}
-                  d={svgPath}
-                  fill="none"
-                  stroke="var(--accent)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                {/* Current Time Tracking Line */}
-                <line
-                  x1={dotCoords.x}
-                  y1={marginTop}
-                  x2={dotCoords.x}
-                  y2={marginTop + plotHeight}
-                  stroke="var(--accent)"
-                  strokeOpacity="0.3"
-                  strokeDasharray="2 2"
-                  strokeWidth="1"
-                />
-
-                {/* Animated Dot on Curve */}
-                <circle
-                  cx={dotCoords.x}
-                  cy={dotCoords.y}
-                  r="8"
-                  fill="var(--accent)"
-                  style={{ filter: 'drop-shadow(0 0 6px rgba(255, 90, 43, 0.8))' }}
-                />
-                <circle
-                  cx={dotCoords.x}
-                  cy={dotCoords.y}
-                  r="3.5"
-                  fill="#FFF"
-                />
-              </svg>
+                      {stat.value}
+                    </span>
+                  </div>
+                  <div className="hero-stat-lbl">{stat.label}</div>
+                </div>
+              ))}
             </div>
+
+            <div className="supporting-stats-grid">
+              {supportingStats.map((stat, idx) => (
+                <div key={stat.id || idx} className="supporting-stat-card glass-fake">
+                  <div className="supporting-stat-val">{stat.value}</div>
+                  <div className="supporting-stat-lbl">{stat.label}</div>
+                  {stat.note && <div className="supporting-stat-note">{stat.note}</div>}
+                </div>
+              ))}
+            </div>
+
+            <div className="retention-footnote">{footnote}</div>
           </div>
         </div>
       </div>
 
       <style jsx>{`
         .retention-section {
-          padding: 110px 96px;
+          padding: 20px 96px;
+          scroll-margin-top: 80px;
         }
         .section-container {
           max-width: 1248px;
@@ -482,25 +357,39 @@ export default function RetentionTheatreSection() {
           position: relative;
           z-index: 1;
         }
+        .section-header {
+          margin-bottom: 12px;
+        }
+        .title-mask-wrapper {
+          overflow: hidden;
+        }
         .section-title {
           font-family: var(--font-main);
-          font-size: 44px;
+          font-size: 34px;
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
           line-height: 1.1;
+          margin: 0;
+        }
+        .section-sub {
+          font-family: var(--font-main);
+          font-size: 15px;
+          color: var(--muted);
+          line-height: 1.35;
+          margin: 6px 0 0 0;
         }
         .theatre-layout {
           display: flex;
-          gap: 32px;
+          gap: 24px;
           align-items: stretch;
           width: 100%;
         }
         .video-frame-wrap {
-          height: 560px;
+          height: 520px;
           aspect-ratio: 9 / 16;
           width: auto;
-          border-radius: 22px;
+          border-radius: 20px;
           overflow: hidden;
           background: #000;
           border: 1px solid rgba(255, 255, 255, 0.08);
@@ -526,8 +415,8 @@ export default function RetentionTheatreSection() {
         }
         .retention-ig-badge {
           position: absolute;
-          top: 16px;
-          left: 16px;
+          top: 14px;
+          left: 14px;
           display: inline-flex;
           align-items: center;
           text-decoration: none;
@@ -553,10 +442,10 @@ export default function RetentionTheatreSection() {
         }
         .video-play-btn {
           position: absolute;
-          bottom: 20px;
-          right: 20px;
-          width: 44px;
-          height: 44px;
+          bottom: 16px;
+          right: 16px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
           background: rgba(11, 10, 9, 0.8);
           border: 1px solid rgba(255, 255, 255, 0.15);
@@ -565,7 +454,7 @@ export default function RetentionTheatreSection() {
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 14px;
+          font-size: 13px;
           transition: transform 0.2s ease, background 0.2s ease;
         }
         .video-play-btn:hover {
@@ -581,8 +470,8 @@ export default function RetentionTheatreSection() {
           background: radial-gradient(circle at 50% 30%, #1c1b1f 0%, #121214 100%);
         }
         .empty-play-icon {
-          width: 52px;
-          height: 52px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.04);
           display: flex;
@@ -590,105 +479,157 @@ export default function RetentionTheatreSection() {
           justify-content: center;
           border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .chart-panel {
+        .insights-panel {
           flex: 1;
-          height: 560px;
-          padding: 32px;
-          border-radius: 22px;
+          height: 520px;
           display: flex;
           flex-direction: column;
+          justify-content: space-between;
+          min-width: 0;
           box-sizing: border-box;
         }
-        .chart-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 20px;
+        .hero-stats-row {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
           flex-shrink: 0;
         }
-        .chart-title {
-          font-family: var(--font-main);
-          font-weight: 500;
-          font-size: 20px;
-          color: var(--text);
-          margin: 0;
-          line-height: 1.2;
-        }
-        .chart-live-metric {
+        .hero-stat-card {
+          padding: 14px 16px;
+          border-radius: 14px;
           display: flex;
-          align-items: baseline;
-          gap: 8px;
+          flex-direction: column;
+          justify-content: center;
+          box-sizing: border-box;
+          will-change: transform, opacity;
         }
-        .live-metric-val {
+        .hero-stat-val {
           font-family: var(--font-main);
           font-weight: 600;
-          font-size: 22px;
+          font-size: 34px;
+          letter-spacing: -0.03em;
+          line-height: 1.05;
           color: var(--accent);
+          margin-bottom: 4px;
         }
-        .live-metric-lbl {
+        .hero-stat-lbl {
           font-family: var(--font-main);
           font-size: 13px;
           color: var(--muted);
+          line-height: 1.25;
         }
-        .svg-wrapper {
+        .supporting-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          margin: 10px 0;
           flex: 1;
-          width: 100%;
-          min-height: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
-        .retention-svg {
-          width: 100%;
-          height: 100%;
-          cursor: crosshair;
-          user-select: none;
+        .supporting-stat-card {
+          padding: 8px 12px;
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          box-sizing: border-box;
+          min-height: 0;
+        }
+        .supporting-stat-val {
+          font-family: var(--font-main);
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text);
+          line-height: 1.15;
+          letter-spacing: -0.01em;
+        }
+        .supporting-stat-lbl {
+          font-family: var(--font-main);
+          font-size: 11px;
+          color: var(--muted);
+          line-height: 1.2;
+          margin-top: 2px;
+        }
+        .supporting-stat-note {
+          font-family: var(--font-main);
+          font-size: 10px;
+          color: var(--accent);
+          opacity: 0.9;
+          margin-top: 2px;
+          line-height: 1.15;
+        }
+        .retention-footnote {
+          font-family: var(--font-main);
+          font-size: 11px;
+          color: var(--muted);
+          opacity: 0.75;
+          line-height: 1.35;
+          flex-shrink: 0;
         }
 
         @media (max-width: 1024px) {
           .retention-section {
-            padding: 80px 48px;
+            padding: 32px 48px;
           }
           .video-frame-wrap {
-            width: 260px;
-            height: 462px;
-            min-width: 260px;
+            height: 480px;
           }
-          .chart-panel {
-            height: 462px;
-            padding: 24px;
+          .insights-panel {
+            height: 480px;
+          }
+          .hero-stat-val {
+            font-size: 28px;
+          }
+          .hero-stat-lbl {
+            font-size: 12px;
           }
         }
 
         @media (max-width: 768px) {
           .retention-section {
-            padding: 64px 24px;
+            padding: 72px 20px 48px;
           }
           .section-title {
-            font-size: 32px;
+            font-size: 26px;
+          }
+          .section-sub {
+            font-size: 14px;
           }
           .theatre-layout {
             flex-direction: column;
             gap: 24px;
           }
           .video-frame-wrap {
-            width: 225px;
-            height: 400px;
-            min-width: 225px;
+            width: 210px;
+            height: 373px;
+            min-width: 210px;
             margin: 0 auto;
           }
-          .chart-panel {
-            width: 100%;
-            height: 400px;
-            padding: 24px 16px;
+          .insights-panel {
+            height: auto;
+            gap: 16px;
           }
-          .chart-header {
-            flex-direction: column;
-            align-items: flex-start;
+          .hero-stats-row {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+          .hero-stat-val {
+            font-size: 28px;
+          }
+          .supporting-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
             gap: 8px;
+            margin: 0;
+          }
+          .supporting-stat-card:nth-child(9) {
+            grid-column: span 2;
+          }
+          .retention-footnote {
+            font-size: 11px;
+            margin-top: 4px;
           }
         }
       `}</style>
     </section>
   );
 }
+

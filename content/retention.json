@@ -1,27 +1,78 @@
 {
-  "_rule": "For the Retention Theatre. Read the curve from your Instagram Insights retention screenshot; enter % still watching at each second you can read.",
+  "_rule": "Verified Instagram Reel insights for Strictly For Corporate (sfc-1). Watch-time retention graph not available for this Reel.",
   "reelSlot": 1,
+  "reelId": "sfc-1",
   "file": "/media/reels/sfc-1.mp4",
-  "insightsScreenshot": "",
-  "durationSeconds": 30,
-  "dummy": true,
-  "curve": [
-    { "t": 0, "pct": 100 },
-    { "t": 1, "pct": 92 },
-    { "t": 2, "pct": 84 },
-    { "t": 4, "pct": 75 },
-    { "t": 7, "pct": 66 },
-    { "t": 10, "pct": 59 },
-    { "t": 13, "pct": 53 },
-    { "t": 15, "pct": 49 },
-    { "t": 18, "pct": 45 },
-    { "t": 22, "pct": 41 },
-    { "t": 26, "pct": 38 },
-    { "t": 30, "pct": 35 }
+  "source": "Instagram Reel insights",
+  "asOf": "2026-10",
+  "heading": "Anatomy of 21.2M",
+  "sub": "One Reel on a 35.3K page. Here is what it did.",
+  "subTemplate": "One Reel on a {followers} page. Here is what it did.",
+  "heroStats": [
+    {
+      "id": "non-followers",
+      "value": "98.9%",
+      "label": "of viewers did not follow the page"
+    },
+    {
+      "id": "shares",
+      "value": "1M",
+      "label": "shares"
+    },
+    {
+      "id": "new-followers",
+      "value": "7,564",
+      "label": "new followers from this one Reel"
+    }
   ],
-  "moments": [
-    { "t": 2, "type": "hook", "note": "Immediate visual trigger to stop fast scrolling.", "dummy": true },
-    { "t": 15, "type": "reveal", "note": "Core concept payoff and perspective shift.", "dummy": true },
-    { "t": 27, "type": "cta", "note": "Direct action prompt for shares and comments.", "dummy": true }
-  ]
+  "supportingStats": [
+    {
+      "id": "views",
+      "value": "21,251,956",
+      "label": "views"
+    },
+    {
+      "id": "viewers",
+      "value": "16,882,320",
+      "label": "viewers"
+    },
+    {
+      "id": "likes",
+      "value": "1.4M",
+      "label": "likes"
+    },
+    {
+      "id": "saves",
+      "value": "56.6K",
+      "label": "saves"
+    },
+    {
+      "id": "comments",
+      "value": "6.2K",
+      "label": "comments"
+    },
+    {
+      "id": "profile-visits",
+      "value": "16.6K",
+      "label": "profile visits"
+    },
+    {
+      "id": "skip-rate",
+      "value": "19.1%",
+      "label": "skip rate",
+      "note": "Instagram rates this Lower than usual"
+    },
+    {
+      "id": "share-rate",
+      "value": "9.2%",
+      "label": "share rate",
+      "note": "Instagram rates this Higher than usual"
+    },
+    {
+      "id": "age-bracket",
+      "value": "87.2%",
+      "label": "of viewers aged 18 to 34"
+    }
+  ],
+  "footnote": "Source: Instagram Reel insights, October 2026. Watch-time graph not available for this Reel."
 }
