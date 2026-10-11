@@ -57,6 +57,7 @@ export default function RetentionTheatreSection() {
   const reelId = retentionData.reelId || 'sfc-1';
   const sfcReel = reelsData.reels?.find((r) => r.id === reelId);
   const reelUrl = sfcReel?.url || 'https://www.instagram.com/reel/DHVgzLQzNQR/?utm_source=ig_web_copy_link&psln=MzRlODBiNWFlZA==';
+  const reelPoster = sfcReel?.poster || '';
 
   const heading = retentionData.heading || '';
   const sfcFollowers = resultsData.results?.find((r) => r.id === 'sfc')?.value || '';
@@ -271,6 +272,7 @@ export default function RetentionTheatreSection() {
                 <video
                   ref={videoRef}
                   src={retentionData.file}
+                  poster={reelPoster || undefined}
                   muted
                   playsInline
                   loop

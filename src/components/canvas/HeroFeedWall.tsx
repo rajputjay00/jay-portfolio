@@ -3,11 +3,12 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import reelsData from '@/../content/reels.json';
 import { perfStore, PerfSettings } from '@/store/perfStore';
 import { openingStore, OpeningStep } from '@/store/openingStore';
 import { windowPointerState, heroScrollProgress } from '@/store/pointerStore';
 
-// 1. Black & White Social Post Card Shader
+// 1. Black & White Social Post Card Shader with Real Reel Poster Atlas
 const FeedShader = {
   uniforms: {
     uTime: { value: 0 },
@@ -19,20 +20,25 @@ const FeedShader = {
     uIsMobile: { value: 0.0 },
     uAccentColor: { value: new THREE.Color('#FF5A2B') },
     uBgColor: { value: new THREE.Color('#0B0A09') },
+    uAtlas: { value: null },
+    uAtlasFade: { value: 0.0 },
   },
   vertexShader: `
     attribute float aIsLight;
+    attribute vec2 aCellCoord;
     uniform vec3 uMouse;
     uniform float uHoverStrength;
     uniform float uStretch;
     
     varying vec2 vUv;
+    varying vec2 vCellCoord;
     varying float vHover;
     varying float vWorldY;
     varying float vIsLight;
 
     void main() {
       vUv = uv;
+      vCellCoord = aCellCoord;
       vIsLight = aIsLight;
 
       // Extract instance center in model space
@@ -61,8 +67,11 @@ const FeedShader = {
     uniform float uIsMobile;
     uniform vec3 uAccentColor;
     uniform vec3 uBgColor;
+    uniform sampler2D uAtlas;
+    uniform float uAtlasFade;
 
     varying vec2 vUv;
+    varying vec2 vCellCoord;
     varying float vHover;
     varying float vWorldY;
     varying float vIsLight;
@@ -78,62 +87,71 @@ const FeedShader = {
       float edgeDist = min(edgeX * 1.25, edgeY);
       float cardMask = smoothstep(0.008, 0.02, edgeDist);
 
-      // 2. Exactly 60% Off-White (#ECE8E1) / 40% Near-Black (#121214) via aIsLight attribute
+      // 2. Exactly 60% Off-White (#ECE8E1) / 40% Near-Black (#121214) via aIsLight attribute (Placeholder)
       bool isLight = vIsLight > 0.5;
       vec3 cardBg = isLight ? vec3(0.925, 0.910, 0.882) : vec3(0.071, 0.071, 0.078);
       vec3 textBarColor = isLight ? vec3(0.18, 0.18, 0.20) : vec3(0.85, 0.84, 0.82);
       vec3 imageBlockColor = isLight ? vec3(0.68, 0.67, 0.65) : vec3(0.18, 0.18, 0.20);
 
-      vec3 col = cardBg;
+      vec3 placeholderCol = cardBg;
 
       // Header row: avatar + handle bar
       vec2 avatarCenter = vec2(0.16, 0.90);
       float avatarDist = length(vec2(vUv.x - avatarCenter.x, (vUv.y - avatarCenter.y) * 1.25));
       if (avatarDist < 0.038) {
-        col = textBarColor;
+        placeholderCol = textBarColor;
       }
       if (vUv.x > 0.24 && vUv.x < 0.55 && abs(vUv.y - 0.90) < 0.012) {
-        col = textBarColor;
+        placeholderCol = textBarColor;
       }
 
       // Text bars
       float w1 = isLight ? 0.72 : 0.65;
       float w2 = isLight ? 0.48 : 0.56;
       if (vUv.x > 0.10 && vUv.x < (0.10 + w1) && abs(vUv.y - 0.80) < 0.010) {
-        col = textBarColor;
+        placeholderCol = textBarColor;
       }
       if (vUv.x > 0.10 && vUv.x < (0.10 + w2) && abs(vUv.y - 0.74) < 0.010) {
-        col = textBarColor;
+        placeholderCol = textBarColor;
       }
 
       // Image Block
       if (vUv.x > 0.10 && vUv.x < 0.90 && vUv.y > 0.16 && vUv.y < 0.66) {
         float innerGrain = (hash(vUv * 300.0) - 0.5) * 0.04;
-        col = imageBlockColor + vec3(innerGrain);
+        placeholderCol = imageBlockColor + vec3(innerGrain);
       }
 
       // Footer interaction dots
       if (vUv.y > 0.06 && vUv.y < 0.11) {
         if (abs(vUv.x - 0.14) < 0.02 || abs(vUv.x - 0.23) < 0.02 || abs(vUv.x - 0.32) < 0.02) {
-          col = textBarColor;
+          placeholderCol = textBarColor;
         }
       }
 
-      // 3. Screen brightness: falls from 0.6 to 0.25 over exit, rises to 1.0 when hovered at top
+      // 3. Atlas Poster lookup (9:16 poster mapped onto 4:5 screen, aspect ratio preserved via cover)
+      vec2 cellUv = vec2(vUv.x, (vUv.y - 0.5) * 0.703125 + 0.5);
+      vec2 atlasUv = vec2((vCellCoord.x + cellUv.x) / 3.0, (2.0 - vCellCoord.y + cellUv.y) / 3.0);
+      vec4 posterTex = texture2D(uAtlas, atlasUv);
+      vec3 posterCol = posterTex.rgb * 0.80; // Keep hero dark mood
+
+      // Smooth 400ms fade from placeholder to real atlas poster
+      vec3 col = mix(placeholderCol, posterCol, uAtlasFade);
+
+      // 4. Screen brightness: falls from 0.6 to 0.25 over exit, rises to 1.0 when hovered at top
       float baseBrightness = uIsMobile > 0.5 ? 0.35 : 0.60;
       float exitBrightness = mix(baseBrightness, 0.25, smoothstep(0.0, 0.75, uExitProgress));
       float hoverAtTop = vHover * (1.0 - smoothstep(0.0, 0.10, uExitProgress));
       float brightness = mix(exitBrightness, 1.0, hoverAtTop);
       col *= brightness;
 
-      // 4. Hover accent edge glow (#FF5A2B) at top
+      // 5. Hover accent edge glow (#FF5A2B) at top
       float edgeGlow = smoothstep(0.04, 0.008, edgeDist) * hoverAtTop;
       col = mix(col, uAccentColor, edgeGlow * 0.90);
 
       // Blend card into background outside bezel
       col = mix(uBgColor, col, cardMask);
 
-      // 5. Vertical fade into background (#0B0A09) at top and bottom + exit fade (0.55 to 0.95)
+      // 6. Vertical fade into background (#0B0A09) at top and bottom + exit fade (0.55 to 0.95)
       float exitFade = 1.0 - smoothstep(0.55, 0.95, uExitProgress);
       float topBottomFade = smoothstep(-4.5, -2.0, vWorldY) * (1.0 - smoothstep(2.0, 4.5, vWorldY));
       topBottomFade = clamp(topBottomFade, 0.0, 1.0) * exitFade;
@@ -250,6 +268,46 @@ export default function HeroFeedWall() {
     return arr;
   }, [totalCount, rowsPerCol]);
 
+  // 9 cells distributed without neighboring repeats (horizontally, vertically, and wrapping)
+  const cellCoordArray = useMemo(() => {
+    const arr = new Float32Array(totalCount * 2);
+    const pattern = [
+      [0, 4, 8, 1, 5, 2, 6, 3, 7, 2], // col 0
+      [3, 7, 2, 6, 0, 4, 8, 1, 5, 4], // col 1
+      [6, 1, 5, 0, 7, 3, 1, 4, 8, 0], // col 2
+    ];
+    let idx = 0;
+    for (let c = 0; c < cols; c++) {
+      const colPattern = pattern[c % 3];
+      for (let r = 0; r < rowsPerCol; r++) {
+        const cellIndex = colPattern[r % 10];
+        const cellX = cellIndex % 3;
+        const cellY = Math.floor(cellIndex / 3);
+        arr[idx * 2] = cellX;
+        arr[idx * 2 + 1] = cellY;
+        idx++;
+      }
+    }
+    return arr;
+  }, [totalCount, cols, rowsPerCol]);
+
+  const atlasLoadedRef = useRef(false);
+  const atlasFadeRef = useRef(0.0);
+
+  const atlasTexture = useMemo(() => {
+    const atlasPath = reelsData?.heroAtlas?.path || '/media/reels/hero-atlas.jpg';
+    const tex = new THREE.TextureLoader().load(atlasPath, (loadedTex) => {
+      loadedTex.colorSpace = THREE.SRGBColorSpace;
+      loadedTex.minFilter = THREE.LinearFilter;
+      loadedTex.magFilter = THREE.LinearFilter;
+      loadedTex.generateMipmaps = false;
+      loadedTex.needsUpdate = true;
+      atlasLoadedRef.current = true;
+    });
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, []);
+
   // Feed Shader Material
   const feedMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -263,13 +321,15 @@ export default function HeroFeedWall() {
         uIsMobile: { value: isMobile ? 1.0 : 0.0 },
         uAccentColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
+        uAtlas: { value: atlasTexture },
+        uAtlasFade: { value: 0.0 },
       },
       vertexShader: FeedShader.vertexShader,
       fragmentShader: FeedShader.fragmentShader,
       transparent: true,
       depthWrite: true,
     });
-  }, [isMobile]);
+  }, [isMobile, atlasTexture]);
 
   // Soft Radial Glow behind feed (Max 0.20 alpha at center)
   const glowMaterial = useMemo(() => {
@@ -343,6 +403,15 @@ export default function HeroFeedWall() {
       5.0,
       delta
     );
+
+    // Atlas smooth 400ms fade once loaded
+    const isAtlasReady =
+      atlasLoadedRef.current ||
+      Boolean(atlasTexture?.image && (atlasTexture.image as HTMLImageElement).complete);
+    if (isAtlasReady && shaderMatRef.current && atlasFadeRef.current < 1.0) {
+      atlasFadeRef.current = Math.min(1.0, atlasFadeRef.current + delta / 0.4);
+      shaderMatRef.current.uniforms.uAtlasFade.value = atlasFadeRef.current;
+    }
 
     // 1. Time uniform update
     shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
@@ -468,7 +537,7 @@ export default function HeroFeedWall() {
     meshRef.current.instanceMatrix.needsUpdate = true;
 
     // 4. Hero Exit Transformation (Recede, Tilt back ~8°, Drift upward ~15%)
-    const baseStartX = isMobile ? 0.0 : 1.75;
+    const baseStartX = isMobile ? 0.0 : 1.80;
     const baseStartY = isMobile ? 0.0 : 0.05;
     const baseStartZ = isMobile ? -1.2 : 0.0;
 
@@ -523,6 +592,10 @@ export default function HeroFeedWall() {
             <instancedBufferAttribute
               attach="attributes-aIsLight"
               args={[isLightArray, 1]}
+            />
+            <instancedBufferAttribute
+              attach="attributes-aCellCoord"
+              args={[cellCoordArray, 2]}
             />
           </planeGeometry>
           <primitive object={feedMaterial} ref={shaderMatRef} attach="material" />
