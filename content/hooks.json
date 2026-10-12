@@ -1,17 +1,16 @@
 {
-  "dummy": true,
   "templates": [
-    "POV: {brand} shows up before your manager does.",
-    "Nobody warns you about {brand}.",
-    "Rating {brand} so you don't have to. Number one hurt.",
-    "Things {brand} knows about you that your family doesn't.",
-    "Tell me you love {brand} without telling me.",
-    "{brand}, but explained by your mom.",
-    "The {brand} mistake everyone makes on a Monday.",
-    "If {brand} had a group chat.",
-    "Stop scrolling if {brand} has ever saved your day.",
-    "What {brand} looks like at 2am.",
-    "We asked five strangers about {brand}. Number three lied.",
-    "{brand} walked so your weekend could run."
+    "Salary aayi. Salary gayi. Beech me bas {brand} tha.",
+    "HR ne bola \"we're a family\". Family me saath sirf {brand} ne diya.",
+    "Manager: \"quick call?\" Me: already thinking about {brand}.",
+    "Kal se pakka gym. Aaj {brand}.",
+    "Appraisal: 0%. Still showing up for me: {brand}.",
+    "Me: aaj full productive rahunga. Also me, 11 baje: {brand}.",
+    "Client: \"make it viral.\" Me: opens {brand}.",
+    "Unpopular opinion: {brand} > weekend plans.",
+    "Red flag: he says he has never heard of {brand}.",
+    "Tag that one friend who won't shut up about {brand}.",
+    "3 signs you need {brand}. Number 2 is your boss.",
+    "Stop scrolling. This one is about {brand}. Yes, you."
   ]
 }

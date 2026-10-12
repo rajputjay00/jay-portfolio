@@ -13,19 +13,10 @@ if (typeof window !== 'undefined') {
 const DEFAULT_BRAND = 'a chai brand';
 
 const INITIAL_HOOKS = [
-  (hooksData?.templates?.[0] || 'POV: {brand} shows up before your manager does.').replace(/\{brand\}/g, DEFAULT_BRAND),
-  (hooksData?.templates?.[1] || 'Nobody warns you about {brand}.').replace(/\{brand\}/g, DEFAULT_BRAND),
-  (hooksData?.templates?.[2] || "Rating {brand} so you don't have to. Number one hurt.").replace(/\{brand\}/g, DEFAULT_BRAND),
+  (hooksData?.templates?.[0] || '').replace(/\{brand\}/g, () => DEFAULT_BRAND),
+  (hooksData?.templates?.[1] || '').replace(/\{brand\}/g, () => DEFAULT_BRAND),
+  (hooksData?.templates?.[2] || '').replace(/\{brand\}/g, () => DEFAULT_BRAND),
 ];
-
-function generateRandomHooks(brandName: string): string[] {
-  const brand = brandName.trim() || DEFAULT_BRAND;
-  const templates = [...(hooksData?.templates || [])];
-  // Shuffle templates and pick 3
-  const shuffled = templates.sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, 3);
-  return selected.map((tpl) => tpl.replace(/\{brand\}/g, brand));
-}
 
 export default function HookMachineSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -36,6 +27,7 @@ export default function HookMachineSection() {
 
   const [hooks, setHooks] = useState<string[]>(INITIAL_HOOKS);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const lastIndicesRef = useRef<number[]>([0, 1, 2]);
 
   useEffect(() => {
     const unsub = perfStore.subscribe((s) => setIsGlassBlur(s.glassBlur));
@@ -86,8 +78,33 @@ export default function HookMachineSection() {
   const handleMakeHooks = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const rawVal = inputRef.current?.value || '';
-    const newHooks = generateRandomHooks(rawVal);
-    setHooks(newHooks);
+    const trimmed = rawVal.trim().slice(0, 40);
+    const brand = trimmed.length > 0 ? trimmed : DEFAULT_BRAND;
+
+    const templates = hooksData?.templates || [];
+    const n = templates.length;
+    if (n >= 3) {
+      let chosenIndices: number[] = [];
+      const prevKey = [...lastIndicesRef.current].sort().join(',');
+
+      for (let attempts = 0; attempts < 50; attempts++) {
+        const pool = Array.from({ length: n }, (_, i) => i);
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const candidate = pool.slice(0, 3);
+        const candKey = [...candidate].sort().join(',');
+        if (candKey !== prevKey || attempts === 49) {
+          chosenIndices = candidate;
+          break;
+        }
+      }
+
+      lastIndicesRef.current = chosenIndices;
+      const newHooks = chosenIndices.map((idx) => templates[idx].replace(/\{brand\}/g, () => brand));
+      setHooks(newHooks);
+    }
 
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
@@ -327,6 +344,8 @@ export default function HookMachineSection() {
           border: 1px solid rgba(255, 255, 255, 0.1);
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
           transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+          box-sizing: border-box;
+          max-width: 100%;
         }
         .hook-card-item:hover {
           border-color: rgba(255, 255, 255, 0.22);
@@ -345,6 +364,7 @@ export default function HookMachineSection() {
           align-items: baseline;
           gap: 16px;
           min-width: 0;
+          flex: 1;
         }
         .hook-num {
           font-family: var(--font-serif);
@@ -361,6 +381,9 @@ export default function HookMachineSection() {
           color: var(--text);
           line-height: 1.35;
           letter-spacing: -0.01em;
+          min-width: 0;
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
         .hook-copy-btn {
           width: 40px;
