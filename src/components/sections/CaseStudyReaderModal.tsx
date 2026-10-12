@@ -17,14 +17,6 @@ interface CaseStudyReaderModalProps {
   returnFocusRef?: React.RefObject<HTMLElement> | null;
 }
 
-const PART_HEADINGS = [
-  'Headline result',
-  'Brief & baseline',
-  'Insight & idea',
-  'Execution & distribution',
-  'Results & learning',
-];
-
 export default function CaseStudyReaderModal({
   studies,
   study,
@@ -69,10 +61,16 @@ export default function CaseStudyReaderModal({
     return extra || [];
   }, []);
 
+  const currentParts = currentStudy?.parts || [];
   const extraSlides = getStudyExtraSlides(currentStudy?.id);
-  const totalSlides = 5 + extraSlides.length;
-  const isExtraSlide = partIdx >= 5;
-  const currentExtraSlide = isExtraSlide ? extraSlides[partIdx - 5] : null;
+  const totalSlides = currentParts.length + extraSlides.length;
+  const isExtraSlide = partIdx >= currentParts.length;
+  const currentExtraSlide = isExtraSlide ? extraSlides[partIdx - currentParts.length] : null;
+
+  const currentPart = !isExtraSlide ? currentParts[partIdx] : null;
+  const currentPartHeading = currentPart?.heading || '';
+  const currentPartText = currentPart?.text || '';
+  const currentPartNote = currentPart?.note || '';
 
   const initials = profileData?.name
     ? profileData.name
@@ -82,31 +80,6 @@ export default function CaseStudyReaderModal({
         .toUpperCase()
     : 'JR';
 
-  // Extract text for 5 parts
-  const getPartText = (idx: number, s: CaseStudyData) => {
-    if (!s || !s.sections) return '';
-    switch (idx) {
-      case 0:
-        return (
-          s.sections.headlineResult ||
-          (s.headline?.value ? `${s.headline.value} ${s.headline.label || ''}`.trim() : s.summary)
-        );
-      case 1:
-        return s.sections.brief || s.summary;
-      case 2:
-        return s.sections.insight || '';
-      case 3:
-        return s.sections.execution || '';
-      case 4:
-        return s.sections.results || '';
-      default:
-        return '';
-    }
-  };
-
-  const currentPartHeading = PART_HEADINGS[partIdx] || PART_HEADINGS[0];
-  const currentPartText = currentStudy ? getPartText(partIdx, currentStudy) : '';
-
   // Navigation handlers
   const handleNext = useCallback(() => {
     progressRef.current = 0;
@@ -114,7 +87,8 @@ export default function CaseStudyReaderModal({
       activeBarRef.current.style.transform = 'scaleX(0)';
     }
     const currentExtra = getStudyExtraSlides(currentStudy?.id);
-    const currentTotal = 5 + currentExtra.length;
+    const studyPartsCount = currentStudy?.parts?.length || 0;
+    const currentTotal = studyPartsCount + currentExtra.length;
     if (partIdx < currentTotal - 1) {
       setPartIdx((prev) => prev + 1);
     } else {
@@ -127,7 +101,7 @@ export default function CaseStudyReaderModal({
         onClose();
       }
     }
-  }, [partIdx, currentStudy?.id, studyIdx, allStudies.length, onClose, getStudyExtraSlides]);
+  }, [partIdx, currentStudy?.id, currentStudy?.parts?.length, studyIdx, allStudies.length, onClose, getStudyExtraSlides]);
 
   const handlePrev = useCallback(() => {
     progressRef.current = 0;
@@ -140,7 +114,7 @@ export default function CaseStudyReaderModal({
       if (studyIdx > 0) {
         const prevStudy = allStudies[studyIdx - 1];
         const prevExtra = getStudyExtraSlides(prevStudy?.id);
-        const prevTotal = 5 + prevExtra.length;
+        const prevTotal = (prevStudy?.parts?.length || 0) + prevExtra.length;
         setStudyIdx((prev) => prev - 1);
         setPartIdx(prevTotal - 1);
       } else {
@@ -369,7 +343,9 @@ export default function CaseStudyReaderModal({
               className="story-bg-img"
             />
           ) : (
-            <div className="story-bg-placeholder" />
+            <div className="story-bg-dark-cover">
+              <span className="story-dark-cover-title">{currentStudy.title.split(' — ')[0]}</span>
+            </div>
           )}
           {!isExtraSlide && <div className="story-gradient-overlay" />}
           {isExtraSlide && <div className="story-brand-top-scrim" />}
@@ -450,6 +426,11 @@ export default function CaseStudyReaderModal({
                   {para}
                 </p>
               ))}
+              {currentPartNote && (
+                <p className="story-note">
+                  {currentPartNote}
+                </p>
+              )}
             </div>
             <div className="story-panel-hint">Tap to continue · hold to pause</div>
           </div>
@@ -557,10 +538,23 @@ export default function CaseStudyReaderModal({
           text-transform: uppercase;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
         }
-        .story-bg-placeholder {
+        .story-bg-placeholder,
+        .story-bg-dark-cover {
           width: 100%;
           height: 100%;
-          background: #181719;
+          background: #0B0A09;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 32px;
+          text-align: center;
+        }
+        .story-dark-cover-title {
+          font-family: var(--font-main);
+          font-size: 26px;
+          font-weight: 600;
+          letter-spacing: -0.02em;
+          color: var(--text);
         }
         .story-gradient-overlay {
           position: absolute;
@@ -743,6 +737,14 @@ export default function CaseStudyReaderModal({
         }
         .story-para:last-child {
           margin-bottom: 0;
+        }
+        .story-note {
+          font-family: var(--font-main);
+          font-size: 13px;
+          color: var(--muted);
+          font-style: italic;
+          margin-top: 10px;
+          opacity: 0.85;
         }
         .story-panel-hint {
           font-family: var(--font-main);

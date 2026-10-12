@@ -3,6 +3,12 @@ import brandSocialRaw from '@/../content/case-studies/brand-social.md';
 import strictlyRaw from '@/../content/case-studies/strictly-for-corporate.md';
 import campusRaw from '@/../content/case-studies/campus-community.md';
 
+export interface CaseStudyPart {
+  heading: string;
+  text: string;
+  note?: string;
+}
+
 export interface CaseStudyData {
   id: string;
   order: number;
@@ -21,6 +27,8 @@ export interface CaseStudyData {
   accounts?: Array<{ name: string; followers: string }>;
   brands?: string[];
   summary: string;
+  note?: string;
+  parts: CaseStudyPart[];
   sections: {
     headlineResult: string;
     brief: string;
@@ -133,17 +141,41 @@ function parseMarkdownCaseStudy(raw: string): CaseStudyData {
   }
 
   // Parse markdown body sections
-  const sectionBriefMatch = body.match(/## Brief and baseline\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+  const parts: CaseStudyPart[] = [];
+  const sectionRegex = /##\s+([^\r\n]+)\r?\n([\s\S]*?)(?=(?:\r?\n##\s+|$))/g;
+  let match;
+  while ((match = sectionRegex.exec(body)) !== null) {
+    const heading = match[1].trim();
+    let text = cleanText(match[2]);
+    if (!text) continue;
+
+    let partNote = '';
+    const noteMatch = text.match(/(?:\r?\n|^)\*([^*]+)\*$/);
+    if (noteMatch) {
+      partNote = noteMatch[1].trim();
+      text = text.replace(/(?:\r?\n|^)\*([^*]+)\*$/, '').trim();
+    } else if (heading.toLowerCase().includes('result') && data.note) {
+      partNote = String(data.note);
+    }
+
+    parts.push({
+      heading,
+      text,
+      note: partNote || undefined,
+    });
+  }
+
+  const sectionBriefMatch = body.match(/## (?:Brief and baseline|Context)\r?\n([\s\S]*?)(?=\r?\n## |$)/);
   const sectionInsightMatch = body.match(/## Insight and idea\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-  const sectionExecMatch = body.match(/## Execution and distribution\r?\n([\s\S]*?)(?=\r?\n## |$)/);
-  const sectionResultsMatch = body.match(/## Results and learning\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+  const sectionExecMatch = body.match(/## (?:Execution and distribution|What I did)\r?\n([\s\S]*?)(?=\r?\n## |$)/);
+  const sectionResultsMatch = body.match(/## (?:Results and learning|Result)\r?\n([\s\S]*?)(?=\r?\n## |$)/);
 
-  const brief = cleanText(sectionBriefMatch ? sectionBriefMatch[1] : '');
+  const brief = cleanText(sectionBriefMatch ? sectionBriefMatch[1] : (parts[0]?.text || ''));
   const insight = cleanText(sectionInsightMatch ? sectionInsightMatch[1] : '');
-  const execution = cleanText(sectionExecMatch ? sectionExecMatch[1] : '');
-  const results = cleanText(sectionResultsMatch ? sectionResultsMatch[1] : '');
+  const execution = cleanText(sectionExecMatch ? sectionExecMatch[1] : (parts[1]?.text || ''));
+  const results = cleanText(sectionResultsMatch ? sectionResultsMatch[1] : (parts[2]?.text || ''));
 
-  const summary = brief.split('\n\n')[0] || brief;
+  const summary = (data.summary as string) || brief.split('\n\n')[0] || brief;
   const headlineResult = `${data.headline?.value || ''} ${data.headline?.label || ''}`.trim();
 
   return {
@@ -164,6 +196,8 @@ function parseMarkdownCaseStudy(raw: string): CaseStudyData {
     accounts: data.accounts?.length ? data.accounts : undefined,
     brands: data.brands?.length ? data.brands : undefined,
     summary,
+    note: data.note ? String(data.note) : undefined,
+    parts,
     sections: {
       headlineResult,
       brief,

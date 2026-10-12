@@ -48,9 +48,12 @@ export default function CaseStudiesSection() {
           },
         });
 
+        const getPad = () => Math.max(48, Math.round((window.innerWidth - 1248) / 2));
+
         const getScrollDistance = () => {
           if (!trackRef.current) return window.innerWidth * 2;
-          return trackRef.current.scrollWidth - window.innerWidth + 160;
+          const pad = getPad();
+          return Math.max(0, trackRef.current.scrollWidth + 2 * pad - window.innerWidth);
         };
 
         const totalDist = getScrollDistance();
@@ -67,11 +70,10 @@ export default function CaseStudiesSection() {
             scrub: 0.8,
             invalidateOnRefresh: true,
             onUpdate: (self) => {
-              // Calculate active card index based on progress (0 to 3)
               const count = caseStudiesList.length;
-              const activeIndex = Math.min(count - 1, Math.floor(self.progress * count));
+              const bestIndex = Math.min(count - 1, Math.max(0, Math.round(self.progress * (count - 1))));
               if (counterRef.current) {
-                counterRef.current.innerText = `${activeIndex + 1} / ${count}`;
+                counterRef.current.innerText = `${bestIndex + 1} / ${count}`;
               }
             },
           },
@@ -258,6 +260,7 @@ export default function CaseStudiesSection() {
           min-height: 100vh;
         }
         .desktop-sideways-container {
+          --side-pad: max(48px, calc((100vw - 1248px) / 2));
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -270,7 +273,7 @@ export default function CaseStudiesSection() {
         .sideways-header {
           position: absolute;
           top: 48px;
-          left: 96px;
+          left: var(--side-pad);
           display: flex;
           align-items: baseline;
           gap: 24px;
@@ -295,7 +298,8 @@ export default function CaseStudiesSection() {
         .sideways-track-wrapper {
           width: 100%;
           overflow: visible;
-          padding-left: 96px;
+          padding-left: var(--side-pad);
+          padding-right: var(--side-pad);
           box-sizing: border-box;
           margin-top: 60px;
         }
@@ -306,9 +310,9 @@ export default function CaseStudiesSection() {
           will-change: transform;
         }
         .sideways-card-item {
-          width: 46vw;
-          min-width: 440px;
-          max-width: 680px;
+          width: 44vw;
+          min-width: 420px;
+          max-width: 620px;
           flex-shrink: 0;
         }
         .mobile-grid-container {
@@ -389,8 +393,8 @@ function CaseStudyCard({
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    const rotateX = ((centerY - y) / centerY) * 4;
-    const rotateY = ((x - centerX) / centerX) * 4;
+    const rotateX = ((centerY - y) / centerY) * 3;
+    const rotateY = ((x - centerX) / centerX) * 3;
 
     setTransformStyle(`perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.01, 1.01, 1.01)`);
   };
@@ -399,7 +403,27 @@ function CaseStudyCard({
     setTransformStyle('perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
   };
 
-  const isAltFallback = index % 2 === 0;
+  const resultsList = resultsData?.results || [];
+  let metricText = '';
+
+  if (study.id === 'brand-social') {
+    const r = resultsList.find((item) => item.id === 'brands' || item.caseStudy === 'brand-social');
+    if (r) {
+      metricText = `${r.value} ${r.label}`; // "5 brand campaigns"
+    }
+  } else if (study.id === 'creativefuel') {
+    const r = resultsList.find((item) => item.id === 'icl' || item.caseStudy === 'creativefuel');
+    if (r) {
+      metricText = r.value; // "401K"
+    }
+  } else if (study.id === 'strictly-for-corporate') {
+    const r = resultsList.find((item) => item.id === 'sfc' || item.caseStudy === 'strictly-for-corporate');
+    if (r) {
+      metricText = r.value; // "35.3K"
+    }
+  }
+
+  const baseTitle = study.title.split(' — ')[0];
 
   return (
     <button
@@ -418,62 +442,33 @@ function CaseStudyCard({
       }}
       aria-label={`Open case study: ${study.title}`}
     >
-      {/* Full Card Background Media (Scales 1.0 -> 1.04 on hover) */}
-      <div className="card-media-bg">
+      {/* 1. Top Image Area: Takes remaining height, object-fit contain, #000 behind */}
+      <div className="card-image-area">
         {study.heroImage ? (
           <img
             src={study.heroImage}
             alt={study.title}
             loading="lazy"
             decoding="async"
-            className="card-full-image"
+            className="card-contained-img"
           />
         ) : (
-          <div
-            className="card-media-fallback"
-            style={{
-              backgroundColor: isAltFallback ? '#ECE8E1' : '#121214',
-              color: isAltFallback ? '#121214' : '#F5EFE6',
-            }}
-          >
-            <span>{study.kicker}</span>
+          <div className="card-plain-dark-cover">
+            <span className="card-plain-title">{baseTitle}</span>
           </div>
         )}
+        <div className="card-sheen" />
       </div>
 
-      {/* Hover Sheen Sweep Element */}
-      <div className="card-sheen" />
-
-      {/* Overlaid Bottom Text Panel with Glass */}
-      <div className={`card-overlay-panel ${isGlassBlur ? 'glass-real' : 'glass-fake'}`}>
+      {/* 2. Bottom Text Panel: Stacked underneath, no overlap */}
+      <div className="card-text-panel">
         <div className="card-kicker">{study.kicker}</div>
 
-        <h3 className="card-title">
-          {study.title.split(' — ')[0]}
-          {(() => {
-            const resultsList = resultsData?.results || [];
-            const resultsMap: Record<string, string> = {};
-            resultsList.forEach((r) => {
-              if (r.caseStudy && r.value) resultsMap[r.caseStudy] = r.value;
-              if (r.id && r.value) resultsMap[r.id] = r.value;
-            });
-            const primaryId =
-              study.id === 'strictly-for-corporate'
-                ? 'sfc'
-                : study.id === 'creativefuel'
-                ? 'icl'
-                : study.id === 'brand-social'
-                ? 'brands'
-                : study.id;
-            const metric = resultsMap[primaryId] || resultsMap[study.id] || study.headline?.value;
-
-            if (metric && metric !== 'XXK') {
-              return (
-                <> · <span className="accent-metric">{metric}</span>{study.brands ? ' brands' : ''}</>
-              );
-            }
-            return null;
-          })()}
+        <h3 className={`card-title ${study.id === 'brand-social' ? 'card-title-brand' : ''}`}>
+          {baseTitle}
+          {metricText ? (
+            <> · <span className="accent-metric">{metricText}</span></>
+          ) : null}
         </h3>
 
         <p className="card-summary">{study.summary}</p>
@@ -483,19 +478,18 @@ function CaseStudyCard({
         .case-card {
           position: relative;
           width: 100%;
-          height: 440px;
+          height: 480px;
           border-radius: 22px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          justify-content: flex-end;
           text-align: left;
           cursor: pointer;
           border: 1px solid rgba(255, 255, 255, 0.08);
           background: #0B0A09;
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
           transition: transform 0.15s cubic-bezier(0.2, 0, 0.38, 0.9), border-color 0.2s ease, box-shadow 0.2s ease;
-          padding: 12px;
+          padding: 0;
           outline: none;
           color: inherit;
         }
@@ -503,35 +497,45 @@ function CaseStudyCard({
           border-color: rgba(255, 255, 255, 0.22);
           box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
         }
-        .card-media-bg {
-          position: absolute;
-          inset: 0;
+        .card-image-area {
+          position: relative;
+          flex: 1;
+          min-height: 0;
           width: 100%;
-          height: 100%;
+          background: #000;
           overflow: hidden;
-          z-index: 0;
-          background: #000;
-        }
-        .card-full-image {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          background: #000;
-          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .case-card:hover .card-full-image {
-          transform: scale(1.04);
-        }
-        .card-media-fallback {
-          width: 100%;
-          height: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+        .card-contained-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          object-position: center;
+          background: #000;
+          display: block;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .case-card:hover .card-contained-img {
+          transform: scale(1.03);
+        }
+        .card-plain-dark-cover {
+          width: 100%;
+          height: 100%;
+          background: #0B0A09;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 32px;
+          text-align: center;
+        }
+        .card-plain-title {
           font-family: var(--font-main);
+          font-size: 24px;
           font-weight: 600;
-          letter-spacing: 0.15em;
-          font-size: 14px;
+          letter-spacing: -0.02em;
+          color: var(--text);
         }
         .card-sheen {
           position: absolute;
@@ -547,21 +551,22 @@ function CaseStudyCard({
         .case-card:hover .card-sheen {
           transform: translateX(240%);
         }
-        .card-overlay-panel {
+        .card-text-panel {
           position: relative;
-          z-index: 3;
           width: 100%;
-          border-radius: 14px;
-          background: rgba(11, 10, 9, 0.82);
-          padding: 20px 24px;
+          flex-shrink: 0;
+          padding: 18px 24px 20px;
           box-sizing: border-box;
+          background: rgba(14, 13, 12, 0.96);
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
           display: flex;
           flex-direction: column;
           gap: 6px;
+          z-index: 2;
         }
         .card-kicker {
           font-family: var(--font-main);
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 600;
           letter-spacing: 0.15em;
           text-transform: uppercase;
@@ -569,12 +574,17 @@ function CaseStudyCard({
         }
         .card-title {
           font-family: var(--font-main);
-          font-size: 24px;
+          font-size: 23px;
           font-weight: 500;
           letter-spacing: -0.02em;
           color: var(--text);
           line-height: 1.2;
           margin: 0;
+          white-space: nowrap;
+          overflow: visible;
+        }
+        .card-title-brand {
+          font-size: 20px;
         }
         .accent-metric {
           color: var(--accent);
@@ -591,16 +601,20 @@ function CaseStudyCard({
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
-
         @media (max-width: 768px) {
           .case-card {
             height: 380px;
           }
-          .card-overlay-panel {
-            padding: 16px 18px;
+          .card-text-panel {
+            padding: 16px 18px 18px;
+            gap: 4px;
           }
           .card-title {
-            font-size: 20px;
+            font-size: 19px;
+            white-space: normal;
+          }
+          .card-title-brand {
+            font-size: 17px;
           }
           .card-summary {
             font-size: 13px;

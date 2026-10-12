@@ -12,15 +12,71 @@ if (typeof window !== 'undefined') {
 export default function BeforeAfterSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
+  const typedBlockRef = useRef<HTMLDivElement>(null);
+  const meantBlockRef = useRef<HTMLDivElement>(null);
   const rangeInputRef = useRef<HTMLInputElement>(null);
 
-  const heading = beforeAfterData?.heading || 'What I typed. What I meant.';
-  const sub = beforeAfterData?.sub || 'One series. Three pages.';
+  const currentP = useRef(0);
+  const isDragging = useRef(false);
+  const [hasDragged, setHasDragged] = useState(false);
+
+  const heading = beforeAfterData?.heading || '';
+  const sub = beforeAfterData?.sub || '';
+  const hint = beforeAfterData?.hint || '';
   const pairs = beforeAfterData?.pairs || [];
   const [selectedPairIndex, setSelectedPairIndex] = useState(0);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
 
   const currentPair = pairs[selectedPairIndex] || pairs[0];
+
+  const updateHandle = (pVal: number) => {
+    const p = Math.max(0, Math.min(1, pVal));
+    currentP.current = p;
+
+    // typed block opacity = clamp(1 - p / 0.4, 0, 1)
+    // meant block opacity = clamp((p - 0.6) / 0.4, 0, 1)
+    const typedOpacity = Math.max(0, Math.min(1, 1 - p / 0.4));
+    const meantOpacity = Math.max(0, Math.min(1, (p - 0.6) / 0.4));
+
+    if (typedBlockRef.current) {
+      typedBlockRef.current.style.opacity = typedOpacity.toString();
+    }
+    if (meantBlockRef.current) {
+      meantBlockRef.current.style.opacity = meantOpacity.toString();
+    }
+
+    if (frameRef.current) {
+      frameRef.current.style.setProperty('--divider-pos', `${(p * 100).toFixed(2)}%`);
+      frameRef.current.style.setProperty('--handle-pos', `clamp(24px, ${(p * 100).toFixed(2)}%, calc(100% - 24px))`);
+    }
+
+    if (rangeInputRef.current) {
+      rangeInputRef.current.value = (p * 100).toString();
+      rangeInputRef.current.setAttribute('aria-valuenow', p.toFixed(2));
+    }
+  };
+
+  const easeTo = (targetP: number) => {
+    const startP = currentP.current;
+    const startTime = performance.now();
+    const duration = 250; // 250ms ease on release
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Power2 out easing
+      const eased = 1 - Math.pow(1 - progress, 2);
+      const p = startP + (targetP - startP) * eased;
+      updateHandle(p);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        updateHandle(targetP);
+      }
+    };
+    requestAnimationFrame(animate);
+  };
 
   useEffect(() => {
     const prefersReducedMotion =
@@ -28,6 +84,9 @@ export default function BeforeAfterSection() {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     setIsReducedMotion(prefersReducedMotion);
+
+    // Initial handle state: p = 0 with typed fully visible
+    updateHandle(0);
 
     if (!prefersReducedMotion && sectionRef.current) {
       const ctx = gsap.context(() => {
@@ -47,40 +106,6 @@ export default function BeforeAfterSection() {
               duration: 0.8,
               ease: 'power2.out',
             });
-
-            // Divider hint animation: 0 -> 45 -> 0
-            if (frameRef.current) {
-              const obj = { val: 0 };
-              gsap.to(obj, {
-                val: 45,
-                duration: 0.6,
-                delay: 0.4,
-                ease: 'power2.inOut',
-                onUpdate: () => {
-                  if (frameRef.current) {
-                    frameRef.current.style.setProperty('--divider-pos', `${obj.val.toFixed(1)}%`);
-                  }
-                  if (rangeInputRef.current) {
-                    rangeInputRef.current.value = obj.val.toString();
-                  }
-                },
-                onComplete: () => {
-                  gsap.to(obj, {
-                    val: 0,
-                    duration: 0.6,
-                    ease: 'power2.inOut',
-                    onUpdate: () => {
-                      if (frameRef.current) {
-                        frameRef.current.style.setProperty('--divider-pos', `${obj.val.toFixed(1)}%`);
-                      }
-                      if (rangeInputRef.current) {
-                        rangeInputRef.current.value = obj.val.toString();
-                      }
-                    },
-                  });
-                },
-              });
-            }
           },
         });
       }, sectionRef);
@@ -89,21 +114,74 @@ export default function BeforeAfterSection() {
     }
   }, []);
 
-  const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    setHasDragged(true);
+
     if (frameRef.current) {
-      frameRef.current.style.setProperty('--divider-pos', `${val}%`);
+      const rect = frameRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const p = Math.max(0, Math.min(1, x / rect.width));
+      updateHandle(p);
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !frameRef.current) return;
+    const rect = frameRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const p = Math.max(0, Math.min(1, x / rect.width));
+    updateHandle(p);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    const snapTarget = currentP.current < 0.5 ? 0 : 1;
+    easeTo(snapTarget);
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    const snapTarget = currentP.current < 0.5 ? 0 : 1;
+    easeTo(snapTarget);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHasDragged(true);
+      const newP = Math.max(0, parseFloat((currentP.current - 0.1).toFixed(2)));
+      updateHandle(newP);
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHasDragged(true);
+      const newP = Math.min(1, parseFloat((currentP.current + 0.1).toFixed(2)));
+      updateHandle(newP);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setHasDragged(true);
+      easeTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setHasDragged(true);
+      easeTo(1);
     }
   };
 
   const handleSelectPair = (idx: number) => {
     setSelectedPairIndex(idx);
-    if (frameRef.current) {
-      frameRef.current.style.setProperty('--divider-pos', '0%');
-    }
-    if (rangeInputRef.current) {
-      rangeInputRef.current.value = '0';
-    }
+    updateHandle(0);
   };
 
   return (
@@ -188,31 +266,56 @@ export default function BeforeAfterSection() {
                   </div>
                 </div>
               ) : (
-                <div
-                  ref={frameRef}
-                  className="ba-slider-panel"
-                  style={{
-                    ['--divider-pos' as any]: '0%',
-                  }}
-                >
-                  {/* Layer A (Underneath, Full): What I typed */}
-                  <div className="ba-slider-layer ba-layer-typed glass-fake">
-                    <div className="ba-layer-content">
+                <div className="ba-slider-container">
+                  <div
+                    ref={frameRef}
+                    role="slider"
+                    tabIndex={0}
+                    aria-label="What I typed vs what I meant comparison"
+                    aria-valuenow={0}
+                    aria-valuemin={0}
+                    aria-valuemax={1}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerCancel}
+                    onKeyDown={handleKeyDown}
+                    className="ba-slider-panel"
+                    style={{
+                      ['--divider-pos' as any]: '0%',
+                      ['--handle-pos' as any]: '24px',
+                    }}
+                  >
+                    {/* Layer A (Underneath, Full): Dark panel background */}
+                    <div className="ba-slider-layer ba-layer-typed" />
+
+                    {/* Layer B (On Top, Revealed by clip-path): Accent color wipe */}
+                    <div className="ba-slider-layer ba-layer-meant" />
+
+                    {/* Text Block: What I typed (Driven by opacity directly) */}
+                    <div
+                      ref={typedBlockRef}
+                      className="ba-text-block ba-block-typed"
+                      style={{ opacity: 1 }}
+                    >
                       <span className="ba-text-tag tag-typed">What I typed</span>
                       <p className="ba-text-line line-typed">"{currentPair?.typed}"</p>
                     </div>
-                  </div>
 
-                  {/* Layer B (On Top, Revealed by clip-path): What I meant */}
-                  <div className="ba-slider-layer ba-layer-meant">
-                    <div className="ba-layer-content">
+                    {/* Text Block: What I meant (Driven by opacity directly) */}
+                    <div
+                      ref={meantBlockRef}
+                      className="ba-text-block ba-block-meant"
+                      style={{ opacity: 0 }}
+                    >
                       <span className="ba-text-tag tag-meant">What I meant</span>
                       <p className="ba-text-line line-meant">"{currentPair?.meant}"</p>
                     </div>
-                  </div>
 
-                  {/* Accent Divider Line & Drag Handle */}
-                  <div className="ba-divider-line">
+                    {/* Accent Divider Line */}
+                    <div className="ba-divider-line" />
+
+                    {/* Drag Handle: Kept fully inside panel at both ends */}
                     <div className="ba-handle" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B0A09" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 21 12 15 6" />
@@ -221,18 +324,12 @@ export default function BeforeAfterSection() {
                     </div>
                   </div>
 
-                  {/* Range Slider for Accessible Mouse/Touch/Keyboard navigation */}
-                  <input
-                    ref={rangeInputRef}
-                    type="range"
-                    min="0"
-                    max="100"
-                    defaultValue="0"
-                    onChange={handleRangeChange}
-                    onInput={handleRangeChange}
-                    className="ba-range-slider"
-                    aria-label="Drag to reveal what I meant"
-                  />
+                  {/* Hint under the panel from content */}
+                  <div className="ba-hint-row">
+                    <span className={`ba-hint-text ${hasDragged ? 'hint-hidden' : ''}`}>
+                      {hint}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -258,11 +355,12 @@ export default function BeforeAfterSection() {
 
       <style jsx>{`
         .ba-section {
-          padding: 32px 80px;
+          padding: 104px 40px 32px;
           min-height: 100vh;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-sizing: border-box;
         }
         .section-container {
           max-width: 1248px;
@@ -276,12 +374,12 @@ export default function BeforeAfterSection() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          margin-bottom: 24px;
-          gap: 6px;
+          margin-bottom: 16px;
+          gap: 4px;
         }
         .section-title {
           font-family: var(--font-main);
-          font-size: 40px;
+          font-size: 36px;
           font-weight: 600;
           letter-spacing: -0.03em;
           color: var(--text);
@@ -291,23 +389,23 @@ export default function BeforeAfterSection() {
         .ba-subtitle {
           font-family: var(--font-serif);
           font-style: italic;
-          font-size: 22px;
+          font-size: 20px;
           color: var(--muted);
-          line-height: 1.3;
-          margin: 0 0 12px 0;
+          line-height: 1.2;
+          margin: 0 0 8px 0;
           letter-spacing: -0.01em;
         }
         .ba-pills-row {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }
         .ba-pill-btn {
-          width: 40px;
-          height: 40px;
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
           font-family: var(--font-main);
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 700;
           display: flex;
           align-items: center;
@@ -332,17 +430,44 @@ export default function BeforeAfterSection() {
           width: 100%;
           min-width: 0;
         }
+        .ba-slider-container {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+        }
         .ba-slider-panel {
           position: relative;
-          height: min(380px, 50vh);
+          height: min(340px, 44vh);
           border-radius: 20px;
           overflow: hidden;
           background: #121214;
           border: 1px solid rgba(255, 255, 255, 0.12);
           box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
           user-select: none;
+          cursor: ew-resize;
+          touch-action: none;
+          outline: none;
+        }
+        .ba-slider-panel:focus-visible {
+          box-shadow: 0 0 0 2px var(--accent), 0 20px 50px rgba(0, 0, 0, 0.6);
         }
         .ba-slider-layer {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+        .ba-layer-typed {
+          background: #121214;
+          z-index: 1;
+        }
+        .ba-layer-meant {
+          background: #FF5A2B;
+          clip-path: inset(0 calc(100% - var(--divider-pos, 0%)) 0 0);
+          z-index: 2;
+        }
+        .ba-text-block {
           position: absolute;
           inset: 0;
           width: 100%;
@@ -352,24 +477,18 @@ export default function BeforeAfterSection() {
           display: flex;
           flex-direction: column;
           justify-content: center;
+          align-items: flex-start;
+          text-align: left;
           pointer-events: none;
-        }
-        .ba-layer-typed {
-          background: rgba(18, 18, 20, 0.92);
-          color: var(--text);
-          z-index: 1;
-        }
-        .ba-layer-meant {
-          background: #FF5A2B;
-          color: #0B0A09;
-          clip-path: inset(0 calc(100% - var(--divider-pos, 0%)) 0 0);
-          z-index: 2;
-        }
-        .ba-layer-content {
-          display: flex;
-          flex-direction: column;
           gap: 12px;
-          max-width: 100%;
+        }
+        .ba-block-typed {
+          z-index: 3;
+          color: var(--text);
+        }
+        .ba-block-meant {
+          z-index: 4;
+          color: #0B0A09;
         }
         .ba-text-tag {
           font-family: var(--font-main);
@@ -392,6 +511,7 @@ export default function BeforeAfterSection() {
           margin: 0;
           word-break: break-word;
           overflow-wrap: break-word;
+          white-space: normal;
         }
         .line-typed {
           color: var(--text);
@@ -421,16 +541,16 @@ export default function BeforeAfterSection() {
           top: 0;
           bottom: 0;
           left: var(--divider-pos, 0%);
-          width: 3px;
-          background: #fff;
+          width: 2px;
+          background: rgba(255, 255, 255, 0.85);
           transform: translateX(-50%);
-          z-index: 4;
+          z-index: 5;
           pointer-events: none;
         }
         .ba-handle {
           position: absolute;
           top: 50%;
-          left: 50%;
+          left: var(--handle-pos, 24px);
           transform: translate(-50%, -50%);
           width: 48px;
           height: 48px;
@@ -440,16 +560,25 @@ export default function BeforeAfterSection() {
           display: flex;
           align-items: center;
           justify-content: center;
+          z-index: 6;
+          pointer-events: none;
         }
-        .ba-range-slider {
-          position: absolute;
-          inset: 0;
+        .ba-hint-row {
+          display: flex;
+          justify-content: center;
+          margin-top: 10px;
           width: 100%;
-          height: 100%;
+        }
+        .ba-hint-text {
+          font-family: var(--font-main);
+          font-size: 13px;
+          color: var(--muted);
+          opacity: 0.8;
+          transition: opacity 0.3s ease;
+          pointer-events: none;
+        }
+        .ba-hint-text.hint-hidden {
           opacity: 0;
-          cursor: ew-resize;
-          z-index: 10;
-          margin: 0;
         }
         .ba-right-col {
           display: flex;
@@ -464,7 +593,7 @@ export default function BeforeAfterSection() {
           width: 100%;
         }
         .ba-post-frame {
-          height: min(380px, 50vh);
+          height: min(340px, 44vh);
           aspect-ratio: 4 / 5;
           border-radius: 20px;
           overflow: hidden;
@@ -494,7 +623,7 @@ export default function BeforeAfterSection() {
 
         @media (max-width: 900px) {
           .ba-section {
-            padding: 48px 24px;
+            padding: 96px 24px 32px;
           }
           .section-title {
             font-size: 30px;
@@ -510,7 +639,7 @@ export default function BeforeAfterSection() {
             height: 240px;
           }
           .ba-post-frame {
-            height: 320px;
+            height: 300px;
           }
         }
       `}</style>

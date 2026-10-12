@@ -9,6 +9,8 @@ headline:
   value: "401K"
   label: "followers on Indian Corporate Life, one of four pages managed"
 heroImage: "/media/images/icl_art1.jpg"
+summary: "Took over Indian Corporate Life at around 200K followers about a year ago. It is at 401K today."
+note: "Starting figure is approximate."
 accounts:
   - { name: "Indian Corporate Life", followers: "401K", asOf: "2026-10" }
   - { name: "Relatable Office Memes", followers: "34.1K", asOf: "2026-10" }
@@ -17,21 +19,11 @@ accounts:
 reels: [1, 2, 4]
 ---
 
-## Brief and baseline
-Took over Indian Corporate Life at around 200K followers about a year ago. It is at 401K today.
+## Context
+Indian Corporate Life is an Instagram page about office life in India, run under Creativefuel. I took it over when it had around 200K followers.
 
-[DUMMY] Managed multi-account content operations across four humor and community properties, establishing consistent publishing schedules and voice guidelines.
+## What I did
+I run the page end to end: ideas, content, captions and posting. About 8 posts go out every day, spread through the day.
 
-## Insight and idea
-[DUMMY] Corporate humor resonates most when framed as shared survival rather than individual complaints, giving characters like Dadi and Nani distinct authoritative voices.
-
-## Execution and distribution
-[DUMMY] Produced daily meme carousels and short-form video concepts tailored for peak commuting and end-of-day engagement windows.
-
-## Results and learning
-- Indian Corporate Life — 401K followers
-- Relatable Office Memes — 34.1K followers. Built from zero to 34.1K followers. Top Reel: 11.1M views.
-- Corporate Nani — 4.9K followers
-- Corporate Dadi — 4.2K followers
-
-[DUMMY] Generated over XXM organic impressions across the network, demonstrating that repeatable character framing and swift trend turnaround sustain long-term engagement.
+## Result
+401K followers today. Top Reel: 3.7M views.

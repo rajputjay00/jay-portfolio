@@ -7,22 +7,15 @@ niche: Brand
 role: "Social Media Strategist & Campaign Execution"
 headline:
   value: "5"
-  label: "national brands made to feel native to the feed"
+  label: "brand campaigns"
 heroImage: "/media/images/amazon-now.png"
+summary: "Campaign content for five brands through Creativefuel."
 brands: ["Flipkart", "Amazon Now", "Tecno", "Mirzapur", "ARTBAT"]
 reels: [5]
 ---
 
-## Brief and baseline
-Social-first content and campaign work for major consumer brands through Creativefuel.
+## Context
+Brand campaigns through Creativefuel for Flipkart, Amazon Now, Tecno, Mirzapur and ARTBAT.
 
-[DUMMY] Developed branded integrations and moment-marketing activations designed to blend seamlessly into fast-scrolling consumer feeds.
-
-## Insight and idea
-[DUMMY] Viewers skip blatant product pitches, so campaigns were structured around relatable micro-dramas where the product serves as the natural punchline.
-
-## Execution and distribution
-[DUMMY] Distributed custom video memes and co-branded reels across high-affinity meme pages and creator networks during key commercial drop dates.
-
-## Results and learning
-[DUMMY] Achieved an average engagement rate of XX% with over XXK total interactions across all five brand partner campaigns.
+## What I did
+On some of these campaigns I did the idea and the copy end to end. On others I worked on part of it.
