@@ -331,6 +331,8 @@ body {
   background: var(--accent);
   color: var(--bg);
   padding: 0.75rem 1.6rem;
+  min-height: 44px;
+  box-sizing: border-box;
   border-radius: 9999px;
   font-family: var(--font-main);
   font-size: 0.88rem;
@@ -349,9 +351,17 @@ body {
   filter: brightness(1.1);
 }
 
+.btn-accent:focus,
+.btn-accent:focus-visible {
+  outline: 2px solid #FFFFFF !important;
+  outline-offset: 3px !important;
+}
+
 .btn-glass {
   color: var(--text);
   padding: 0.75rem 1.6rem;
+  min-height: 44px;
+  box-sizing: border-box;
   border-radius: 9999px;
   font-family: var(--font-main);
   font-size: 0.88rem;
@@ -586,6 +596,44 @@ html.lenis, html.lenis body {
     transform: translateY(105vh) rotate(45deg) scale(0.9);
     opacity: 0;
   }
+}
+
+/* Accessible Skip to Content Link */
+.skip-to-content-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100000;
+  padding: 0.65rem 1.25rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #0B0A09;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-200%);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.skip-to-content-link:focus-visible {
+  transform: translateY(0);
+  pointer-events: auto;
+  outline: 2px solid #FFFFFF;
+  outline-offset: 3px;
+}
+
+/* Universal Keyboard Focus Indicator */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 

@@ -49,7 +49,7 @@ export default function RetentionTheatreSection() {
   const heroValRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(false);
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -271,7 +271,7 @@ export default function RetentionTheatreSection() {
               <div className="video-container">
                 <video
                   ref={videoRef}
-                  src={retentionData.file}
+                  src={isInView ? retentionData.file : undefined}
                   poster={reelPoster || undefined}
                   muted
                   playsInline
@@ -421,9 +421,13 @@ export default function RetentionTheatreSection() {
           left: 14px;
           display: inline-flex;
           align-items: center;
+          min-height: 44px;
           text-decoration: none;
           z-index: 4;
-          outline: none;
+        }
+        .retention-ig-badge:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 3px;
         }
         .retention-ig-badge span {
           font-family: var(--font-main);
@@ -446,8 +450,8 @@ export default function RetentionTheatreSection() {
           position: absolute;
           bottom: 16px;
           right: 16px;
-          width: 40px;
-          height: 40px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           background: rgba(11, 10, 9, 0.8);
           border: 1px solid rgba(255, 255, 255, 0.15);

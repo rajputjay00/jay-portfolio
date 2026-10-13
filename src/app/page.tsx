@@ -190,6 +190,11 @@ export default function HomePage() {
 
   return (
     <div style={{ position: 'relative', width: '100%', background: 'transparent' }}>
+      {/* 0. Accessible Skip to content link */}
+      <a href="#hero" className="skip-to-content-link">
+        Skip to content
+      </a>
+
       {/* 1. Scroll Progress Line Fixed at Top */}
       <ScrollProgressLine />
 

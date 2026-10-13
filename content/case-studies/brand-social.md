@@ -8,7 +8,7 @@ role: "Social Media Strategist & Campaign Execution"
 headline:
   value: "5"
   label: "brand campaigns"
-heroImage: "/media/images/amazon-now.png"
+heroImage: "/media/images/amazon-now.jpg"
 summary: "Campaign content for five brands through Creativefuel."
 brands: ["Flipkart", "Amazon Now", "Tecno", "Mirzapur", "ARTBAT"]
 reels: [5]

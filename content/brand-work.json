@@ -3,43 +3,43 @@
     {
       "id": "flipkart-1",
       "brand": "Flipkart",
-      "image": "/media/images/flipkart-1.png",
+      "image": "/media/images/flipkart-1.jpg",
       "alt": "Office employee sitting in a cubicle below Flipkart and Reddit logos with headline about iPhone offers."
     },
     {
       "id": "flipkart-2",
       "brand": "Flipkart",
-      "image": "/media/images/flipkart-2.png",
+      "image": "/media/images/flipkart-2.jpg",
       "alt": "Colleagues collaborating at an office desk with Reddit and Flipkart badge overlays."
     },
     {
       "id": "amazon-now",
       "brand": "Amazon Now",
-      "image": "/media/images/amazon-now.png",
+      "image": "/media/images/amazon-now.jpg",
       "alt": "People gathered around a large clock installation next to an Amazon Now promotional display."
     },
     {
       "id": "tecno-pova",
       "brand": "Tecno",
-      "image": "/media/images/tecno-pova.png",
+      "image": "/media/images/tecno-pova.jpg",
       "alt": "Meme comparing CSK cricket team fandom with the drop-resistant Tecno POVA Curve 2 5G smartphone."
     },
     {
       "id": "mirzapur",
       "brand": "Mirzapur",
-      "image": "/media/images/mirzapur.png",
+      "image": "/media/images/mirzapur.jpg",
       "alt": "Promo graphic comparing release dates for Toxic and Mirzapur series."
     },
     {
       "id": "kaleen",
       "brand": "Mirzapur",
-      "image": "/media/images/kaleen.png",
+      "image": "/media/images/kaleen.jpg",
       "alt": "Meme featuring Pankaj Tripathi as Kaleen Bhaiya alongside stylish fashion photoshoot portraits."
     },
     {
       "id": "artbat",
       "brand": "ARTBAT",
-      "image": "/media/images/artbat.png",
+      "image": "/media/images/artbat.jpg",
       "alt": "Concert tour poster featuring DJ duo ARTBAT against a stage laser light show."
     }
   ]

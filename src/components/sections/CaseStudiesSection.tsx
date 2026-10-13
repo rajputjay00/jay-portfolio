@@ -15,7 +15,8 @@ if (typeof window !== 'undefined') {
 
 export default function CaseStudiesSection() {
   const [selectedStudyIndex, setSelectedStudyIndex] = useState<number | null>(null);
-  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const desktopCardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const mobileCardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [isGlassBlur, setIsGlassBlur] = useState(perfStore.getSettings().glassBlur);
   const [isDesktop, setIsDesktop] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
@@ -202,7 +203,7 @@ export default function CaseStudiesSection() {
                   onSelect={() => setSelectedStudyIndex(index)}
                   onFocus={() => handleCardFocus(index)}
                   refSetter={(el) => {
-                    cardRefs.current[index] = el;
+                    desktopCardRefs.current[index] = el;
                   }}
                   isSideways={true}
                 />
@@ -228,7 +229,7 @@ export default function CaseStudiesSection() {
                 isGlassBlur={isGlassBlur && isDesktop}
                 onSelect={() => setSelectedStudyIndex(index)}
                 refSetter={(el) => {
-                  cardRefs.current[index] = el;
+                  mobileCardRefs.current[index] = el;
                 }}
                 isSideways={false}
               />
@@ -246,8 +247,11 @@ export default function CaseStudiesSection() {
             const lastIdx = selectedStudyIndex;
             setSelectedStudyIndex(null);
             setTimeout(() => {
-              if (lastIdx !== null && cardRefs.current[lastIdx]) {
-                cardRefs.current[lastIdx]?.focus({ preventScroll: true });
+              if (lastIdx !== null) {
+                const targetEl = isDesktop
+                  ? desktopCardRefs.current[lastIdx]
+                  : mobileCardRefs.current[lastIdx];
+                targetEl?.focus({ preventScroll: true });
               }
             }, 50);
           }}

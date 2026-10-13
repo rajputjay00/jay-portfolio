@@ -466,27 +466,38 @@ export default function MessageMeSection() {
             </div>
           </div>
 
-          {/* Social Links Row Below Cards */}
-          {socialLinks.length > 0 && (
-            <div className="social-links-row-bottom">
-              {socialLinks.map((item) => (
-                <a
-                  key={item.key}
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="social-pill-btn"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
-                  <span>{item.label}</span>
-                </a>
-              ))}
-            </div>
-          )}
+          {/* Social Links & Mailto Row Below Cards */}
+          <div className="social-links-row-bottom">
+            {email && (
+              <a
+                href={`mailto:${email}`}
+                className="social-pill-btn"
+                aria-label={`Send email to ${email}`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+                <span>{email}</span>
+              </a>
+            )}
+            {socialLinks.map((item) => (
+              <a
+                key={item.key}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-pill-btn"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+                <span>{item.label}</span>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -92,7 +92,9 @@ export default function Toast() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 4px;
+          padding: 8px;
+          min-width: 44px;
+          min-height: 44px;
           border-radius: 50%;
           transition: color 0.2s ease;
           line-height: 1;

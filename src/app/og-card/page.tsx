@@ -24,7 +24,7 @@ export default function OgCardPage() {
   const stats = [
     {
       value: resultsMap.icl?.value || '401K',
-      label: resultsMap.icl?.label || 'followers',
+      label: resultsMap.icl?.account || 'Indian Corporate Life',
     },
     {
       value: resultsMap['sfc-top-reel']?.value || '21.2M',

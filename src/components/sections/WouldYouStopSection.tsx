@@ -228,7 +228,6 @@ export default function WouldYouStopSection() {
       id="swipe"
       ref={sectionRef}
       className="swipe-section"
-      tabIndex={0}
       aria-label="Would you stop? interactive card swipe section"
       style={{
         position: 'relative',
@@ -573,6 +572,11 @@ export default function WouldYouStopSection() {
         .swipe-action-btn:hover {
           transform: scale(1.08);
           box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+        .swipe-action-btn:focus,
+        .swipe-action-btn:focus-visible {
+          outline: 2px solid var(--accent) !important;
+          outline-offset: 3px !important;
         }
         .btn-scroll {
           background: rgba(30, 28, 26, 0.85);

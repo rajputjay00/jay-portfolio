@@ -105,9 +105,9 @@ export default function ExitStopOverlay() {
       className="exit-stop-overlay"
     >
       <div className="exit-stop-content">
-        <h1 className="exit-stop-heading">
+        <div className="exit-stop-heading">
           STOP<span style={{ color: 'var(--accent)' }}>.</span>
-        </h1>
+        </div>
         <p className="exit-stop-subline">
           Leaving without a message? Someone else won't.
         </p>

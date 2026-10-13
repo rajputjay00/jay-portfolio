@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdaptiveDpr, AdaptiveEvents, PerformanceMonitor } from '@react-three/drei';
+import { perfStore } from '@/store/perfStore';
 
 export default function AdaptivePerfManager() {
   const [enabled, setEnabled] = useState(false);

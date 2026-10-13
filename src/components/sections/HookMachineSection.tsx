@@ -307,12 +307,17 @@ export default function HookMachineSection() {
           flex: 1;
           background: transparent;
           border: none;
-          outline: none;
           color: var(--text);
           font-family: var(--font-main);
           font-size: 16px;
           font-weight: 500;
           min-width: 0;
+        }
+        .hooks-text-input:focus-visible,
+        .hooks-text-input:focus {
+          outline: 2px solid var(--accent);
+          outline-offset: 3px;
+          border-radius: 4px;
         }
         .hooks-text-input::placeholder {
           color: rgba(245, 239, 230, 0.4);

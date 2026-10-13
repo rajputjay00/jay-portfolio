@@ -206,12 +206,12 @@ function PhoneMonolith({
                     ref={(el) => {
                       videoRefs.current[rIdx] = el;
                     }}
-                    src={reelItem.file}
+                    src={isSectionInView ? reelItem.file : undefined}
                     poster={reelItem.poster || undefined}
                     muted
                     playsInline
                     loop
-                    preload={isCurrent ? 'auto' : 'metadata'}
+                    preload={isSectionInView && isCurrent ? 'auto' : 'none'}
                     className="reel-video"
                   />
                 </div>
