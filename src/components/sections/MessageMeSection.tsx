@@ -48,6 +48,15 @@ export default function MessageMeSection() {
   const email = profileData.contact?.email || '';
   const instagram = profileData.contact?.instagram || '';
 
+  const rawLinks = (profileData as any).links || {};
+  const socialLinks = Object.entries(rawLinks)
+    .filter(([_, url]) => typeof url === 'string' && (url as string).trim().length > 0)
+    .map(([key, url]) => ({
+      key,
+      label: key.toLowerCase() === 'linkedin' ? 'LinkedIn' : key.charAt(0).toUpperCase() + key.slice(1),
+      url: url as string,
+    }));
+
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -336,6 +345,17 @@ export default function MessageMeSection() {
                   >
                     I have a project
                   </button>
+                  {socialLinks.map((item) => (
+                    <a
+                      key={item.key}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="reply-btn social-link-btn"
+                    >
+                      {item.label}
+                    </a>
+                  ))}
                 </div>
               )}
 
@@ -445,6 +465,28 @@ export default function MessageMeSection() {
               </svg>
             </div>
           </div>
+
+          {/* Social Links Row Below Cards */}
+          {socialLinks.length > 0 && (
+            <div className="social-links-row-bottom">
+              {socialLinks.map((item) => (
+                <a
+                  key={item.key}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-pill-btn"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                  <span>{item.label}</span>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -793,6 +835,51 @@ export default function MessageMeSection() {
             width: 120px;
             height: 50px;
           }
+        }
+        .social-link-btn {
+          text-decoration: none;
+          color: var(--text);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          background: rgba(255, 255, 255, 0.05);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .social-link-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+          border-color: rgba(255, 255, 255, 0.25);
+        }
+        .social-link-btn:focus-visible,
+        .social-pill-btn:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+        .social-links-row-bottom {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 14px;
+        }
+        .social-pill-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 18px;
+          border-radius: 9999px;
+          background: rgba(30, 28, 26, 0.7);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          color: var(--text);
+          font-family: var(--font-main);
+          font-size: 14px;
+          font-weight: 500;
+          text-decoration: none;
+          transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+        .social-pill-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+          border-color: rgba(255, 255, 255, 0.25);
+          transform: translateY(-1px);
         }
       `}</style>
     </section>

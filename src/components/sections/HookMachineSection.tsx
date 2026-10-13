@@ -10,12 +10,12 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const DEFAULT_BRAND = 'a chai brand';
+const defaultInput = hooksData?.defaultInput || '';
 
 const INITIAL_HOOKS = [
-  (hooksData?.templates?.[0] || '').replace(/\{brand\}/g, () => DEFAULT_BRAND),
-  (hooksData?.templates?.[1] || '').replace(/\{brand\}/g, () => DEFAULT_BRAND),
-  (hooksData?.templates?.[2] || '').replace(/\{brand\}/g, () => DEFAULT_BRAND),
+  (hooksData?.templates?.[0] || '').replace(/\{brand\}/g, () => defaultInput),
+  (hooksData?.templates?.[1] || '').replace(/\{brand\}/g, () => defaultInput),
+  (hooksData?.templates?.[2] || '').replace(/\{brand\}/g, () => defaultInput),
 ];
 
 export default function HookMachineSection() {
@@ -79,7 +79,7 @@ export default function HookMachineSection() {
     if (e) e.preventDefault();
     const rawVal = inputRef.current?.value || '';
     const trimmed = rawVal.trim().slice(0, 40);
-    const brand = trimmed.length > 0 ? trimmed : DEFAULT_BRAND;
+    const brand = trimmed.length > 0 ? trimmed : defaultInput;
 
     const templates = hooksData?.templates || [];
     const n = templates.length;
@@ -185,7 +185,8 @@ export default function HookMachineSection() {
                   ref={inputRef}
                   type="text"
                   maxLength={40}
-                  placeholder="a chai brand"
+                  placeholder={defaultInput}
+                  defaultValue={defaultInput}
                   className="hooks-text-input"
                 />
                 <button type="submit" className="btn-accent hooks-submit-btn">

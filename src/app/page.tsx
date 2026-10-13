@@ -25,7 +25,14 @@ import ExitStopOverlay from '@/components/ui/ExitStopOverlay';
 import { openingStore } from '@/store/openingStore';
 import { perfStore } from '@/store/perfStore';
 import { scrollManager } from '@/store/scrollStore';
-import { heroScrollProgress } from '@/store/pointerStore';
+import {
+  heroScrollProgress,
+  feedDragState,
+  startFeedDrag,
+  updateFeedDrag,
+  endFeedDrag,
+  subscribeFeedDrag,
+} from '@/store/pointerStore';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -41,6 +48,66 @@ export default function HomePage() {
   const [isDesktop, setIsDesktop] = React.useState(true);
   const [heroVisible, setHeroVisible] = React.useState(true);
   const [mounted, setMounted] = React.useState(false);
+  const [chipVisible, setChipVisible] = React.useState(false);
+  const [hasDragged, setHasDragged] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const dragHint = (profileData as any).dragHint || "Drag the feed";
+
+  React.useEffect(() => {
+    if (!heroVisible) return;
+    const timer = setTimeout(() => {
+      setChipVisible(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [heroVisible]);
+
+  React.useEffect(() => {
+    return subscribeFeedDrag(() => {
+      if (feedDragState.hasDragged) {
+        setHasDragged(true);
+      }
+      setIsDragging(feedDragState.isDragging);
+    });
+  }, []);
+
+  const handleDragPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (e.button !== 0) return;
+
+    const target = e.target as HTMLElement;
+    if (target.closest('a, button, input, textarea, .hero-numbers-card, .hero-author-block, .hero-headline, .hero-label-pill')) {
+      return;
+    }
+
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    startFeedDrag(e.clientY);
+    setIsDragging(true);
+    setHasDragged(true);
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleDragPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!feedDragState.isDragging) return;
+    updateFeedDrag(e.clientY, window.innerHeight);
+  };
+
+  const handleDragPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!feedDragState.isDragging) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    endFeedDrag();
+    setIsDragging(false);
+    document.body.style.userSelect = '';
+  };
 
   // Extract statement interlude texts from profile.json
   const interlude1Text = profileData.about?.philosophy || "Attention is earned in the first second and kept by every second after.";
@@ -244,6 +311,28 @@ export default function HomePage() {
               Message me
             </a>
           </div>
+        </div>
+
+        {/* Draggable Hero Feed overlay zone (desktop fine pointers only) */}
+        <div
+          className={`hero-feed-drag-zone ${isDragging ? 'is-dragging' : ''}`}
+          onPointerDown={handleDragPointerDown}
+          onPointerMove={handleDragPointerMove}
+          onPointerUp={handleDragPointerUp}
+          onPointerCancel={handleDragPointerUp}
+          aria-hidden="true"
+        />
+
+        {/* Glass chip near the wall: fades in 1.5s after hero is ready, fades out for good after first drag */}
+        <div
+          className={`hero-drag-chip glass-real ${chipVisible && !hasDragged ? 'chip-visible' : ''}`}
+          aria-hidden="true"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85 }}>
+            <polyline points="7 15 12 20 17 15"></polyline>
+            <polyline points="7 9 12 4 17 9"></polyline>
+          </svg>
+          <span>{dragHint}</span>
         </div>
       </section>
 

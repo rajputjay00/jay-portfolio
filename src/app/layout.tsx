@@ -20,11 +20,37 @@ const instrumentSerif = Instrument_Serif({
   display: 'swap',
 });
 
+import profileData from '@/../content/profile.json';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const title = `${profileData.name} · ${profileData.title}`;
+const roleLine = `${profileData.title} · ${profileData.tags?.join(' · ') || ''}`;
+
 export const metadata: Metadata = {
-  title: 'The Attention Lab — Jay Rajput',
-  description: 'Social Media Manager who creates attention and runs it at scale. Instagram · Content · Strategy · Growth.',
-  keywords: ['Jay Rajput', 'Social Media Manager', 'Instagram Growth', 'Content Strategy', 'Attention Lab'],
-  authors: [{ name: 'Jay Rajput' }],
+  metadataBase: new URL(siteUrl),
+  title,
+  description: roleLine,
+  openGraph: {
+    type: 'website',
+    title,
+    description: roleLine,
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'You just stopped scrolling. Jay Rajput, Social Media Manager.',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description: roleLine,
+    images: ['/og.png'],
+  },
+  keywords: [profileData.name, profileData.title, ...(profileData.tags || [])],
+  authors: [{ name: profileData.name }],
 };
 
 export const viewport: Viewport = {

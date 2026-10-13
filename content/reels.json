@@ -1,5 +1,6 @@
 {
   "_rule": "Drop video files in media/reels/. Compress to 1080x1920, H.264/MP4 under ~8 MB each. Only fill numbers you can see in Insights.",
+  "dragHint": "Drag the feed",
   "heroAtlas": {
     "path": "/media/reels/hero-atlas.jpg",
     "file": "/media/reels/hero-atlas.jpg",

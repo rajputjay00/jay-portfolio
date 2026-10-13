@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import reelsData from '@/../content/reels.json';
 import { perfStore, PerfSettings } from '@/store/perfStore';
 import { openingStore, OpeningStep } from '@/store/openingStore';
-import { windowPointerState, heroScrollProgress } from '@/store/pointerStore';
+import { windowPointerState, heroScrollProgress, feedDragState } from '@/store/pointerStore';
 
 // 1. Black & White Social Post Card Shader with Real Reel Poster Atlas
 const FeedShader = {
@@ -246,6 +246,12 @@ export default function HeroFeedWall() {
   const [perfSettings, setPerfSettings] = useState<PerfSettings>(perfStore.getSettings());
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__HERO_FEED__ = {
+        getScrollOffset: () => scrollOffsetRef.current,
+        getCurrentSpeed: () => currentSpeedRef.current,
+      };
+    }
     return perfStore.subscribe((s) => setPerfSettings(s));
   }, []);
 
@@ -469,26 +475,44 @@ export default function HeroFeedWall() {
     const progressSpeedFactor = Math.sin(Math.min(1.0, exitProgress / 0.6) * (Math.PI / 2));
     const targetExitSpeed = 0.32 * (1.0 + (maxMultiplier - 1.0) * progressSpeedFactor) + clampedVelocity;
 
-    const targetSpeed = prefersReducedMotion
-      ? 0.32
-      : isMouseNearFeed
-      ? 0.0
-      : targetExitSpeed;
+    const normalSpeed = 0.32;
+    const baseTargetSpeed = prefersReducedMotion ? normalSpeed : targetExitSpeed;
 
-    // Smooth speed damping: never runs backwards
-    currentSpeedRef.current = THREE.MathUtils.damp(
-      currentSpeedRef.current,
-      targetSpeed,
-      isMouseNearFeed ? 5.0 : 3.0,
-      delta
-    );
-    if (currentSpeedRef.current < 0) currentSpeedRef.current = 0;
-
-    // Increment vertical feed scroll
-    scrollOffsetRef.current += currentSpeedRef.current * delta;
+    if (feedDragState.isDragging) {
+      // 1. Direct 1:1 vertical tracking with pointer
+      scrollOffsetRef.current += feedDragState.dragDeltaY;
+      feedDragState.dragDeltaY = 0;
+      currentSpeedRef.current = THREE.MathUtils.clamp(
+        Math.abs(feedDragState.trackedVelocity),
+        0,
+        normalSpeed * 6.0
+      );
+    } else if (feedDragState.frictionTimeRemaining > 0) {
+      // 2. Post-release: keep throw velocity and ease back to normal speed & direction over 1.2s
+      feedDragState.frictionElapsed += delta;
+      const t = Math.min(1.0, feedDragState.frictionElapsed / 1.2);
+      // Cubic ease-out: 1 - (1 - t)^3
+      const ease = 1 - Math.pow(1 - t, 3);
+      const currentVel = THREE.MathUtils.lerp(feedDragState.throwVelocity, baseTargetSpeed, ease);
+      scrollOffsetRef.current += currentVel * delta;
+      currentSpeedRef.current = currentVel;
+      feedDragState.frictionTimeRemaining -= delta;
+      if (feedDragState.frictionTimeRemaining <= 0) {
+        feedDragState.frictionTimeRemaining = 0;
+      }
+    } else {
+      // 3. Normal speed damping and continuous upward travel
+      currentSpeedRef.current = THREE.MathUtils.damp(
+        currentSpeedRef.current,
+        baseTargetSpeed,
+        3.0,
+        delta
+      );
+      if (currentSpeedRef.current < 0 && prefersReducedMotion) currentSpeedRef.current = 0;
+      scrollOffsetRef.current += currentSpeedRef.current * delta;
+    }
 
     // Motion stretch: 1.0 up to 1.25x based on current speed
-    const normalSpeed = 0.32;
     const speedRatio = THREE.MathUtils.clamp(currentSpeedRef.current / normalSpeed, 1.0, 6.0);
     const stretch = prefersReducedMotion
       ? 1.0

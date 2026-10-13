@@ -1,0 +1,15 @@
+{
+  "label": "THE ATTENTION LAB",
+  "time": "now",
+  "headlineTop": "You just",
+  "headlineBottom": "stopped scrolling",
+  "line": "That is the job.",
+  "images": [
+    "icl_art1",
+    "sfc_art1",
+    "rom_art2",
+    "icl_art2",
+    "sfc_art2",
+    "rom_art1"
+  ]
+}

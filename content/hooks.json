@@ -1,4 +1,5 @@
 {
+  "defaultInput": "chai",
   "templates": [
     "Salary aayi. Salary gayi. Beech me bas {brand} tha.",
     "HR ne bola \"we're a family\". Family me saath sirf {brand} ne diya.",

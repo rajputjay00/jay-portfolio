@@ -3,6 +3,7 @@
   "title": "Social Media Manager",
   "tags": ["Instagram", "Content", "Strategy", "Community", "Growth"],
   "hero": "I make people stop scrolling.",
+  "dragHint": "Drag the feed",
   "openingSequence": {
     "stop": "STOP.",
     "youDid": "YOU DID.",
@@ -15,6 +16,10 @@
     "instagram": "@rajputjay00",
     "linkedin": "",
     "cvFile": ""
+  },
+  "links": {
+    "instagram": "https://www.instagram.com/rajputjay00/",
+    "linkedin": ""
   },
   "about": {
     "story": "I'm a social media manager who works where internet culture, storytelling and strategy meet. I run Instagram communities at Creativefuel, have worked on campaigns for Flipkart, Amazon Now, Tecno, Mirzapur and ARTBAT, and built pages of my own from zero. What I've learned: good social is about understanding people, spotting the moment, and making something they stop for, relate to and share.",
