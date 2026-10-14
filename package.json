@@ -6,7 +6,7 @@
     "copy-media": "node scripts/copy-media.mjs",
     "check:dummy": "node scripts/check-dummy.mjs",
     "predev": "npm run copy-media",
-    "prebuild": "npm run copy-media",
+    "prebuild": "node scripts/copy-media.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
