@@ -1,5 +1,5 @@
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.js
 
@@ -7,12 +7,12 @@
 /coverage
 
 # next.js
-/.next/
+.next
 /out/
 
 # production
 /build
-/public/media/
+public/media
 
 # misc
 .DS_Store
@@ -24,6 +24,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env*
 .env*.local
 
 # vercel
@@ -32,3 +33,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# media & artifacts
+screenshots
+
