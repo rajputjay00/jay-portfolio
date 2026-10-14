@@ -22,7 +22,7 @@ const instrumentSerif = Instrument_Serif({
 
 import profileData from '@/../content/profile.json';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jay-portfolio-tau.vercel.app';
 const title = `${profileData.name} · ${profileData.title}`;
 const roleLine = `${profileData.title} · ${profileData.tags?.join(' · ') || ''}`;
 
@@ -30,8 +30,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title,
   description: roleLine,
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
+    url: '/',
     title,
     description: roleLine,
     images: [
