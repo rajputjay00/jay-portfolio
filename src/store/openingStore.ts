@@ -15,18 +15,35 @@ export type OpeningStep =
 type OpeningListener = (step: OpeningStep) => void;
 
 class OpeningStore {
-  private step: OpeningStep = 'idle';
+  private step: OpeningStep = 'completed';
   private listeners: Set<OpeningListener> = new Set();
-  private hasSeen: boolean = false;
+  private hasSeen: boolean = true;
+  private isIntroRequested: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
       try {
-        this.hasSeen = localStorage.getItem('attention_lab_opening_seen') === 'true';
+        const params = new URLSearchParams(window.location.search);
+        this.isIntroRequested = params.get('intro') === '1';
+        if (this.isIntroRequested) {
+          this.step = 'idle';
+          this.hasSeen = false;
+        } else {
+          this.step = 'completed';
+          this.hasSeen = true;
+        }
       } catch (e) {
-        this.hasSeen = false;
+        this.step = 'completed';
+        this.hasSeen = true;
       }
+    } else {
+      this.step = 'completed';
+      this.hasSeen = true;
     }
+  }
+
+  isIntro(): boolean {
+    return this.isIntroRequested;
   }
 
   getStep(): OpeningStep {
@@ -58,13 +75,7 @@ class OpeningStore {
 
   resetSeen() {
     this.hasSeen = false;
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem('attention_lab_opening_seen');
-      } catch (e) {
-        // ignore
-      }
-    }
+    this.isIntroRequested = true;
     this.setStep('screen_1');
   }
 

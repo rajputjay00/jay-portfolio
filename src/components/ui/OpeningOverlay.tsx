@@ -5,6 +5,7 @@ import { openingStore, OpeningStep } from '@/store/openingStore';
 import profileData from '@/../content/profile.json';
 
 export default function OpeningOverlay() {
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<OpeningStep>('idle');
   const [showSkip, setShowSkip] = useState(false);
   const [isBlackout, setIsBlackout] = useState(false);
@@ -76,11 +77,16 @@ export default function OpeningOverlay() {
   };
 
   useEffect(() => {
+    setMounted(true);
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (prefersReducedMotion || openingStore.isSeen()) {
+    const isIntroRequested = typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('intro') === '1' || openingStore.isIntro())
+      : false;
+
+    if (!isIntroRequested || prefersReducedMotion || openingStore.isSeen()) {
       jumpToHero();
     } else {
       startSequence();
@@ -109,7 +115,7 @@ export default function OpeningOverlay() {
   const youDidText = openingSequence?.youDid || 'YOU DID.';
   const taglineText = openingSequence?.tagline || "That's the job.";
 
-  if (isComplete) {
+  if (!mounted || isComplete || step === 'completed' || !openingStore.isIntro()) {
     return null;
   }
 

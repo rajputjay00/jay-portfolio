@@ -342,12 +342,16 @@ export default function HeroFeedWall() {
 
   // Feed Shader Material
   const feedMaterial = useMemo(() => {
+    const isIntroRequested = typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('intro') === '1' || openingStore.isIntro())
+      : false;
+    const initialOpacity = !isIntroRequested ? (isMobile ? 0.35 : 1.0) : 0.0;
     return new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uMouse: { value: new THREE.Vector3(999, 999, 0) },
         uHoverStrength: { value: 1.0 },
-        uOpacity: { value: 0.0 }, // Starts at 0.0, smoothly fades in over 0.6s
+        uOpacity: { value: initialOpacity },
         uExitProgress: { value: 0.0 },
         uStretch: { value: 1.0 },
         uIsMobile: { value: isMobile ? 1.0 : 0.0 },
@@ -355,7 +359,7 @@ export default function HeroFeedWall() {
         uAccentColor: { value: new THREE.Color('#FF5A2B') },
         uBgColor: { value: new THREE.Color('#0B0A09') },
         uAtlas: { value: atlasTexture },
-        uAtlasFade: { value: 0.0 },
+        uAtlasFade: { value: !isIntroRequested ? 1.0 : 0.0 },
       },
       vertexShader: FeedShader.vertexShader,
       fragmentShader: FeedShader.fragmentShader,
@@ -428,14 +432,18 @@ export default function HeroFeedWall() {
   useFrame((state, delta) => {
     if (!meshRef.current || !shaderMatRef.current) return;
 
-    // 0. Smoothly fade in opacity over 0.6s
+    // 0. Opacity handling (instant for normal load, 0.6s damp when completing intro)
     const targetOpacity = isMobile ? 0.35 : 1.0;
-    shaderMatRef.current.uniforms.uOpacity.value = THREE.MathUtils.damp(
-      shaderMatRef.current.uniforms.uOpacity.value,
-      targetOpacity,
-      5.0,
-      delta
-    );
+    if (!openingStore.isIntro() || openingStore.getStep() === 'completed') {
+      shaderMatRef.current.uniforms.uOpacity.value = targetOpacity;
+    } else {
+      shaderMatRef.current.uniforms.uOpacity.value = THREE.MathUtils.damp(
+        shaderMatRef.current.uniforms.uOpacity.value,
+        targetOpacity,
+        5.0,
+        delta
+      );
+    }
 
     // Atlas smooth 400ms fade once loaded
     const isAtlasReady =

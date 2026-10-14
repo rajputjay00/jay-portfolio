@@ -208,8 +208,11 @@ export default function OpeningScreens() {
     return openingStore.subscribe((s) => setStep(s));
   }, []);
 
-  const isCompleted = step === 'completed' && openingStore.isSeen();
-  if (isCompleted) {
+  const isIntroRequested = typeof window !== 'undefined'
+    ? (new URLSearchParams(window.location.search).get('intro') === '1' || openingStore.isIntro())
+    : false;
+
+  if (!isIntroRequested || step === 'completed') {
     return null;
   }
 
@@ -237,7 +240,7 @@ export default function OpeningScreens() {
     step === 'pullback' ||
     step === 'identity';
 
-  const isGliding = step === 'pullback' || step === 'identity' || step === 'completed';
+  const isGliding = step === 'pullback' || step === 'identity';
 
   return (
     <group position={[0, 0, 0]}>

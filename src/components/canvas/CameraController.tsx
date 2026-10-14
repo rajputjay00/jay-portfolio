@@ -27,8 +27,10 @@ export default function CameraController() {
 
   // Initialize camera position on first load
   useEffect(() => {
-    const isSeen = openingStore.isSeen();
-    const initialCam = isSeen ? new THREE.Vector3(0, 0, 5.0) : new THREE.Vector3(0, 0.4, 6.5);
+    const isIntroRequested = typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('intro') === '1' || openingStore.isIntro())
+      : false;
+    const initialCam = !isIntroRequested ? new THREE.Vector3(0, 0, 5.0) : new THREE.Vector3(0, 0.4, 6.5);
     const initialLook = new THREE.Vector3(0, 0, 0);
     camera.position.copy(initialCam);
     camera.lookAt(initialLook);

@@ -116,13 +116,21 @@ export default function HomePage() {
 
   React.useEffect(() => {
     setMounted(true);
-    if (!openingStore.isSeen()) {
+    const isIntroRequested = typeof window !== 'undefined'
+      ? (new URLSearchParams(window.location.search).get('intro') === '1' || openingStore.isIntro())
+      : false;
+
+    if (isIntroRequested && openingStore.getStep() !== 'completed') {
       setHeroVisible(false);
+    } else {
+      setHeroVisible(true);
     }
 
     const unsubOpening = openingStore.subscribe((s) => {
       if (s === 'completed') {
         setHeroVisible(true);
+      } else if (s === 'screen_1') {
+        setHeroVisible(false);
       }
     });
 
@@ -249,7 +257,7 @@ export default function HomePage() {
           className="hero-content"
           style={{
             opacity: heroVisible ? 1 : 0,
-            transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: mounted && openingStore.isIntro() ? 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
             pointerEvents: heroVisible ? 'auto' : 'none',
           }}
         >
