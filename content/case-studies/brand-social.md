@@ -1,10 +1,10 @@
 ---
 id: brand-social
 order: 2
-title: Brand Social — National brands, feed-native
+title: "Brand campaigns"
 client: Flipkart, Amazon Now, Tecno, Mirzapur, ARTBAT (via Creativefuel)
 niche: Brand
-role: "Social Media Strategist & Campaign Execution"
+role: "Idea and copy"
 headline:
   value: "5"
   label: "brand campaigns"

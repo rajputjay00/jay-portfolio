@@ -1,10 +1,10 @@
 ---
 id: campus-community
 order: 4
-title: Campus & Community — TEDxIPSA Indore and GDGOC IPSA
+title: "TEDxIPSA Indore"
 client: TEDxIPSA Indore, GDGOC IPSA
 niche: Culture
-role: "Social Media Lead"
+role: "Social media, end to end"
 heroImage: ""
 summary: "Social for TEDxIPSA Indore, end to end."
 reels: [9]

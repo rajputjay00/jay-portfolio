@@ -189,19 +189,22 @@ export default function AboutAndServicesSection() {
         <div className="experience-block">
           <div className="experience-label">Experience</div>
           <ul ref={expListRef} className="experience-list">
-            {experienceItems.map((item, idx) => (
-              <li key={idx} className="experience-item">
-                <div className="experience-top-border" />
-                <div className="experience-content">
-                  <div className="exp-org">{item.org}</div>
-                  <div className="exp-role-type">
-                    {item.role}{item.type ? ` · ${item.type}` : ''}
+            {experienceItems.map((item, idx) => {
+              const summaryLine = ((item as any).summary !== undefined ? (item as any).summary : item.line)?.trim();
+              return (
+                <li key={idx} className="experience-item">
+                  <div className="experience-top-border" />
+                  <div className={`experience-content ${!summaryLine ? 'no-line' : ''}`}>
+                    <div className="exp-org">{item.org}</div>
+                    <div className="exp-role-type">
+                      {item.role}{item.type ? ` · ${item.type}` : ''}
+                    </div>
+                    <div className="exp-dates">{item.from} – {item.to}</div>
+                    {summaryLine ? <div className="exp-line">{summaryLine}</div> : null}
                   </div>
-                  <div className="exp-dates">{item.from} – {item.to}</div>
-                  {item.line ? <div className="exp-line">{item.line}</div> : null}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -387,6 +390,9 @@ export default function AboutAndServicesSection() {
           align-items: baseline;
           padding: 18px 0;
           transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .experience-content.no-line {
+          grid-template-areas: "org role dates";
         }
         .exp-org {
           grid-area: org;

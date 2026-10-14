@@ -1,10 +1,10 @@
 ---
 id: strictly-for-corporate
 order: 3
-title: Strictly For Corporate — Built from scratch
+title: "Strictly For Corporate"
 client: Own page (independent)
 niche: Creator
-role: "Founder and sole operator"
+role: "Founder"
 headline:
   value: "35.3K"
   label: "followers built on an independent corporate-culture page"

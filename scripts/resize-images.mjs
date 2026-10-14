@@ -22,72 +22,87 @@ async function main() {
   });
 
   const page = await browser.newPage();
-  const files = fs.readdirSync(srcDir).filter((f) => {
-    const ext = path.extname(f).toLowerCase();
-    return ext === '.jpg' || ext === '.jpeg' || ext === '.png';
-  });
+  const targetFiles = ['icl_art1.jpg', 'sfc_art1.jpg'];
 
   const results = [];
 
-  for (const file of files) {
+  for (const file of targetFiles) {
     const srcFilePath = path.join(srcDir, file);
+    if (!fs.existsSync(srcFilePath)) continue;
     const stat = fs.statSync(srcFilePath);
-    if (stat.size <= 350 * 1024) {
-      continue; // Under 350 KB, exempt
-    }
 
     const ext = path.extname(file).toLowerCase();
-    const baseName = path.basename(file, ext);
-    const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+    const mime = 'image/jpeg';
     const fileData = fs.readFileSync(srcFilePath);
     const base64 = `data:${mime};base64,${fileData.toString('base64')}`;
 
-    const reencodedBase64 = await page.evaluate(async (dataUri) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.82));
-        };
-        img.src = dataUri;
-      });
-    }, base64);
+    let quality = 0.80;
+    let buffer;
+    let finalDimensions = { width: 0, height: 0 };
 
-    const buffer = Buffer.from(reencodedBase64.replace(/^data:image\/jpeg;base64,/, ''), 'base64');
-    const outFileName = `${baseName}.jpg`;
+    while (quality >= 0.50) {
+      const res = await page.evaluate(async ({ dataUri, q }) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            const maxSide = Math.max(w, h);
+            if (maxSide > 1600) {
+              const scale = 1600 / maxSide;
+              w = Math.round(w * scale);
+              h = Math.round(h * scale);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve({
+              dataUrl: canvas.toDataURL('image/jpeg', q),
+              width: w,
+              height: h,
+            });
+          };
+          img.src = dataUri;
+        });
+      }, { dataUri: base64, q: quality });
+
+      buffer = Buffer.from(res.dataUrl.replace(/^data:image\/jpeg;base64,/, ''), 'base64');
+      finalDimensions = { width: res.width, height: res.height };
+
+      if (buffer.length < 290 * 1024) {
+        break;
+      }
+      quality -= 0.03;
+    }
+
+    const outFileName = file;
     const outSrcPath = path.join(srcDir, outFileName);
     const outTargetPath = path.join(targetDir, outFileName);
 
     fs.writeFileSync(outSrcPath, buffer);
     fs.writeFileSync(outTargetPath, buffer);
 
-    if (ext === '.png' && outFileName !== file) {
-      // Remove old .png file
-      if (fs.existsSync(srcFilePath)) fs.unlinkSync(srcFilePath);
-      const targetOldPng = path.join(targetDir, file);
-      if (fs.existsSync(targetOldPng)) fs.unlinkSync(targetOldPng);
-    }
-
     results.push({
       original: file,
       output: outFileName,
       beforeSize: stat.size,
       afterSize: buffer.length,
+      quality: quality.toFixed(2),
+      width: finalDimensions.width,
+      height: finalDimensions.height,
     });
   }
 
   await browser.close();
 
-  console.log('=== RE-ENCODED IMAGES (QUALITY 82, ORIGINAL PIXEL SIZE) ===');
+  console.log('=== RE-ENCODED TARGET IMAGES ===');
   for (const r of results) {
     const beforeKb = (r.beforeSize / 1024).toFixed(1);
     const afterKb = (r.afterSize / 1024).toFixed(1);
     const pct = ((1 - r.afterSize / r.beforeSize) * 100).toFixed(1);
-    console.log(`${r.original} (${beforeKb} KB) -> ${r.output} (${afterKb} KB) [-${pct}%]`);
+    console.log(`${r.original} (${beforeKb} KB) -> ${r.output} (${afterKb} KB, ${r.width}x${r.height}, q=${r.quality}) [-${pct}%]`);
   }
 }
 

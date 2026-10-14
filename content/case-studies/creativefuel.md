@@ -1,13 +1,13 @@
 ---
 id: creativefuel
 order: 1
-title: Creativefuel — Internet-native page portfolio
+title: "Indian Corporate Life"
 client: Creativefuel (freelance)
 niche: Community + Character
-role: "Content & Social Media Manager (freelance)"
+role: "Social Media Manager"
 headline:
   value: "401K"
-  label: "followers on Indian Corporate Life, one of four pages managed"
+  label: "followers on Indian Corporate Life"
 heroImage: "/media/images/icl_art1.jpg"
 summary: "Took over Indian Corporate Life at around 200K followers about a year ago. It is at 401K today."
 note: "Starting figure is approximate."
