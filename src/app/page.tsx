@@ -253,24 +253,27 @@ export default function HomePage() {
             pointerEvents: heroVisible ? 'auto' : 'none',
           }}
         >
-          {/* a. Label pill */}
-          <div className="hero-label-pill glass-fake">
-            THE ATTENTION LAB
-          </div>
+          {/* Text Block with Scrim on mobile */}
+          <div className="hero-text-block">
+            {/* a. Label pill */}
+            <div className="hero-label-pill glass-fake">
+              THE ATTENTION LAB
+            </div>
 
-          {/* b. Headline */}
-          <h1 className="hero-headline">
-            <span className="headline-line-1">I make people</span>
-            <span className="headline-line-2">
-              stop scrolling<span style={{ color: 'var(--accent)' }}>.</span>
-            </span>
-          </h1>
+            {/* b. Headline */}
+            <h1 className="hero-headline">
+              <span className="headline-line-1">I make people</span>
+              <span className="headline-line-2">
+                stop scrolling<span style={{ color: 'var(--accent)' }}>.</span>
+              </span>
+            </h1>
 
-          {/* c. Name & Roles */}
-          <div className="hero-author-block">
-            <div className="hero-name">{name}</div>
-            <div className="hero-roles-line">
-              {title} · {tags.join(' · ')}
+            {/* c. Name & Roles */}
+            <div className="hero-author-block">
+              <div className="hero-name">{name}</div>
+              <div className="hero-roles-line">
+                {title} · {tags.join(' · ')}
+              </div>
             </div>
           </div>
 

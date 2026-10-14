@@ -209,6 +209,11 @@ body {
   }
 }
 
+.hero-text-block {
+  display: flex;
+  flex-direction: column;
+}
+
 /* a. Label pill */
 .hero-label-pill {
   display: inline-flex;
@@ -465,6 +470,29 @@ body {
     max-width: 100%;
   }
 
+  .hero-text-block {
+    position: relative;
+    z-index: 10;
+  }
+
+  .hero-text-block::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    bottom: -80px;
+    left: -1.5rem;
+    right: -1.5rem;
+    background: linear-gradient(
+      to bottom,
+      rgba(11, 10, 9, 0) 0px,
+      rgba(11, 10, 9, 0.92) 80px,
+      rgba(11, 10, 9, 0.92) calc(100% - 80px),
+      rgba(11, 10, 9, 0) 100%
+    );
+    pointer-events: none;
+    z-index: -1;
+  }
+
   .headline-line-1 {
     font-size: clamp(32px, 8.5vw, 48px);
     white-space: normal;
@@ -480,6 +508,9 @@ body {
     max-width: 100%;
     padding: 1rem 1.2rem;
     margin-bottom: 2rem;
+    background: rgba(11, 10, 9, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .number-val {

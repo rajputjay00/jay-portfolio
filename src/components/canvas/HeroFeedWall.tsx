@@ -149,6 +149,9 @@ const FeedShader = {
       float hoverGain = (1.0 - baseIdle) * vHover * (1.0 - smoothstep(0.0, 0.10, uExitProgress));
       float activeBrightness = baseIdle + hoverGain;
       float brightness = mix(activeBrightness, 0.25, smoothstep(0.0, 0.75, uExitProgress));
+      if (uIsMobile > 0.5) {
+        brightness *= 0.7;
+      }
       col *= brightness;
 
       // 5. Left 15% gradient on wall to preserve high contrast for hero text if screen overlaps
@@ -446,6 +449,7 @@ export default function HeroFeedWall() {
     // Touch or reduced motion fallback: all screens sit at 0.95
     const isTouchOrReduced = isMobile || prefersReducedMotion || !windowPointerState.hasPointer;
     shaderMatRef.current.uniforms.uIsTouchOrReduced.value = isTouchOrReduced ? 1.0 : 0.0;
+    shaderMatRef.current.uniforms.uIsMobile.value = isMobile ? 1.0 : 0.0;
 
     // 1. Time uniform update
     shaderMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
